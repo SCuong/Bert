@@ -1,125 +1,199 @@
 # NEXT TASK
 
-task_id: overnight-004
-reviewed_commit_sha: 48e69dac96c68f7ece6e58b717d46b82331280df
+task_id: overnight-005
+reviewed_commit_sha: 2a8a407627a56541b86053a98ec2973fe8127cbe
 status: READY
 
 ## Goal
 
-Close the remaining Test-set sealing/provenance gaps, then run the real validation-only TF-IDF baseline. Do not fine-tune BERT and do not run final Test evaluation in this phase.
+Harden the BERT-model completion guard, then run the first and only planned validation-only BERT fine-tuning run with the already-fixed configuration. Persist real validation artifacts and training telemetry. Keep the held-out Test Set sealed; do not run final comparative evaluation in this phase.
 
-## Reviewer decision on overnight-003
+## Reviewer decision on overnight-004
 
-The artifact-path cleanup, comparative evaluator preparation, hardware-claim cleanup, and validation-only baseline structure are accepted.
+The validation-only baseline is accepted as the fixed development reference.
 
-Two residual issues must be corrected before/while running the baseline:
+Accepted measured Baseline Validation result:
+- split: Validation only
+- sample count: 1,975
+- Accuracy: 0.810126582278481
+- Macro Precision: 0.8115951441377918
+- Macro Recall: 0.8099680454828865
+- Macro F1: 0.8098450029770088
+- Weighted F1: 0.8098783478942885
+- confusion matrix: [[838, 154], [221, 762]]
 
-1. `src.data.analyze_and_plot_data()` now writes the EDA JSON itself, but `decision_rationale` still hard-codes measured numbers (`96.07%`, `121.0`, `3.93%`, `3.84%`) instead of deriving the text from the just-computed `stats_dict`. This can silently become stale if the data/tokenizer/config changes. Generate the rationale from computed values or move the human rationale out of the JSON.
-2. `split_data()` prints the Test-set sample count and Test label distribution on every call. Therefore `python -m src.train_baseline` and `python -m src.train_bert` still expose Test-derived label statistics during model development even though callers ignore the returned Test dataframe. The development invariant is: split construction may use labels for stratification, but training commands must not print, persist, inspect, or use Test-derived counts/distributions/predictions/metrics for model or hyperparameter decisions.
+The split-sealing and data-derived EDA rationale changes are also accepted.
+
+One safety issue must be fixed before the BERT run is treated as complete: `train_bert.py` currently creates `BERT_BEST_MODEL_DIR` before training, while `evaluate.py` considers the BERT model available if that directory merely exists. A failed/interrupted training run could therefore leave an empty/incomplete directory that incorrectly opens the final Test-evaluation gate. The final evaluator must require a genuinely complete trained-model artifact, not just a directory.
 
 ## Required work
 
-### A. Make EDA rationale data-derived
+### A. Harden BERT artifact completion before training
 
-1. In `src/data.py`, remove hard-coded measured values from `decision_rationale`.
-2. Either:
-   - build the rationale string from the actual values already computed in `stats_dict`, or
-   - keep `token_length_stats.json` measurement-only and place the human explanation in documentation.
-3. Re-run `python -m src.data` after the change.
-4. Verify the regenerated `artifacts/metrics/token_length_stats.json` still contains the accepted real measurements and is reproducible on a second run.
+1. In `src/train_bert.py`, do not pre-create `BERT_BEST_MODEL_DIR` merely to prepare for training. Let the successful model-save step create/populate it.
+2. Add a robust model-completeness check shared with `src/evaluate.py`. At minimum, a BERT artifact must contain:
+   - `config.json`;
+   - model weights (`model.safetensors` or `pytorch_model.bin`);
+   - tokenizer files sufficient for `AutoTokenizer.from_pretrained(BERT_BEST_MODEL_DIR)`.
+3. Prefer an explicit local completion marker/manifest written only after all of the following succeed:
+   - training finishes;
+   - the best checkpoint is loaded;
+   - the best model and tokenizer are saved;
+   - validation metrics/history are persisted.
+   `evaluate.py` must not unlock the Test Set unless the trained BERT artifact passes the completeness check (and completion marker if implemented).
+4. Keep the baseline model guard unchanged except for any shared helper refactor needed.
+5. Do not load, split, print, or inspect Test labels/predictions while implementing or smoke-checking this guard.
 
-### B. Fully seal Test-derived reporting during model development
+### B. Add explicit BERT Validation artifact paths
 
-1. Refactor the split/reporting API so development callers can obtain deterministic Train/Validation partitions without printing or otherwise surfacing Test label distribution/counts.
-2. Preserve the exact same seed-42 stratified partitioning logic used by the final evaluator.
-3. The standalone EDA/data-audit command may continue to report split counts and zero-overlap facts because those are part of the accepted data-integrity audit.
-4. `src/train_baseline.py` must not print Test count/distribution or inspect Test labels/metrics.
-5. `src/train_bert.py` must follow the same sealed-development behavior for its future run.
-6. `src/evaluate.py` remains the only model-evaluation command allowed to expose final Test labels/predictions/metrics after both trained model artifacts exist.
+Add development/validation paths in `src/config.py`, separate from final-Test paths:
+- `artifacts/metrics/bert_validation_metrics.json`
+- `artifacts/figures/bert_val_confusion_matrix.png`
 
-### C. Run the real validation-only baseline
+Do not reuse `bert_test_metrics.json`, `BERT_METRICS_PATH`, or any final-Test filename for validation results.
 
-After A and B pass static checks:
+### C. Preflight the fixed training configuration
 
-1. Run exactly:
-   `python -m src.train_baseline`
-2. Train TF-IDF + Logistic Regression on Train only with the already-defined fixed baseline configuration.
-3. Evaluate only on Validation.
-4. Persist the real outputs:
-   - `artifacts/metrics/baseline_validation_metrics.json`
-   - `artifacts/figures/baseline_val_confusion_matrix.png`
-   - local ignored model: `artifacts/model/baseline_tfidf_lr.joblib`
-5. Record real training time and validation inference time as measured by the run.
-6. Do not tune `C`, `max_features`, n-grams, or other baseline hyperparameters in response to Validation results in this phase. This run establishes the fixed baseline reference.
+Before the real run, verify without touching the Test Set:
+- `torch.cuda.is_available()` and the actual device selected;
+- GPU name and total VRAM if CUDA is available;
+- installed PyTorch and Transformers versions;
+- `TrainingArguments` accepts the arguments used by the project;
+- `Trainer` construction remains compatible with `processing_class` in the installed version;
+- Train/Validation split remains 13,821 / 1,975 with seed 42 while Test reporting stays sealed.
 
-### D. Validate the artifacts and documentation
+The official configuration remains fixed from the already-reviewed design:
+- model: `google-bert/bert-base-uncased`
+- MAX_LENGTH: 128
+- epochs: 3
+- learning rate: 2e-5
+- weight decay: 0.01
+- warmup ratio: 0.1
+- train batch size: 16
+- seed: 42
+- checkpoint selection metric: Validation Macro F1
 
-1. Confirm the validation metrics JSON contains at minimum:
-   - `evaluation_split: validation`
-   - Accuracy
-   - Macro Precision
-   - Macro Recall
-   - Macro F1
-   - Weighted F1
-   - per-class metrics
-   - training time
-   - validation inference time
-   - validation sample count
-   - confusion matrix
-2. Check that the confusion-matrix totals equal the validation sample count.
-3. Check that `artifacts/model/baseline_tfidf_lr.joblib` exists locally but is ignored by Git and is not committed.
-4. Confirm that no final-Test metric artifact exists as a result of this phase:
-   - no new `baseline_test_metrics.json`
-   - no new `bert_test_metrics.json`
-   - no new `comparative_metrics.json`
-   - no `error_cases.json` from final evaluation
-5. Update only the relevant docs/presentation source with the real Baseline **Validation** results, clearly labeled as development/validation results and never presented as final Test performance.
-6. Do not claim that BERT outperforms or underperforms the baseline yet.
+Do not tune these values in response to the Baseline Validation score or intermediate BERT Validation scores.
 
-### E. Keep the next phases sealed
+If the official run fails because of CUDA OOM or an environment/runtime incompatibility, do not silently change the experiment configuration and do not fabricate a replacement result. Record the exact failure in `docs/REVIEW_REQUEST.md`, mark the request as blocked, and stop so the next review can make a grounded resource/configuration decision.
 
-Do NOT run in this phase:
-- `python -m src.train_bert`
-- `python -m src.evaluate` after model artifacts exist
-- any Test-set prediction/evaluation
-- final PowerPoint generation
+### D. Run the real BERT fine-tuning phase
 
-Do not create placeholder BERT/Test metrics to satisfy report or slide code.
+After A-C pass, run exactly:
+
+`python -m src.train_bert`
+
+Requirements:
+1. Train on Train only.
+2. Use Validation only for per-epoch evaluation and best-checkpoint selection.
+3. Never instantiate/use Test examples for predictions or metrics during this command.
+4. Keep `load_best_model_at_end=True` and save the actually selected best model/tokenizer to the local ignored BERT model directory.
+5. Persist the real `trainer.state.log_history` / training history already implemented.
+6. Record actual training duration.
+7. If CUDA is used, also record actual GPU name and peak allocated/reserved CUDA memory if reasonably available from PyTorch. These are measurements, not estimates.
+
+### E. Evaluate the selected BERT checkpoint on Validation only
+
+After training has completed and the best checkpoint is loaded, evaluate/predict once on the Validation dataset and persist `bert_validation_metrics.json` with at minimum:
+- `model_name`;
+- `evaluation_split: validation`;
+- Validation sample count;
+- Accuracy;
+- Macro Precision;
+- Macro Recall;
+- Macro F1;
+- Weighted F1;
+- per-class Precision / Recall / F1;
+- Validation inference time;
+- confusion matrix;
+- best Validation metric / selected best checkpoint information;
+- training configuration actually used;
+- training time;
+- device/GPU information actually observed.
+
+Save `bert_val_confusion_matrix.png` from the same predictions.
+
+The confusion-matrix total must equal 1,975.
+
+### F. Validate training-history provenance
+
+`artifacts/metrics/bert_training_history.json` must reflect real Trainer logs, not hand-entered values. Verify:
+- train-loss points exist;
+- validation-loss points exist for the evaluation epochs;
+- Validation Accuracy and Macro F1 correspond to Trainer evaluation logs;
+- best-model/checkpoint information is internally consistent with the configured `metric_for_best_model`;
+- `artifacts/figures/training_history.png` is generated from those real logs.
+
+If a claimed curve/metric is not present in Trainer logs, change the report/slide claim instead of synthesizing it.
+
+### G. Preserve Test-set sealing and artifact integrity
+
+Before completion, explicitly confirm that this phase did NOT create or modify final-Test outputs:
+- `artifacts/metrics/baseline_test_metrics.json`
+- `artifacts/metrics/bert_test_metrics.json`
+- `artifacts/metrics/comparative_metrics.json`
+- `artifacts/metrics/error_cases.json`
+- `artifacts/figures/baseline_test_confusion_matrix.png`
+- `artifacts/figures/bert_test_confusion_matrix.png`
+
+Do NOT run `python -m src.evaluate`.
+
+Do NOT generate the final PowerPoint.
+
+### H. Update documentation as Validation-only development evidence
+
+Update only the relevant project/report/presentation source files to reflect the real BERT Validation run. Keep the distinction explicit:
+- Baseline Validation = development result;
+- BERT Validation = development result;
+- final comparative Test result = still pending.
+
+It is acceptable to report a same-Validation-split delta between BERT and Baseline as a development observation, but do not convert it into the final research conclusion and do not alter BERT hyperparameters based on it.
+
+Do not claim Test performance, final superiority, or final error patterns yet.
 
 ## Verification criteria
 
 Before completion, verify all of the following:
 
-- `python -m src.data` succeeds and a second run gives identical EDA JSON content.
-- `decision_rationale` is derived from computed measurements or removed from the JSON; it is not a hard-coded copy of today's numbers.
-- Running/importing the development split path used by `train_baseline.py` and `train_bert.py` does not print Test count or Test label distribution.
-- Baseline training completes successfully on Train only.
-- Baseline development evaluation uses Validation only.
-- `baseline_validation_metrics.json` contains real measured values and its confusion-matrix sum equals the validation sample count.
-- `baseline_tfidf_lr.joblib` exists locally and remains Git-ignored.
-- No final Test metric/error artifact is generated by this phase.
-- Documentation and presentation source label these numbers as Validation results, not final Test results.
+- the final evaluator cannot unlock merely because an empty `bert_best_model/` directory exists;
+- the BERT artifact completeness guard checks real saved model/tokenizer content;
+- root-level BERT imports and TrainingArguments/Trainer API preflight pass;
+- Train/Validation remain 13,821 / 1,975 with Test reporting sealed;
+- `python -m src.train_bert` completes successfully with the fixed reviewed configuration;
+- best checkpoint selection is based only on Validation Macro F1;
+- `bert_validation_metrics.json` contains real measured Validation values and its confusion matrix sums to 1,975;
+- `bert_training_history.json` contains real train/eval logs;
+- `training_history.png` and `bert_val_confusion_matrix.png` are derived from those real run artifacts;
+- the saved BERT model/tokenizer exists locally and remains Git-ignored;
+- no final Test metric, error-analysis, or final-Test confusion-matrix artifact is generated or changed;
+- docs and presentation source label all new BERT numbers as Validation/development results.
 
 ## Completion protocol
 
-When done:
-1. Review the generated baseline metrics/figure and the EDA diff.
-2. Commit source/docs/real validation artifacts with exactly:
-   `experiment: train validation-only baseline`
+When done successfully:
+1. Review the generated BERT Validation JSON, training-history JSON, and figures for internal consistency.
+2. Commit tracked source/docs/real Validation artifacts with exactly:
+   `experiment: fine-tune BERT with validation-only evaluation`
 3. Push to `main`.
-4. Obtain the exact implementation SHA with `git rev-parse HEAD` after the implementation commit is created and pushed.
-5. Create/update `docs/REVIEW_REQUEST.md` with:
+4. Obtain the exact implementation SHA with `git rev-parse HEAD` after that implementation commit is created and pushed.
+5. Create/update `docs/REVIEW_REQUEST.md` containing:
    - `request_commit_sha: <exact implementation SHA>`
    - `status: READY_FOR_REVIEW`
-   - summary of the split-sealing and EDA-rationale fixes
-   - exact Baseline Validation metrics copied from the generated JSON
-   - measured training/inference times
+   - summary of the BERT artifact-guard hardening
+   - exact runtime/device preflight results
+   - exact BERT Validation metrics copied from the generated JSON
+   - training time and Validation inference time
+   - best checkpoint / best Validation Macro F1
+   - training-history consistency check
    - confusion-matrix consistency check
-   - confirmation that the local baseline model exists and is ignored by Git
-   - confirmation that no final Test evaluation/artifacts were produced
+   - measured GPU peak memory if CUDA was used and the value was captured
+   - confirmation that the local BERT model/tokenizer exists and is Git-ignored
+   - confirmation that final Test artifacts remain absent/unchanged
    - verification commands actually run
    - files/artifacts changed
    - known issues/blockers
    - proposed next phase
 6. Commit/push the review request if needed.
 7. Stop and wait for the next NEXT_TASK.
+
+If the real BERT run is blocked by OOM or an environment/runtime error, do not invent results or change experimental hyperparameters silently. Record the exact blocker and evidence in `docs/REVIEW_REQUEST.md`, push that request, and stop.
