@@ -1,95 +1,103 @@
-request_commit_sha: 48e69dac96c68f7ece6e58b717d46b82331280df
+request_commit_sha: 2a8a407627a56541b86053a98ec2973fe8127cbe
 status: READY_FOR_REVIEW
 
-# Summary of Provenance & Protocol Fixes
-Đã hoàn thành toàn bộ các hạng mục công việc trong task `overnight-003`:
+# Summary of Split-Sealing & EDA-Rationale Fixes
+Đã hoàn thành toàn bộ các yêu cầu của task `overnight-004`:
 
-1. **Khắc phục triệt để tính tái lập của EDA JSON Artifacts (Source-Reproducible EDA):**
-   - Cập nhật `src/data.py` để sinh đầy đủ các trường `selected_max_length`, `decision_rationale` cùng các giá trị làm tròn tường minh (`round(..., 2)` và `round(..., 1)`).
-   - Tệp `artifacts/metrics/token_length_stats.json` giờ đây hoàn toàn do `python -m src.data` tự động sinh ra trực tiếp từ mã nguồn mà không cần chỉnh sửa thủ công (không manual post-editing).
-   - Đã chạy kiểm chứng 2 lần liên tiếp `python -m src.data`: xác nhận nội dung file JSON sau lần chạy thứ hai hoàn toàn đồng nhất với lần chạy thứ nhất (`git diff` rỗng).
+1. **Sinh tự động `decision_rationale` từ số liệu đo lường thực tế (Data-Derived Rationale):**
+   - Đã loại bỏ hoàn toàn các giá trị hard-coded (`96.07%`, `121.0`, `3.93%`, `3.84%`) trong `decision_rationale` tại `src/data.py`.
+   - Chuỗi giải thích hiện được sinh động trực tiếp từ các biến đã tính toán trong `stats_dict` (`MAX_LENGTH`, `pct_preserved_128`, `p95_val`, `pct_truncated_128`, `coverage_gain_256`).
+   - Đã chạy kiểm chứng 2 lần liên tiếp `python -m src.data`: xác nhận `artifacts/metrics/token_length_stats.json` bảo toàn 100% số liệu thực nghiệm đã duyệt và cho `git diff` rỗng.
 
-2. **Loại bỏ toàn bộ tuyên bố phần cứng chưa qua đo lường thực tế (Hardware Claims Removal):**
-   - Đã rà soát và loại bỏ/viết lại toàn bộ các khẳng định chưa được đo lường thực nghiệm:
-     - Xóa các con số ước lượng bộ nhớ `~4.5 GB VRAM`.
-     - Xóa các khẳng định tuyệt đối `without OOM risk` / `an toàn tuyệt đối`.
-     - Xóa mô tả không chính xác về Google Colab T4 như một GPU 8GB (chỉ nêu Colab GPU T4 hoặc môi trường phần cứng máy tính cá nhân RTX 5050 8GB).
-   - Giữ lại đầy đủ cơ sở toán học lý thuyết: sequence length tăng từ 128 lên 256 làm tăng gấp 4 lần kích thước ma trận self-attention theo quy luật $\mathcal{O}(L^2)$ nhưng chỉ tăng thêm 3.84% độ phủ văn bản (p95 = 121.0 tokens, 3.93% truncation tại 128 so với 0.09% tại 256). Mức tiêu thụ bộ nhớ và thời gian thực thi thực tế sẽ được đo lường trực tiếp trong quá trình huấn luyện.
+2. **Niêm phong triệt để việc in ấn/báo cáo thông tin Test Set trong quá trình huấn luyện (Fully Sealed Test-Set Reporting):**
+   - Bổ sung tham số `verbose_test: bool = False` vào hàm `split_data()` trong `src/data.py`. Khi ở chế độ mặc định (hoặc khi gọi qua `get_train_val_split()`), hàm chỉ in:
+     `Test set:  [SEALED — Held out for final evaluation]`
+     Tuyệt đối không in số lượng mẫu hay phân bố nhãn của tập Test.
+   - Thêm hàm `get_train_val_split(df)` chuyên biệt cho pha phát triển, chỉ trả về `(train_df, val_df)`.
+   - Cập nhật cả `src/train_baseline.py` và `src/train_bert.py` sử dụng `get_train_val_split(df)`.
+   - Giữ nguyên việc in đầy đủ thông tin Test Set khi chạy standalone EDA/Audit (`python -m src.data`) hoặc khi đánh giá so sánh cuối cùng (`python -m src.evaluate`) qua cờ `verbose_test=True`.
 
-3. **Niêm phong tập kiểm thử (Sealed Test Set) trong giai đoạn phát triển:**
-   - Cập nhật `src/train_baseline.py`:
-     - Phân chia `train_df, val_df, _ = split_data(df, random_state=RANDOM_SEED)` - tập Test Set hoàn toàn không bị nạp, dự đoán hay đánh giá.
-     - Huấn luyện TF-IDF + Logistic Regression trên Train Set và chỉ đánh giá phát triển trên Validation Set.
-     - Lưu kết quả vào `artifacts/metrics/baseline_validation_metrics.json` và biểu đồ `artifacts/figures/baseline_val_confusion_matrix.png`.
-     - Lưu mô hình tại `artifacts/model/baseline_tfidf_lr.joblib`.
-   - Chuẩn hóa định nghĩa đường dẫn trong `src/config.py`:
-     - Tách biệt rõ `BASELINE_VAL_METRICS_PATH`, `BASELINE_VAL_CM_PATH` (phát triển) với `BASELINE_TEST_METRICS_PATH`, `BASELINE_TEST_CM_PATH`, `BERT_TEST_METRICS_PATH`, `BERT_TEST_CM_PATH`, `COMPARATIVE_METRICS_PATH` (đánh giá cuối cùng).
+3. **Huấn luyện thực tế mô hình Baseline trên Train Set & Đánh giá trên Validation Set (Validation-Only Baseline):**
+   - Đã chạy thực tế: `python -m src.train_baseline`.
+   - Mô hình TF-IDF (10,000 n-grams) + Logistic Regression (C=1.0, L-BFGS, seed=42) được huấn luyện trên 13,821 mẫu Train.
+   - Đánh giá phát triển độc lập trên 1,975 mẫu Validation.
+   - Lưu trữ đầy đủ kết quả đo lường vào `artifacts/metrics/baseline_validation_metrics.json` và biểu đồ ma trận nhầm lẫn vào `artifacts/figures/baseline_val_confusion_matrix.png`.
+   - Mô hình huấn luyện được lưu tại `artifacts/model/baseline_tfidf_lr.joblib` và được xác nhận đã bị Git bỏ qua (Git-ignored) theo `.gitignore`.
+   - Không có bất kỳ hyperparameter nào bị tinh chỉnh sau khi có kết quả Validation; đây là mốc đối sánh tham chiếu cố định.
 
-4. **Chuẩn bị mô-đun đánh giá so sánh đối đầu cuối cùng (`src/evaluate.py`):**
-   - Đã tái cấu trúc `src/evaluate.py` để đánh giá đồng thời cả mô hình Baseline (`baseline_tfidf_lr.joblib`) và mô hình Fine-Tuned BERT (`bert_best_model/`) trên cùng một tập Test Set độc lập trong cùng một lệnh chạy duy nhất.
-   - Tích hợp **Fail-Fast Guard**: kiểm tra sự tồn tại của cả hai artifact mô hình; nếu thiếu một hoặc cả hai mô hình, chương trình lập tức báo lỗi `RuntimeError` và dừng ngay trước khi nạp dữ liệu hay chạm vào Test Set.
-   - Không thực thi đánh giá Test Set trong phase này (chỉ kiểm chứng fail-fast guard khi thiếu mô hình).
+# Exact Baseline Validation Metrics (`artifacts/metrics/baseline_validation_metrics.json`)
+- **Evaluation Split:** `validation`
+- **Validation Sample Count:** 1,975
+- **Accuracy:** 81.01% (`0.810126582278481`)
+- **Macro Precision:** 0.8116 (`0.8115951441377918`)
+- **Macro Recall:** 0.8100 (`0.8099680454828865`)
+- **Macro F1-Score:** 0.8098 (`0.8098450029770088`)
+- **Weighted F1-Score:** 0.8099 (`0.8098783478942885`)
+- **Class 0 (Negative):**
+  - Precision: 0.7913 (`0.7913125590179415`)
+  - Recall: 0.8448 (`0.844758064516129`)
+  - F1-Score: 0.8172 (`0.8171623598244758`)
+- **Class 1 (Positive):**
+  - Precision: 0.8319 (`0.8318777292576419`)
+  - Recall: 0.7752 (`0.775178026449644`)
+  - F1-Score: 0.8025 (`0.8025276461295419`)
+- **Training Time:** 0.68 giây (`0.676741361618042` s)
+- **Validation Inference Time:** 0.114 giây (`0.11364960670471191` s) — Tốc độ xử lý: ~17,378 mẫu/giây
 
-5. **Đồng bộ hóa tài liệu và mã nguồn thuyết trình:**
-   - Đã cập nhật `README.md`, `FINAL_REPORT.md`, `data/README.md`, `docs/02_project_spec.md`, `docs/PRE_EXPERIMENT_REVIEW.md`, `presentation/generate_presentation.py`, `presentation/presentation_outline.md`, `presentation/speaker_notes.md`.
-   - Phân biệt rõ ràng giữa chỉ số validation (phát triển) và chỉ số test (đánh giá đối đầu cuối cùng).
-   - Chuẩn hóa nguyên tắc bất biến của tập Test: không có bất kỳ nhãn, dự đoán hay chỉ số nào của Test Set được kiểm tra hoặc sử dụng cho việc ra quyết định mô hình/siêu tham số trước lượt đánh giá so sánh cuối cùng.
+# Confusion-Matrix Consistency Check
+- **Ma trận nhầm lẫn (Validation):**
+  - True Negatives (TN): 838
+  - False Positives (FP): 154
+  - False Negatives (FN): 221
+  - True Positives (TP): 762
+- **Kiểm tra tổng số mẫu:**
+  - Hàng 0 (Negative support): 838 + 154 = 992 (khớp chính xác số lượng nhãn 0 trong tập Validation)
+  - Hàng 1 (Positive support): 221 + 762 = 983 (khớp chính xác số lượng nhãn 1 trong tập Validation)
+  - Tổng số mẫu ma trận: 992 + 983 = 1,975 (khớp 100% với `validation_sample_count = 1975`).
+  - Trạng thái: `passed: true`.
 
-# Proof of EDA JSON Reproducibility
-- Lệnh thực thi: `python -m src.data`
-- Chạy lần 1: Sinh `artifacts/metrics/data_audit.json` và `artifacts/metrics/token_length_stats.json`.
-- Chạy lần 2: `python -m src.data` thực thi thành công; `git diff artifacts/metrics/token_length_stats.json artifacts/metrics/data_audit.json` cho kết quả rỗng 100%.
-- Toàn bộ các trường `candidate_max_length`, `selected_max_length`, `decision_rationale` và các giá trị phân vị làm tròn đều do chính mã nguồn `src/data.py` xuất ra.
+# Confirmation of Local Model & Git Ignore
+- Tệp mô hình `artifacts/model/baseline_tfidf_lr.joblib` tồn tại cục bộ trên đĩa (`Test-Path` trả về `True`).
+- Tệp mô hình được loại trừ thông qua quy tắc `*.joblib` và `artifacts/model/*` trong `.gitignore`.
+- Xác nhận `git status` không hiển thị tệp này trong danh sách tracked/untracked files.
 
-# Confirmation of Hardware Claims Removal
-- Đã loại bỏ tất cả các cụm `~4.5 GB VRAM`, `without OOM risk`, `an toàn tuyệt đối`, và không còn tài liệu nào mô tả Colab T4 là GPU 8GB.
-- Tất cả tài liệu đều nêu rõ mức tiêu thụ bộ nhớ và thời gian thực thi sẽ được đo lường thực nghiệm trong pha huấn luyện mô hình.
-
-# Confirmation of Test Set Sealing & Baseline Training
-- `src/train_baseline.py` không chứa bất kỳ lời gọi hàm hay biến nào đánh giá trên Test Set.
-- Đầu ra của `src/train_baseline.py` được cấu hình ghi vào `artifacts/metrics/baseline_validation_metrics.json` và `artifacts/figures/baseline_val_confusion_matrix.png`.
-- Chưa thực thi huấn luyện Baseline hay BERT trong phase này; không có file metrics hay weights nào bị tạo giả mạo.
-
-# Prepared Comparative Evaluator (`src/evaluate.py`)
-- Cơ chế hoạt động:
-  1. Kiểm tra fail-fast: nếu thiếu `artifacts/model/baseline_tfidf_lr.joblib` hoặc `artifacts/model/bert_best_model`, ném lỗi `RuntimeError` ngay lập tức.
-  2. Nạp dữ liệu và trích xuất tập `test_df` (3,949 mẫu).
-  3. Đánh giá Baseline trên Test Set, lưu `artifacts/metrics/baseline_test_metrics.json` và `artifacts/figures/baseline_test_confusion_matrix.png`.
-  4. Đánh giá BERT trên Test Set, lưu `artifacts/metrics/bert_test_metrics.json`, `artifacts/figures/bert_test_confusion_matrix.png` và trích xuất 20 ca lỗi vào `artifacts/metrics/error_cases.json`.
-  5. Xuất bảng so sánh đối đầu tổng hợp vào `artifacts/metrics/comparative_metrics.json` và in bảng đối chiếu console.
-- Mô-đun đã được kiểm chứng tính sẵn sàng và fail-fast, nhưng **CHƯA ĐƯỢC CHẠY** trên dữ liệu thực nghiệm.
+# Confirmation of Sealed Test Set & No Final Test Artifacts
+- Xác nhận không có tệp nào sau đây được sinh ra hoặc tồn tại trong workspace:
+  - Không có `baseline_test_metrics.json`
+  - Không có `bert_test_metrics.json`
+  - Không có `comparative_metrics.json`
+  - Không có `error_cases.json` từ final evaluation
+- Toàn bộ kết quả mới được dán nhãn rõ ràng là kết quả đánh giá trên tập **Validation** trong giai đoạn phát triển, không được trình bày như kết quả Test cuối cùng.
+- Không đưa ra bất kỳ nhận định nào về việc BERT vượt trội hay kém hơn Baseline trong giai đoạn này.
 
 # Verification Commands Actually Run
-1. `python -m src.data`: Thành công, sinh đầy đủ metrics và figures.
-2. `python -m src.data` (lần 2): Xác nhận tính tái lập 100% không đổi.
-3. `python -m src.evaluate`: Kích hoạt thành công Fail-Fast Guard với thông báo lỗi:
-   `RuntimeError: FAIL-FAST GUARD: Không thể thực thi đánh giá trên Test Set vì thiếu artifact mô hình:`
-   `- Baseline model not found at: A:\Bert\artifacts\model\baseline_tfidf_lr.joblib`
-   `- BERT best model directory not found at: A:\Bert\artifacts\model\bert_best_model`
-4. `python -c "import src.config, src.data, src.train_baseline, src.evaluate"`: Exit code 0, không có lỗi cú pháp hay import.
-5. `git status`: Xác nhận không có metrics, weights hay kết quả huấn luyện nào bị tạo giả mạo.
+1. `python -m src.data`: Chạy thành công, sinh `token_length_stats.json` với rationale tính toán động.
+2. `python -m src.data` (lần 2): Xác nhận tính tái lập 100% (`git diff` rỗng).
+3. `python -c "from src.data import load_and_validate_data, get_train_val_split; df = load_and_validate_data(); train_df, val_df = get_train_val_split(df)"`: Xác nhận chỉ in `Test set: [SEALED — Held out for final evaluation]`, không để lộ số lượng mẫu hay phân bố nhãn của Test Set.
+4. `python -m src.train_baseline`: Huấn luyện thành công, lưu metrics validation và confusion matrix.
+5. `Test-Path A:\Bert\artifacts\model\baseline_tfidf_lr.joblib`: Trả về `True`.
+6. `git status`: Xác nhận mô hình bị Git-ignore và chỉ có các artifacts validation được đưa vào tracking.
 
 # Files Changed
-- `src/config.py`: Khai báo các đường dẫn metrics/figures tách biệt cho validation và test; cập nhật ghi chú MAX_LENGTH.
-- `src/data.py`: Cập nhật `stats_dict` sinh đầy đủ các trường và làm tròn tường minh trong `token_length_stats.json`.
-- `src/train_baseline.py`: Chuyển phạm vi đánh giá sang Validation Set only; niêm phong tập Test Set; lưu `baseline_validation_metrics.json`.
-- `src/evaluate.py`: Tái cấu trúc thành bộ đánh giá đối đầu cả Baseline và BERT trên Test Set với Fail-Fast Guard.
-- `artifacts/metrics/token_length_stats.json`: Được tái sinh hoàn toàn từ `src/data.py`.
-- `README.md`: Cập nhật hướng dẫn chạy `train_baseline` (validation) và `evaluate` (test); loại bỏ các ước lượng phần cứng chưa đo lường.
-- `data/README.md`: Cập nhật nguyên tắc bất biến của Test Set và cơ sở kỹ thuật lựa chọn MAX_LENGTH.
-- `docs/02_project_spec.md`: Cập nhật tiêu chí thành công, sơ đồ quy trình Mermaid và ràng buộc MAX_LENGTH.
-- `docs/PRE_EXPERIMENT_REVIEW.md`: Cập nhật trạng thái các khâu và danh sách tệp chưa runtime-verified.
-- `FINAL_REPORT.md`: Cập nhật Mục 2, 3, 7, 10 phản ánh quy trình mới và lý giải MAX_LENGTH.
-- `presentation/generate_presentation.py`: Cập nhật Slide 5, Slide 7 và Slide 11.
-- `presentation/presentation_outline.md`: Cập nhật Slide 5, Slide 7 và Slide 11.
-- `presentation/speaker_notes.md`: Cập nhật kịch bản thuyết trình Slide 5, Slide 6, Slide 7.
+- `src/data.py`: Sinh `decision_rationale` tự động từ `stats_dict`; thêm cờ `verbose_test` và hàm `get_train_val_split`.
+- `src/train_baseline.py`: Sử dụng `get_train_val_split`, huấn luyện và đánh giá trên Validation Set.
+- `src/train_bert.py`: Cập nhật sử dụng `get_train_val_split` để niêm phong Test Set trong giai đoạn huấn luyện.
+- `src/evaluate.py`: Truyền tường minh `verbose_test=True` khi gọi `split_data`.
+- `artifacts/metrics/baseline_validation_metrics.json`: Tệp metrics thực nghiệm thực tế trên tập Validation.
+- `artifacts/figures/baseline_val_confusion_matrix.png`: Biểu đồ ma trận nhầm lẫn trên tập Validation.
+- `README.md`: Bổ sung kết quả Baseline Validation thực tế tại Mục 4.3.
+- `FINAL_REPORT.md`: Cập nhật Mục 4.1 với số liệu Baseline Validation thực tế.
+- `docs/PRE_EXPERIMENT_REVIEW.md`: Cập nhật trạng thái Baseline Training & Validation Evaluation thành `ĐÃ THỰC THI (EXECUTED)`.
+- `presentation/generate_presentation.py`: Nạp và hiển thị `BASELINE_VAL_METRICS_PATH` trên Slide 7.
+- `presentation/presentation_outline.md`: Cập nhật Slide 7 với kết quả Baseline Validation.
+- `presentation/speaker_notes.md`: Cập nhật kịch bản thuyết trình Slide 7 với kết quả Baseline Validation.
 
 # Known Issues
-- Không có blocker. Quy trình kiểm soát tính toàn vẹn của dữ liệu và niêm phong tập Test đã được củng cố hoàn toàn.
+- Không có blocker. Baseline reference đã được thiết lập vững chắc, sẵn sàng cho pha fine-tuning BERT.
 
 # Proposed Next Phase
-- **Phase Baseline Training (`python -m src.train_baseline`):**
-  - Huấn luyện mô hình TF-IDF + Logistic Regression trên Train Set (13,821 mẫu).
-  - Đánh giá phát triển trên Validation Set (1,975 mẫu).
-  - Lưu mô hình tại `artifacts/model/baseline_tfidf_lr.joblib` và metrics tại `artifacts/metrics/baseline_validation_metrics.json`.
-  - Giữ nguyên niêm phong tập Test Set cho đến khi hoàn tất huấn luyện BERT.
+- **Phase BERT Fine-Tuning (`python -m src.train_bert`):**
+  - Fine-tune mô hình `google-bert/bert-base-uncased` (AdamW, lr=2e-5, batch_size=16, max_length=128, 3 epochs) trên tập Train Set (13,821 mẫu).
+  - Giám sát Train Loss và Validation Loss qua từng epoch; tự động chọn checkpoint có Validation Macro F1 tốt nhất lưu tại `artifacts/model/bert_best_model`.
+  - Xuất biểu đồ quá trình học tập tại `artifacts/figures/training_history.png` và lịch sử tại `artifacts/metrics/bert_training_history.json`.
+  - Tiếp tục giữ nguyên niêm phong tập Test Set cho đến khi hoàn tất huấn luyện BERT.
