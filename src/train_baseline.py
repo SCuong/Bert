@@ -22,9 +22,14 @@ if hasattr(sys.stdout, 'reconfigure'):
 if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8')
 
-# Đảm bảo import được src.data
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from src.data import load_and_clean_data, split_data
+# Import cấu hình tập trung
+from src.config import (
+    BASELINE_MODEL_PATH,
+    BASELINE_METRICS_PATH,
+    FIGURES_DIR,
+    RANDOM_SEED
+)
+from src.data import load_and_validate_data, split_data
 
 def train_and_evaluate_baseline():
     print("="*60)
@@ -32,11 +37,10 @@ def train_and_evaluate_baseline():
     print("="*60)
     
     # 1. Nạp và phân chia dữ liệu
-    df = load_and_clean_data()
-    train_df, val_df, test_df = split_data(df)
+    df = load_and_validate_data()
+    train_df, val_df, test_df = split_data(df, random_state=RANDOM_SEED)
     
     # 2. Xây dựng Pipeline
-    # Sử dụng unigram + bigram (1, 2) với tối đa 10,000 đặc trưng và sublinear_tf=True
     pipeline = Pipeline([
         ('tfidf', TfidfVectorizer(
             ngram_range=(1, 2),
@@ -47,7 +51,7 @@ def train_and_evaluate_baseline():
         ('clf', LogisticRegression(
             C=1.0,
             max_iter=1000,
-            random_state=42,
+            random_state=RANDOM_SEED,
             solver='lbfgs'
         ))
     ])
@@ -78,7 +82,6 @@ def train_and_evaluate_baseline():
     f1_macro = f1_score(test_df["label"], test_preds, average='macro')
     f1_weighted = f1_score(test_df["label"], test_preds, average='weighted')
     
-    # Per-class metrics
     prec_per_class = precision_score(test_df["label"], test_preds, average=None)
     rec_per_class = recall_score(test_df["label"], test_preds, average=None)
     f1_per_class = f1_score(test_df["label"], test_preds, average=None)
@@ -96,9 +99,7 @@ def train_and_evaluate_baseline():
     print("="*50)
     
     # 6. Lưu kết quả metrics
-    metrics_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "artifacts", "metrics"))
-    os.makedirs(metrics_dir, exist_ok=True)
-    
+    os.makedirs(os.path.dirname(BASELINE_METRICS_PATH), exist_ok=True)
     cm = confusion_matrix(test_df["label"], test_preds)
     
     metrics_data = {
@@ -120,15 +121,12 @@ def train_and_evaluate_baseline():
         "confusion_matrix": cm.tolist()
     }
     
-    metrics_path = os.path.join(metrics_dir, "baseline_metrics.json")
-    with open(metrics_path, "w", encoding="utf-8") as f:
+    with open(BASELINE_METRICS_PATH, "w", encoding="utf-8") as f:
         json.dump(metrics_data, f, indent=4, ensure_ascii=False)
-    print(f"[+] Đã lưu metrics tại: {metrics_path}")
+    print(f"[+] Đã lưu metrics tại: {BASELINE_METRICS_PATH}")
     
     # 7. Vẽ và lưu Confusion Matrix
-    figures_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "artifacts", "figures"))
-    os.makedirs(figures_dir, exist_ok=True)
-    
+    os.makedirs(FIGURES_DIR, exist_ok=True)
     plt.figure(figsize=(6, 5))
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=False,
                 xticklabels=["Negative (0)", "Positive (1)"],
@@ -138,17 +136,15 @@ def train_and_evaluate_baseline():
     plt.xlabel("Predicted Label", fontsize=11)
     plt.ylabel("True Label", fontsize=11)
     plt.tight_layout()
-    cm_path = os.path.join(figures_dir, "baseline_confusion_matrix.png")
+    cm_path = os.path.join(FIGURES_DIR, "baseline_confusion_matrix.png")
     plt.savefig(cm_path, dpi=300)
     plt.close()
     print(f"[+] Đã lưu biểu đồ confusion matrix tại: {cm_path}")
     
     # 8. Lưu mô hình
-    model_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "artifacts", "model"))
-    os.makedirs(model_dir, exist_ok=True)
-    model_path = os.path.join(model_dir, "baseline_tfidf_lr.joblib")
-    joblib.dump(pipeline, model_path)
-    print(f"[+] Đã lưu mô hình tại: {model_path}")
+    os.makedirs(os.path.dirname(BASELINE_MODEL_PATH), exist_ok=True)
+    joblib.dump(pipeline, BASELINE_MODEL_PATH)
+    print(f"[+] Đã lưu mô hình tại: {BASELINE_MODEL_PATH}")
     
     return metrics_data
 

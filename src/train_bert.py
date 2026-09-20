@@ -1,11 +1,11 @@
 """
 train_bert.py - Huấn luyện và tinh chỉnh (Fine-tuning) mô hình BERT cho bài toán phân loại cảm xúc.
 Mô hình nền tảng: google-bert/bert-base-uncased (110M tham số).
-Khắc phục triệt để các sai lăm trong tài liệu cũ:
-1. Đồng bộ hoàn toàn Tokenizer và Model uncased.
-2. Cho phép cập nhật trọng số toàn bộ các tầng Encoder (True Fine-Tuning).
-3. Sử dụng bộ tối ưu AdamW, lr=2e-5, weight decay=0.01.
-4. Huấn luyện 2-3 epochs, lưu và phục hồi checkpoint có validation F1 tốt nhất.
+Sử dụng cấu hình tập trung từ src/config.py:
+- Đồng bộ Tokenizer và Model uncased.
+- Cập nhật trọng số toàn bộ các tầng Encoder (True Fine-Tuning).
+- Sử dụng bộ tối ưu AdamW với weight decay và learning rate chuẩn.
+- Huấn luyện có kiểm soát, lưu và phục hồi checkpoint tốt nhất.
 """
 
 import os
@@ -34,13 +34,26 @@ if hasattr(sys.stdout, 'reconfigure'):
 if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8')
 
-# Đảm bảo import được src.data
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from src.data import load_and_clean_data, split_data
+# Import cấu hình tập trung
+from src.config import (
+    MODEL_NAME,
+    MAX_LENGTH,
+    RANDOM_SEED,
+    BATCH_SIZE,
+    LEARNING_RATE,
+    WEIGHT_DECAY,
+    NUM_EPOCHS,
+    WARMUP_RATIO,
+    BERT_BEST_MODEL_DIR,
+    BERT_CHECKPOINTS_DIR,
+    FIGURES_DIR,
+    BERT_TRAINING_HISTORY_PATH
+)
+from src.data import load_and_validate_data, split_data
 
 class HotelReviewDataset(Dataset):
     """Dataset PyTorch thuần túy cho bài toán phân loại đánh giá khách sạn"""
-    def __init__(self, texts, labels, tokenizer, max_length=128):
+    def __init__(self, texts, labels, tokenizer, max_length=MAX_LENGTH):
         self.texts = list(texts)
         self.labels = list(labels)
         self.tokenizer = tokenizer
@@ -63,7 +76,7 @@ class HotelReviewDataset(Dataset):
         item["labels"] = torch.tensor(label, dtype=torch.long)
         return item
 
-def set_seed(seed=42):
+def set_seed(seed=RANDOM_SEED):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -88,7 +101,7 @@ class LossHistoryCallback(TrainerCallback):
     """Callback để ghi nhận loss và metrics qua từng epoch"""
     def __init__(self):
         self.history = []
-        
+
     def on_evaluate(self, args, state, control, metrics=None, **kwargs):
         if metrics:
             self.history.append({
@@ -97,61 +110,54 @@ class LossHistoryCallback(TrainerCallback):
                 **metrics
             })
 
-def train_bert(epochs=3, batch_size=16, lr=2e-5, max_length=128, seed=42):
+def train_bert(epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, lr=LEARNING_RATE, max_length=MAX_LENGTH, seed=RANDOM_SEED):
     print("="*65)
-    print("BẮT ĐẦU FINE-TUNING BERT: google-bert/bert-base-uncased")
+    print(f"BẮT ĐẦU FINE-TUNING BERT: {MODEL_NAME}")
     print("="*65)
-    
+
     set_seed(seed)
-    
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"[*] Thiết bị tính toán: {device}")
     if device == "cuda":
         print(f"[*] Tên GPU: {torch.cuda.get_device_name(0)}")
         print(f"[*] Bộ nhớ VRAM: {torch.cuda.get_device_properties(0).total_memory / (1024**3):.2f} GB")
-        
+
     # 1. Nạp dữ liệu
-    df = load_and_clean_data()
+    df = load_and_validate_data()
     train_df, val_df, test_df = split_data(df, random_state=seed)
-    
+
     # 2. Tokenizer
-    model_name = "bert-base-uncased"
-    print(f"\n[*] Đang khởi tạo Tokenizer: {model_name}")
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    
-    print("[*] Đang khởi tạo PyTorch Dataset...")
+    print(f"\n[*] Đang khởi tạo Tokenizer: {MODEL_NAME}")
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+
+    print(f"[*] Đang khởi tạo PyTorch Dataset (max_length={max_length})...")
     train_ds = HotelReviewDataset(train_df["text"], train_df["label"], tokenizer, max_length=max_length)
     val_ds = HotelReviewDataset(val_df["text"], val_df["label"], tokenizer, max_length=max_length)
     test_ds = HotelReviewDataset(test_df["text"], test_df["label"], tokenizer, max_length=max_length)
-    
+
     # 3. Khởi tạo Mô hình
-    print(f"[*] Đang tải mô hình tiền huấn luyện: {model_name}")
-    model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
+    print(f"[*] Đang tải mô hình tiền huấn luyện: {MODEL_NAME}")
+    model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME, num_labels=2)
     model.to(device)
-    
+
     # Thư mục lưu checkpoint và artifacts
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    checkpoints_dir = os.path.join(project_root, "artifacts", "model", "bert_checkpoints")
-    best_model_dir = os.path.join(project_root, "artifacts", "model", "bert_best_model")
-    figures_dir = os.path.join(project_root, "artifacts", "figures")
-    metrics_dir = os.path.join(project_root, "artifacts", "metrics")
-    
-    os.makedirs(checkpoints_dir, exist_ok=True)
-    os.makedirs(best_model_dir, exist_ok=True)
-    os.makedirs(figures_dir, exist_ok=True)
-    os.makedirs(metrics_dir, exist_ok=True)
-    
+    os.makedirs(BERT_CHECKPOINTS_DIR, exist_ok=True)
+    os.makedirs(BERT_BEST_MODEL_DIR, exist_ok=True)
+    os.makedirs(FIGURES_DIR, exist_ok=True)
+    os.makedirs(os.path.dirname(BERT_TRAINING_HISTORY_PATH), exist_ok=True)
+
     # 4. Cấu hình TrainingArguments
     training_args = TrainingArguments(
-        output_dir=checkpoints_dir,
+        output_dir=BERT_CHECKPOINTS_DIR,
         eval_strategy="epoch",
         save_strategy="epoch",
         learning_rate=lr,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size * 2,
         num_train_epochs=epochs,
-        weight_decay=0.01,
-        warmup_ratio=0.1,
+        weight_decay=WEIGHT_DECAY,
+        warmup_ratio=WARMUP_RATIO,
         fp16=(device == "cuda"),
         load_best_model_at_end=True,
         metric_for_best_model="macro_f1",
@@ -162,9 +168,9 @@ def train_bert(epochs=3, batch_size=16, lr=2e-5, max_length=128, seed=42):
         seed=seed,
         report_to="none"
     )
-    
+
     history_cb = LossHistoryCallback()
-    
+
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -174,25 +180,24 @@ def train_bert(epochs=3, batch_size=16, lr=2e-5, max_length=128, seed=42):
         compute_metrics=compute_metrics,
         callbacks=[history_cb]
     )
-    
+
     # 5. Huấn luyện
     print("\n[*] Bắt đầu quá trình huấn luyện (Fine-Tuning)...")
     start_time = time.time()
     train_result = trainer.train()
     training_time = time.time() - start_time
     print(f"\n[+] Quá trình huấn luyện hoàn tất sau {training_time:.2f} giây ({training_time/60:.2f} phút).")
-    
+
     # 6. Lưu best model & tokenizer
-    print(f"[*] Đang lưu mô hình tốt nhất về: {best_model_dir}")
-    trainer.save_model(best_model_dir)
-    tokenizer.save_pretrained(best_model_dir)
+    print(f"[*] Đang lưu mô hình tốt nhất về: {BERT_BEST_MODEL_DIR}")
+    trainer.save_model(BERT_BEST_MODEL_DIR)
+    tokenizer.save_pretrained(BERT_BEST_MODEL_DIR)
     print("[+] Mô hình và Tokenizer đã được lưu thành công.")
-    
+
     # 7. Lưu lịch sử huấn luyện
-    history_file = os.path.join(metrics_dir, "bert_training_history.json")
-    with open(history_file, "w", encoding="utf-8") as f:
+    with open(BERT_TRAINING_HISTORY_PATH, "w", encoding="utf-8") as f:
         json.dump({
-            "model_name": model_name,
+            "model_name": MODEL_NAME,
             "training_time_seconds": training_time,
             "epochs": epochs,
             "batch_size": batch_size,
@@ -202,15 +207,15 @@ def train_bert(epochs=3, batch_size=16, lr=2e-5, max_length=128, seed=42):
             "train_runtime": train_result.metrics.get("train_runtime", training_time),
             "train_loss": train_result.metrics.get("train_loss", 0.0)
         }, f, indent=4, ensure_ascii=False)
-    print(f"[+] Đã lưu lịch sử huấn luyện tại: {history_file}")
-    
+    print(f"[+] Đã lưu lịch sử huấn luyện tại: {BERT_TRAINING_HISTORY_PATH}")
+
     # 8. Vẽ đồ thị Loss & Accuracy qua các Epoch
     if len(history_cb.history) > 0:
         epochs_logged = [h["epoch"] for h in history_cb.history]
         val_losses = [h.get("eval_loss", 0.0) for h in history_cb.history]
         val_accs = [h.get("eval_accuracy", 0.0) for h in history_cb.history]
         val_f1s = [h.get("eval_macro_f1", 0.0) for h in history_cb.history]
-        
+
         plt.figure(figsize=(10, 4.5))
         plt.subplot(1, 2, 1)
         plt.plot(epochs_logged, val_losses, marker="o", color="#e74c3c", linewidth=2, label="Val Loss")
@@ -219,7 +224,7 @@ def train_bert(epochs=3, batch_size=16, lr=2e-5, max_length=128, seed=42):
         plt.ylabel("Loss")
         plt.grid(True, linestyle="--", alpha=0.6)
         plt.legend()
-        
+
         plt.subplot(1, 2, 2)
         plt.plot(epochs_logged, val_accs, marker="s", color="#2ecc71", linewidth=2, label="Val Accuracy")
         plt.plot(epochs_logged, val_f1s, marker="^", color="#3498db", linewidth=2, label="Val Macro F1")
@@ -228,14 +233,14 @@ def train_bert(epochs=3, batch_size=16, lr=2e-5, max_length=128, seed=42):
         plt.ylabel("Score")
         plt.grid(True, linestyle="--", alpha=0.6)
         plt.legend()
-        
+
         plt.tight_layout()
-        curve_path = os.path.join(figures_dir, "training_history.png")
+        curve_path = os.path.join(FIGURES_DIR, "training_history.png")
         plt.savefig(curve_path, dpi=300)
         plt.close()
         print(f"[+] Đã lưu đồ thị quá trình huấn luyện tại: {curve_path}")
 
-    return best_model_dir
+    return BERT_BEST_MODEL_DIR
 
 if __name__ == "__main__":
     train_bert()

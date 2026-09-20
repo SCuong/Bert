@@ -97,9 +97,9 @@ flowchart LR
 ---
 
 ## 10. Expected Deliverables (Sản phẩm bàn giao)
-1. **Mã nguồn hoàn chỉnh (`BERT_Project/src/`):** `data.py`, `train_baseline.py`, `train_bert.py`, `evaluate.py`, `predict.py`.
-2. **Tài liệu học thuật (`BERT_Project/docs/`):** Audit tài liệu, Đặc tả bài toán, Phân tích mã nguồn cũ, Phân tích lỗi, Cẩm nang học tập (`STUDY_GUIDE.md`), Bộ câu hỏi phản biện (`DEFENSE_QA.md`).
+1. **Mã nguồn hoàn chỉnh (`src/`):** `data.py`, `train_baseline.py`, `train_bert.py`, `evaluate.py`, `predict.py`.
+2. **Tài liệu học thuật (`docs/`):** Audit tài liệu, Đặc tả bài toán, Phân tích mã nguồn cũ, Phân tích lỗi, Cẩm nang học tập (`STUDY_GUIDE.md`), Bộ câu hỏi phản biện (`DEFENSE_QA.md`).
 3. **Artifacts thực nghiệm:** Toàn bộ metrics dạng JSON và biểu đồ trực quan hóa độ phân giải cao trong `artifacts/`.
-4. **Notebook Google Colab (`BERT_Project/notebooks/`):** Hỗ trợ tính năng "Run All" trơn tru cho sinh viên.
-5. **Ứng dụng Demo (`BERT_Project/app/app.py`):** Giao diện Streamlit trực quan, hiển thị xác suất và tokenization.
-6. **Báo cáo & Bài thuyết trình (`BERT_Project/presentation/` & `FINAL_REPORT.md`):** Slide PowerPoint 15 trang chuẩn academic và báo cáo tổng kết 11 mục.
+4. **Notebook Google Colab (`notebooks/`):** Hỗ trợ tính năng "Run All" trơn tru cho sinh viên.
+5. **Ứng dụng Demo (`app/app.py`):** Giao diện Streamlit trực quan, hiển thị xác suất và tokenization.
+6. **Báo cáo & Bài thuyết trình (`presentation/` & `FINAL_REPORT.md`):** Slide PowerPoint 15 trang chuẩn academic và báo cáo tổng kết 11 mục.

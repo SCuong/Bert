@@ -7,7 +7,6 @@ Báo cáo bài tập lớn/
 # =============================================================================
 # Datasets (Local only, không commit vào repository)
 # =============================================================================
-BERT_Project/data/dts_20k_raw.csv
 data/dts_20k_raw.csv
 *.csv
 
@@ -38,8 +37,8 @@ ENV/
 *.pth
 *.h5
 *.joblib
-BERT_Project/artifacts/model/*
-!BERT_Project/artifacts/model/README.md
+artifacts/model/*
+!artifacts/model/README.md
 bert_checkpoints/
 bert_best_model/
 

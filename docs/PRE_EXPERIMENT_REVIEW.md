@@ -10,7 +10,7 @@
 ## 1. Cây Thư Mục Dự Án (Project Tree)
 
 ```text
-BERT_Project/
+.
 ├── .gitignore
 ├── README.md                          # Hướng dẫn tổng quan dự án
 ├── requirements.txt                  # Danh sách thư viện và phiên bản
@@ -32,6 +32,7 @@ BERT_Project/
 │   └── BERT_Training_Colab.ipynb     # Notebook huấn luyện BERT trên Google Colab GPU (Run All)
 ├── src/
 │   ├── __init__.py
+│   ├── config.py                     # Cấu hình tập trung (Single Source of Truth)
 │   ├── data.py                       # Nạp dữ liệu, làm sạch tối thiểu, phân chia Stratified
 │   ├── train_baseline.py             # Huấn luyện mô hình cơ sở TF-IDF + Logistic Regression
 │   ├── train_bert.py                 # Huấn luyện & fine-tuning mô hình BERT chính thức
@@ -56,18 +57,19 @@ BERT_Project/
 
 | Đường Dẫn Tệp | Mục Đích & Vai Trò | Trạng Thái Cú Pháp |
 | :--- | :--- | :---: |
-| `BERT_Project/requirements.txt` | Khai báo các thư viện phụ thuộc (`torch`, `transformers`, `scikit-learn`...) | Đã xác thực |
-| `BERT_Project/src/data.py` | Nạp dữ liệu, minimal cleaning, Stratified split (70/10/20, seed=42) | Đã biên dịch (Pass) |
-| `BERT_Project/src/train_baseline.py` | Pipeline TF-IDF (10k n-grams) + Logistic Regression (L-BFGS) | Đã biên dịch (Pass) |
-| `BERT_Project/src/train_bert.py` | Fine-tuning `bert-base-uncased` với PyTorch Dataset thuần, AdamW, lr=2e-5 | Đã biên dịch (Pass) |
-| `BERT_Project/src/evaluate.py` | Đánh giá trên Test Set, lưu confusion matrix, trích xuất ca lỗi | Đã biên dịch (Pass) |
-| `BERT_Project/src/predict.py` | Pipeline suy luận Baseline & BERT, giải thích token WordPiece | Đã biên dịch (Pass) |
-| `BERT_Project/app/app.py` | Giao diện Web tương tác Streamlit với các kịch bản thử nghiệm | Đã biên dịch (Pass) |
-| `BERT_Project/presentation/generate_presentation.py` | Sinh slide PowerPoint 15 trang bằng `python-pptx` | Đã biên dịch (Pass) |
-| `BERT_Project/notebooks/01_EDA.ipynb` | Notebook khám phá dữ liệu | JSON hợp lệ (Pass) |
-| `BERT_Project/notebooks/02_Baseline.ipynb` | Notebook huấn luyện & đánh giá Baseline | JSON hợp lệ (Pass) |
-| `BERT_Project/notebooks/BERT_Training_Colab.ipynb` | Notebook huấn luyện BERT trên Colab (Run All) | JSON hợp lệ (Pass) |
-| `BERT_Project/docs/*.md` | Bộ tài liệu học thuật hoàn chỉnh (Audit, Spec, Old BERT, QA, Study Guide) | Hoàn thành |
+| `requirements.txt` | Khai báo các thư viện phụ thuộc (`torch`, `transformers`, `scikit-learn`...) | Đã xác thực |
+| `src/config.py` | Cấu hình tập trung (Single Source of Truth) cho toàn bộ pipeline | Đã biên dịch (Pass) |
+| `src/data.py` | Nạp dữ liệu, audit leakage, Stratified split (70/10/20, seed=42) | Đã biên dịch (Pass) |
+| `src/train_baseline.py` | Pipeline TF-IDF (10k n-grams) + Logistic Regression (L-BFGS) | Đã biên dịch (Pass) |
+| `src/train_bert.py` | Fine-tuning `bert-base-uncased` với PyTorch Dataset thuần, AdamW, lr=2e-5 | Đã biên dịch (Pass) |
+| `src/evaluate.py` | Đánh giá trên Test Set, lưu confusion matrix, trích xuất ca lỗi | Đã biên dịch (Pass) |
+| `src/predict.py` | Pipeline suy luận Baseline & BERT, giải thích token WordPiece | Đã biên dịch (Pass) |
+| `app/app.py` | Giao diện Web tương tác Streamlit với các kịch bản thử nghiệm | Đã biên dịch (Pass) |
+| `presentation/generate_presentation.py` | Sinh slide PowerPoint 15 trang bằng `python-pptx` | Đã biên dịch (Pass) |
+| `notebooks/01_EDA.ipynb` | Notebook khám phá dữ liệu | JSON hợp lệ (Pass) |
+| `notebooks/02_Baseline.ipynb` | Notebook huấn luyện & đánh giá Baseline | JSON hợp lệ (Pass) |
+| `notebooks/BERT_Training_Colab.ipynb` | Notebook huấn luyện BERT trên Colab (Run All) | JSON hợp lệ (Pass) |
+| `docs/*.md` | Bộ tài liệu học thuật hoàn chỉnh (Audit, Spec, Old BERT, QA, Study Guide) | Hoàn thành |
 
 ---
 
@@ -108,7 +110,7 @@ BERT_Project/
    - *Xử lý:* Viết lại `HotelReviewDataset` bằng lớp `torch.utils.data.Dataset` thuần túy của PyTorch, giúp mã nguồn nhẹ hơn và hoàn toàn không phụ thuộc vào gói `datasets`.
 3. **Cô lập Dataset và Tránh rò rỉ vào Git:**
    - *Hiện tượng:* File `dts_20k_raw.csv` có dung lượng tương đối lớn và không nên commit trực tiếp vào source control.
-   - *Xử lý:* Cấu hình `.gitignore` loại trừ file CSV và thư mục model weights, giữ dataset cục bộ trong `BERT_Project/data/dts_20k_raw.csv` với cơ chế fallback tự động.
+   - *Xử lý:* Cấu hình `.gitignore` loại trừ file CSV và thư mục model weights, giữ dataset cục bộ trong `data/dts_20k_raw.csv` với cơ chế fallback tự động.
 
 ---
 

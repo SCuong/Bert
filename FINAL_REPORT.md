@@ -29,7 +29,7 @@ Qua quá trình khảo sát, kiểm tra toàn bộ workspace giảng viên cung 
 
 ## 2. Những Gì Nhóm Đã Xây Dựng (What I Built)
 
-Dự án được triển khai **mới hoàn toàn từ đầu (Clean-Room Implementation)**, độc lập 100% trong thư mục `BERT_Project/`:
+Dự án được triển khai **mới hoàn toàn từ đầu (Clean-Room Implementation)**, độc lập 100% tại repository root:
 1. **Pipeline dữ liệu (`src/data.py`):** Làm sạch tối thiểu bảo toàn ngữ cảnh cho Transformer, phân chia dữ liệu Stratified (70% Train, 10% Val, 20% Test) với seed cố định `42`.
 2. **Mô hình cơ sở (`src/train_baseline.py`):** Xây dựng mô hình TF-IDF (10,000 unigram + bigram) kết hợp Logistic Regression.
 3. **Mô hình BERT Fine-Tuning (`src/train_bert.py`):** Tinh chỉnh mô hình chính thức `google-bert/bert-base-uncased` bằng Hugging Face Transformers và PyTorch, sử dụng AdamW (lr=2e-5, weight decay=0.01), huấn luyện 2-3 epochs có kiểm soát checkpoint.
@@ -94,7 +94,7 @@ Dự án được triển khai **mới hoàn toàn từ đầu (Clean-Room Imple
 
 ## 6. Vì Sao Pipeline BERT Mới Khác Biệt Hoàn Toàn Code Cũ
 
-| Tiêu chí kỹ thuật | Triển khai cũ (`DL_Model.ipynb`) | Triển khai mới của nhóm (`BERT_Project`) |
+| Tiêu chí kỹ thuật | Triển khai cũ (`DL_Model.ipynb`) | Triển khai mới của nhóm (Our Clean-Room BERT) |
 | :--- | :--- | :--- |
 | **Tính tương thích từ vựng** | Cased Preprocess ghép với Uncased Model $\rightarrow$ **Lệch token ID** | Đồng bộ tuyệt đối: `AutoTokenizer` và `AutoModel` cùng bản **uncased** |
 | **Cơ chế huấn luyện** | Đóng băng Encoder (`trainable=False`) $\rightarrow$ **Chỉ trích xuất đặc trưng** | Mở khóa toàn bộ tham số $\rightarrow$ **True Fine-Tuning** |
@@ -108,31 +108,28 @@ Dự án được triển khai **mới hoàn toàn từ đầu (Clean-Room Imple
 
 ## 7. Hướng Dẫn Cài Đặt & Khởi Chạy (How to Run)
 
-Toàn bộ các câu lệnh dưới đây đều hoạt động độc lập từ thư mục `BERT_Project/`:
+Toàn bộ các câu lệnh dưới đây đều hoạt động độc lập từ repository root:
 
 ```bash
-# 1. Di chuyển vào thư mục dự án
-cd BERT_Project
-
-# 2. Cài đặt các thư viện phụ thuộc
+# 1. Cài đặt các thư viện phụ thuộc
 pip install -r requirements.txt
 
-# 3. Phân tích dữ liệu & Xuất biểu đồ EDA
+# 2. Phân tích dữ liệu & Xuất biểu đồ EDA
 python src/data.py
 
-# 4. Huấn luyện và đánh giá mô hình cơ sở (Baseline)
+# 3. Huấn luyện và đánh giá mô hình cơ sở (Baseline)
 python src/train_baseline.py
 
-# 5. Huấn luyện & Fine-tuning mô hình BERT
+# 4. Huấn luyện & Fine-tuning mô hình BERT
 python src/train_bert.py
 
-# 6. Đánh giá mô hình BERT trên Test Set & Trích xuất ca lỗi
+# 5. Đánh giá mô hình BERT trên Test Set & Trích xuất ca lỗi
 python src/evaluate.py
 
-# 7. Tạo slide thuyết trình PowerPoint chuẩn học thuật
+# 6. Tạo slide thuyết trình PowerPoint chuẩn học thuật
 python presentation/generate_presentation.py
 
-# 8. Khởi chạy ứng dụng Web Demo tương tác
+# 7. Khởi chạy ứng dụng Web Demo tương tác
 streamlit run app/app.py
 ```
 
@@ -140,11 +137,11 @@ streamlit run app/app.py
 
 ## 8. Vị Trí Slide Thuyết Trình & Sản Phẩm Demo
 
-- **File PowerPoint hoàn chỉnh:** `BERT_Project/presentation/BERT_Project.pptx`
-- **Dàn ý chi tiết 15 slide:** `BERT_Project/presentation/presentation_outline.md`
-- **Kịch bản thuyết trình 8-10 phút:** `BERT_Project/presentation/speaker_notes.md`
-- **Mã nguồn ứng dụng Demo:** `BERT_Project/app/app.py`
-- **Notebook Google Colab độc lập:** `BERT_Project/notebooks/BERT_Training_Colab.ipynb`
+- **File PowerPoint hoàn chỉnh:** `presentation/BERT_Project.pptx`
+- **Dàn ý chi tiết 15 slide:** `presentation/presentation_outline.md`
+- **Kịch bản thuyết trình 8-10 phút:** `presentation/speaker_notes.md`
+- **Mã nguồn ứng dụng Demo:** `app/app.py`
+- **Notebook Google Colab độc lập:** `notebooks/BERT_Training_Colab.ipynb`
 
 ---
 
