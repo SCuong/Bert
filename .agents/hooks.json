@@ -1,0 +1,11 @@
+{
+  "save-conversation-on-stop": {
+    "Stop": [
+      {
+        "type": "command",
+        "command": "python ./scripts/save_conversation.py",
+        "timeout": 10
+      }
+    ]
+  }
+}
