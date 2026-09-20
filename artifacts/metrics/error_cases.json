@@ -1,0 +1,162 @@
+[
+    {
+        "text": "Paying for parking The rooms are nice and clean and the beds are really comfortable The pool is small but you also have sauna and steam room Overall nice stay",
+        "label": 0,
+        "pred": 1,
+        "prob_0": 0.001990528078749776,
+        "prob_1": 0.9980095028877258,
+        "confidence": 0.9980095028877258
+    },
+    {
+        "text": "Nice room with good facilities Clean and tidy Good location the staff were very attentive excellent breakfast",
+        "label": 0,
+        "pred": 1,
+        "prob_0": 0.0020012198947370052,
+        "prob_1": 0.9979987740516663,
+        "confidence": 0.9979987740516663
+    },
+    {
+        "text": "nothing everything was excellent",
+        "label": 0,
+        "pred": 1,
+        "prob_0": 0.0020388977136462927,
+        "prob_1": 0.997961163520813,
+        "confidence": 0.997961163520813
+    },
+    {
+        "text": "All staff in the slow everything Wifi very good",
+        "label": 0,
+        "pred": 1,
+        "prob_0": 0.002076971111819148,
+        "prob_1": 0.9979230761528015,
+        "confidence": 0.9979230761528015
+    },
+    {
+        "text": "It s not Kensington it s Shepherd s Bush a bit miss leading On the location front Staff and cleanliness",
+        "label": 0,
+        "pred": 1,
+        "prob_0": 0.002112540416419506,
+        "prob_1": 0.9978874325752258,
+        "confidence": 0.9978874325752258
+    },
+    {
+        "text": "Decor could do with freshening up Staff very welcoming very pleasant",
+        "label": 0,
+        "pred": 1,
+        "prob_0": 0.002155121648684144,
+        "prob_1": 0.9978448152542114,
+        "confidence": 0.9978448152542114
+    },
+    {
+        "text": "Smell mould the price of Valet arking Staff excellent Chino lation s amazing as always",
+        "label": 0,
+        "pred": 1,
+        "prob_0": 0.00219343020580709,
+        "prob_1": 0.9978066086769104,
+        "confidence": 0.9978066086769104
+    },
+    {
+        "text": "No bar fridge in room Excellent value for money",
+        "label": 0,
+        "pred": 1,
+        "prob_0": 0.002321059349924326,
+        "prob_1": 0.9976789355278015,
+        "confidence": 0.9976789355278015
+    },
+    {
+        "text": "The Hotel doesn t have fitness facilities like a gym steam or sauna These would make our stay very enjoyable the rooms are well maintained and the staff are very friendly and always willing to help",
+        "label": 0,
+        "pred": 1,
+        "prob_0": 0.0024938604328781366,
+        "prob_1": 0.9975062012672424,
+        "confidence": 0.9975062012672424
+    },
+    {
+        "text": "Wish it was closer it was about 15 min bus ride to downtown Otherwise it wasn t a bad hotel I liked the rooms and the parking right next door It was spacious enough for us Public transportation is right down the road",
+        "label": 0,
+        "pred": 1,
+        "prob_0": 0.0025155304465442896,
+        "prob_1": 0.9974844455718994,
+        "confidence": 0.9974844455718994
+    },
+    {
+        "text": "Unpleasant smell all around the hotel specially from the toilet and bathroom It seems that they only clean with water no more detergents and bleaching liquids The location was great just opposite train station",
+        "label": 1,
+        "pred": 0,
+        "prob_0": 0.9957208037376404,
+        "prob_1": 0.004279191605746746,
+        "confidence": 0.9957208037376404
+    },
+    {
+        "text": "I did not like the standerd room i booked it was very poor old cold and isolated at the back of the hotel i had to chang to a bitter room and pay moreNo Positive",
+        "label": 1,
+        "pred": 0,
+        "prob_0": 0.9955767393112183,
+        "prob_1": 0.0044232620857656,
+        "confidence": 0.9955767393112183
+    },
+    {
+        "text": "I paid 409 for a basic twin room The hotel was nice but the price is bloody extortionate Not worth the money at all I only booked it because I had last minute plans No Positive",
+        "label": 1,
+        "pred": 0,
+        "prob_0": 0.995320737361908,
+        "prob_1": 0.004679285455495119,
+        "confidence": 0.995320737361908
+    },
+    {
+        "text": "This hotel is like finding an oasis in a neighborhood that has seen better days. The property is clean and all freshly refurnished. Everything looks freshly painted or replaced. Front desk clerk was efficient. The room had a wet bar in addition to the bathroom sink. The king bed was comfortable. Unfortunately our evening sleep was interrupted several times by loud cars and people yelling at the hotel property across the street. The free breakfast was very sparse and basic. The property was a good value for an evening on the road. The hotel itself was okay but would look for other options next time and not stay in this neighborhood again.",
+        "label": 1,
+        "pred": 0,
+        "prob_0": 0.9950059056282043,
+        "prob_1": 0.004994140937924385,
+        "confidence": 0.9950059056282043
+    },
+    {
+        "text": "The small rooms We booked a window room but were told that none were available on check in VERY small rooms you dont want to spend much time in room but in the middle of SOHO why would you Good place to rest your head for the night",
+        "label": 1,
+        "pred": 0,
+        "prob_0": 0.9945788383483887,
+        "prob_1": 0.0054211607202887535,
+        "confidence": 0.9945788383483887
+    },
+    {
+        "text": "If you've stayed at a Kimpton Hotel before, well, you know what you're in for. It is an old building converted to a cool, trendy place to rest your head. I will warn you, some people in my group didn't see it that way. They saw it as an old hotel, with new sheets on the bed. I disagree. The service was great, it is located in a good area, and it is only a $- cab ride to anywhere. Cab from airport should be around $-- w- tip.",
+        "label": 1,
+        "pred": 0,
+        "prob_0": 0.9943591952323914,
+        "prob_1": 0.0056408364325761795,
+        "confidence": 0.9943591952323914
+    },
+    {
+        "text": "Booking com didn t book 2 rooms that we had payed for only one we had to pay for another room which restricted us of doing things as we didn t have much money after payn twice totally disgusted with booking com will not use them again I also sent you a email and was expecting a reply but didn t even get one I want a explanationNo Positive",
+        "label": 1,
+        "pred": 0,
+        "prob_0": 0.9942574501037598,
+        "prob_1": 0.005742479581385851,
+        "confidence": 0.9942574501037598
+    },
+    {
+        "text": "Rooms not soundproof at all you hear people in the hallway Small bed rooftop and pool was nice Good location",
+        "label": 1,
+        "pred": 0,
+        "prob_0": 0.994032084941864,
+        "prob_1": 0.005967964418232441,
+        "confidence": 0.994032084941864
+    },
+    {
+        "text": "television would not work over 5 days despite 4 reports hotel denied responsibility said I must have failed to access it properly this is ridiculous as there was only the remote to control and power button would not respond I have stayed at this hotel number of times in the past but never will againNo Positive",
+        "label": 1,
+        "pred": 0,
+        "prob_0": 0.9939271807670593,
+        "prob_1": 0.00607285788282752,
+        "confidence": 0.9939271807670593
+    },
+    {
+        "text": "Rooms are very dark no extra outlets in the bathroom no proper fan in the bathroom ventilation system was odd Location is fairly good staff was friendly and helpful",
+        "label": 1,
+        "pred": 0,
+        "prob_0": 0.9937849044799805,
+        "prob_1": 0.00621507503092289,
+        "confidence": 0.9937849044799805
+    }
+]

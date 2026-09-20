@@ -259,6 +259,7 @@ def evaluate_bert_on_test(test_df: pd.DataFrame):
     errors = test_df_eval[test_df_eval["label"] != test_df_eval["pred"]].copy()
     fps = errors[errors["label"] == 0].sort_values("confidence", ascending=False).head(10)
     fns = errors[errors["label"] == 1].sort_values("confidence", ascending=False).head(10)
+    print(f"[*] Tổng số ca dự đoán sai của BERT: {len(errors)} / {len(test_df)} mẫu ({len(errors)/len(test_df)*100:.2f}%)")
     selected_errors = pd.concat([fps, fns]).to_dict(orient="records")
 
     with open(ERROR_CASES_PATH, "w", encoding="utf-8") as f:

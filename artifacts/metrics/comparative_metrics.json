@@ -1,0 +1,26 @@
+{
+    "evaluation_split": "test",
+    "test_sample_count": 3949,
+    "baseline": {
+        "model_name": "TF-IDF + Logistic Regression",
+        "accuracy": 0.8194479615092428,
+        "macro_precision": 0.8208148776629387,
+        "macro_recall": 0.8192890451859147,
+        "macro_f1": 0.8192008301395627,
+        "weighted_f1": 0.8192329910712334,
+        "inference_time_seconds": 0.13703632354736328
+    },
+    "bert": {
+        "model_name": "Fine-Tuned BERT",
+        "accuracy": 0.8483160293745252,
+        "macro_precision": 0.848589149890211,
+        "macro_recall": 0.8482479428301732,
+        "macro_f1": 0.8482655894059412,
+        "weighted_f1": 0.8482788999532065,
+        "inference_time_seconds": 307.30150413513184
+    },
+    "delta_bert_vs_baseline": {
+        "accuracy": 0.0289,
+        "macro_f1": 0.0291
+    }
+}

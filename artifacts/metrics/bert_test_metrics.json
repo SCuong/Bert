@@ -1,0 +1,27 @@
+{
+    "model_name": "Fine-Tuned BERT",
+    "evaluation_split": "test",
+    "accuracy": 0.8483160293745252,
+    "macro_precision": 0.848589149890211,
+    "macro_recall": 0.8482479428301732,
+    "macro_f1": 0.8482655894059412,
+    "weighted_f1": 0.8482788999532065,
+    "class_0_precision": 0.8399607265586647,
+    "class_0_recall": 0.8623991935483871,
+    "class_0_f1": 0.8510320815717484,
+    "class_1_precision": 0.8572175732217573,
+    "class_1_recall": 0.8340966921119592,
+    "class_1_f1": 0.8454990972401342,
+    "inference_time_seconds": 307.30150413513184,
+    "test_sample_count": 3949,
+    "confusion_matrix": [
+        [
+            1711,
+            273
+        ],
+        [
+            326,
+            1639
+        ]
+    ]
+}
