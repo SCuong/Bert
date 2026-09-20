@@ -31,6 +31,7 @@ BERT_METRICS_PATH = os.path.join(METRICS_DIR, "bert_metrics.json")
 ERROR_CASES_PATH = os.path.join(METRICS_DIR, "error_cases.json")
 BERT_TRAINING_HISTORY_PATH = os.path.join(METRICS_DIR, "bert_training_history.json")
 TOKEN_STATS_PATH = os.path.join(METRICS_DIR, "token_length_stats.json")
+DATA_AUDIT_PATH = os.path.join(METRICS_DIR, "data_audit.json")
 
 # =============================================================================
 # THIẾT LẬP MÔ HÌNH & TÁI LẬP (MODEL & REPRODUCIBILITY CONFIG)
@@ -43,9 +44,9 @@ TRAIN_RATIO = 0.70
 VAL_RATIO = 0.10
 TEST_RATIO = 0.20
 
-# Độ dài chuỗi tối đa: Giá trị mặc định / ứng viên ban đầu (Candidate: 128)
-# Sẽ được kiểm chứng qua các phân vị (p90, p95, p99) và tỷ lệ cắt cụt từ EDA token-length thực tế
-# để quyết định giữ 128 hay chuyển sang 256.
+# Độ dài chuỗi tối đa: Đã được xác nhận dựa trên thực nghiệm EDA (Scope: Train + Val)
+# Với p95 = 121 tokens, ngưỡng 128 bảo toàn trọn vẹn 96.07% mẫu (chỉ cắt cụt 3.93%),
+# tối ưu chi phí tính toán O(L^2) và phù hợp giới hạn 8GB VRAM (RTX 5050 / Colab T4).
 MAX_LENGTH = 128
 
 # Siêu tham số huấn luyện BERT

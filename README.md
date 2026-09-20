@@ -21,7 +21,7 @@ Bài toán đặt ra: **Tự động phân loại cảm xúc (Sentiment Analysis
 
 - **Mô hình cốt lõi:** `google-bert/bert-base-uncased` (110M tham số), fine-tuning có kiểm soát bằng PyTorch và Hugging Face Transformers.
 - **Mô hình cơ sở (Baseline):** TF-IDF (10,000 unigram + bigram) kết hợp Logistic Regression.
-- **Tập dữ liệu:** Teacher-provided hotel-review sentiment dataset (`data/dts_20k_raw.csv`), cân bằng ban đầu 50/50, chứa các marker đặc thù phong cách Booking.com (như `"No Negative"` trong các bài đánh giá hài lòng).
+- **Tập dữ liệu:** Teacher-provided hotel-review sentiment dataset (`data/dts_20k_raw.csv`), quy mô ban đầu 20,000 mẫu. Sau kiểm toán dữ liệu và loại bỏ 255 mẫu (rỗng, xung đột nhãn, trùng lặp), tập sạch còn 19,745 mẫu duy nhất (9,921 Negative, 9,824 Positive), chứa các marker đặc thù phong cách Booking.com (như `"No Negative"` trong các bài đánh giá hài lòng).
 
 ---
 
@@ -98,7 +98,7 @@ pip install -r requirements.txt
 ```bash
 python -m src.data
 ```
-*Lệnh này sẽ tự động nạp dữ liệu, kiểm toán missing/rỗng/conflicting/duplicates, thực hiện Stratified Split, tính toán phân vị độ dài token BERT thực tế và xuất biểu đồ `class_distribution.png` cùng `token_length_distribution.png` vào thư mục `artifacts/figures/`.*
+*Lệnh này thực hiện Data Audit, loại bỏ 255 mẫu không hợp lệ/trùng lặp/xung đột nhãn (còn 19,745 mẫu hợp lệ), phân chia Stratified Split (70/10/20, Zero Data Leakage), đo lường phân vị độ dài token BERT thực tế trên tập Train+Val (Mean: 42.33, Median: 30.0, p95: 121.0, Max: 425, cắt cụt tại 128: 3.93%), xác nhận lựa chọn MAX_LENGTH = 128 và xuất các artifacts `artifacts/metrics/data_audit.json`, `artifacts/metrics/token_length_stats.json`, `artifacts/figures/class_distribution.png`, `artifacts/figures/token_length_distribution.png`.*
 
 ### 4.3. Huấn luyện mô hình cơ sở (Baseline)
 ```bash

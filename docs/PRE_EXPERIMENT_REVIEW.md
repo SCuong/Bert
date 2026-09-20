@@ -78,28 +78,28 @@
 1. **`artifacts/metrics/baseline_metrics.json`**: Chưa được sinh (do chưa chạy `train_baseline.py`).
 2. **`artifacts/metrics/bert_metrics.json`**: Chưa được sinh (do chưa chạy `evaluate.py`).
 3. **`artifacts/metrics/error_cases.json`**: Chưa được sinh (do chưa chạy trích xuất lỗi).
-4. **`artifacts/figures/*.png`**: Các biểu đồ (`class_distribution.png`, `baseline_confusion_matrix.png`, `bert_confusion_matrix.png`, `training_history.png`) chưa được xuất ra đĩa.
+4. **`artifacts/figures/*.png`**: Biểu đồ confusion matrix và training history chưa được sinh (`class_distribution.png` và `token_length_distribution.png` đã hoàn thành).
 5. **`artifacts/model/bert_best_model/`**: Trọng số mô hình BERT chưa được lưu.
 
 ---
 
-## 4. Các Thực Nghiệm Chưa Chạy (Unexecuted Experiments)
+## 4. Trạng Thái Các Khâu Thực Nghiệm
 
-1. **EDA & Token Length Distribution:**
+1. **EDA & Token Length Distribution:** **ĐÃ THỰC THI (EXECUTED)**
    - Lệnh: `python -m src.data`
-   - Mục tiêu: Thực hiện Data Audit, đo lường phân vị độ dài token BERT thực tế, xuất `class_distribution.png` và `token_length_distribution.png`.
-2. **Baseline Training & Evaluation:**
+   - Kết quả: Data Audit loại bỏ 255 mẫu không hợp lệ/trùng lặp/xung đột, còn 19,745 mẫu sạch (Zero Data Leakage). Đo lường độ dài token trên tập Train+Val (15,796 mẫu) với p95 = 121 tokens, chỉ cắt cụt 3.93% tại 128. Đã chốt lựa chọn `MAX_LENGTH = 128` và xuất `artifacts/metrics/data_audit.json`, `artifacts/metrics/token_length_stats.json`, `artifacts/figures/class_distribution.png`, `artifacts/figures/token_length_distribution.png`.
+2. **Baseline Training & Evaluation:** `CHƯA CHẠY (NOT YET EXECUTED)`
    - Lệnh: `python -m src.train_baseline`
    - Mục tiêu: Thiết lập mốc Accuracy, F1 và Confusion Matrix thực tế cho TF-IDF + Logistic Regression trên tập Test.
-3. **BERT Fine-Tuning:**
+3. **BERT Fine-Tuning:** `CHƯA CHẠY (NOT YET EXECUTED)`
    - Lệnh: `python -m src.train_bert`
    - Mục tiêu: Huấn luyện `bert-base-uncased` trong 2-3 epochs trên GPU/CPU, ghi nhận đường cong học tập thực tế (Train Loss & Val Loss).
-4. **BERT Test Set Evaluation & Error Extraction:**
+4. **BERT Test Set Evaluation & Error Extraction:** `CHƯA CHẠY (NOT YET EXECUTED)`
    - Lệnh: `python -m src.evaluate`
    - Mục tiêu: Đánh giá duy nhất 1 lần trên Test Set và trích xuất 20 ca lỗi thực tế (False Positives và False Negatives).
-5. **PowerPoint Deck Generation:**
-   - Lệnh: `python -m presentation.generate_presentation` (hoặc `--draft` khi chưa chạy thực nghiệm)
-   - Mục tiêu: Nhúng các biểu đồ và số liệu thực nghiệm thực tế vào file slide PowerPoint.
+5. **PowerPoint Deck Generation:** `CHƯA CHẠY BẢN CHÍNH THỨC (CHỈ HỖ TRỢ --DRAFT)`
+   - Lệnh: `python -m presentation.generate_presentation --draft`
+   - Mục tiêu: Nhúng các biểu đồ và số liệu thực nghiệm thực tế vào file slide PowerPoint sau khi hoàn tất training.
 
 ---
 

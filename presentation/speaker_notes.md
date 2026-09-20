@@ -37,9 +37,9 @@
 
 ### Slide 5: Phân tích dữ liệu khách sạn (03:00 - 04:00)
 > *"Bám sát giai đoạn 'Data' trong AI Project Cycle, chúng em sử dụng tập dữ liệu 20,000 đánh giá khách sạn do giảng viên cung cấp.  
-> Dữ liệu thô ban đầu có độ cân bằng hoàn hảo: 10,000 mẫu tích cực và 10,000 mẫu tiêu cực.  
-> Để chọn độ dài chuỗi tối ưu, chúng em không đoán mò bằng số từ mà dùng trực tiếp Tokenizer thực tế của BERT để đo lường phân vị (p90, p95, p99). Ngưỡng candidate ban đầu là 128 và sẽ được đối chiếu với tỷ lệ cắt cụt để quyết định giữ 128 hay đổi sang 256.  
-> Đặc biệt, dữ liệu chứa các marker đặc thù phong cách Booking.com như 'No Negative' trong các bài đánh giá hài lòng, nhắc nhở chúng em phải giữ nguyên cấu trúc tự nhiên và từ ngữ phủ định thay vì xóa bỏ stopword như cách làm cổ điển."*
+> Qua quy trình kiểm toán dữ liệu (Data Audit), chúng em loại bỏ 255 mẫu gồm 5 mẫu rỗng, 127 mẫu xung đột nhãn và 123 mẫu trùng lặp văn bản, thu được 19,745 mẫu sạch duy nhất (9,921 Negative, 9,824 Positive).  
+> Để chọn độ dài chuỗi tối ưu, chúng em đo lường trực tiếp bằng Tokenizer WordPiece của BERT trên tập Train+Val (15,796 mẫu) để giữ tập Test hoàn toàn độc lập. Kết quả thực nghiệm cho thấy: độ dài trung bình là 42.33 tokens, trung vị 30 tokens, và phân vị 95 là 121 tokens.  
+> Với ngưỡng MAX_LENGTH = 128, chúng em bảo toàn trọn vẹn 96.07% toàn bộ văn bản (chỉ cắt cụt 3.93%), vừa tối ưu hóa chi phí tính toán O(L^2) vừa đảm bảo an toàn bộ nhớ trên GPU 8GB VRAM mà không lo tràn bộ nhớ (OOM)."*
 
 ---
 

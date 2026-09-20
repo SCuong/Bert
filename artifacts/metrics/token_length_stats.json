@@ -1,0 +1,18 @@
+{
+    "scope": "train_val",
+    "description": "Calculated on Train + Validation sets (80% of clean data) to prevent data snooping on the held-out Test Set.",
+    "total_samples": 15796,
+    "mean": 42.33,
+    "std": 37.32,
+    "min": 3,
+    "median": 30.0,
+    "p90": 94.0,
+    "p95": 121.0,
+    "p99": 168.0,
+    "max": 425,
+    "pct_truncated_at_128": 3.93,
+    "pct_truncated_at_256": 0.09,
+    "candidate_max_length": 128,
+    "selected_max_length": 128,
+    "decision_rationale": "At MAX_LENGTH=128, 96.07% of samples are fully preserved (p95 is 121 tokens). Truncation is only 3.93%. Quadratic attention cost O(L^2) and activation memory fit comfortably within 8GB VRAM (RTX 5050 / Colab T4) without OOM risk, whereas 256 would quadruple attention operations for a marginal 3.84% coverage gain."
+}

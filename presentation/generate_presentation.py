@@ -280,18 +280,18 @@ def create_presentation(is_draft=False):
     s5 = prs.slides.add_slide(blank_layout)
     add_header(s5, "04. Phân Tích Khám Phá Dữ Liệu (Data & EDA)", "Giai đoạn 02 (Data) theo AI Project Cycle — Kiểm soát chất lượng dữ liệu")
     add_card(s5, Inches(0.8), Inches(1.6), Inches(5.6), Inches(5.2),
-             title="Đặc Tính Tập Dữ Liệu",
+             title="Đặc Tính Tập Dữ Liệu & Kiểm Toán",
              body="• Nguồn dữ liệu: Teacher-provided hotel-review dataset.\n"
-                  "  - Tổng quy mô ban đầu: 20,000 bài đánh giá tiếng Anh.\n"
-                  "  - Cân bằng nhãn: 10,000 Positive (1) và 10,000 Negative (0).\n\n"
-                  "• Audit trùng lặp & Rò rỉ (Pre-split Audit):\n"
-                  "  - Kiểm tra missing values và chuỗi rỗng.\n"
-                  "  - Phân tích và loại bỏ exact duplicate texts.\n"
-                  "  - Loại bỏ các văn bản có nhãn xung đột (Conflicting labels).\n"
-                  "  - Đảm bảo không có dữ liệu trùng giữa Train và Test (Zero Data Leakage).\n\n"
-                  "• Nhận diện đặc trưng cấu trúc:\n"
-                  "  - Xuất hiện các marker phổ biến như 'No Negative' trong review tích cực.\n"
-                  "  - Giữ nguyên cấu trúc tự nhiên, không xóa stopwords để bảo tồn ngữ nghĩa.")
+                  "  - Quy mô ban đầu: 20,000 bài đánh giá tiếng Anh.\n"
+                  "  - Kiểm toán: Loại bỏ 255 mẫu (5 rỗng, 127 xung đột nhãn, 123 trùng lặp).\n"
+                  "  - Dữ liệu sạch: 19,745 mẫu (9,921 Negative, 9,824 Positive).\n\n"
+                  "• Phân chia Stratified Split (seed=42):\n"
+                  "  - Train: 13,821 (70%) | Val: 1,975 (10%) | Test: 3,949 (20%).\n"
+                  "  - Xác nhận 0 mẫu trùng lặp giữa các tập (Zero Data Leakage).\n\n"
+                  "• Phân vị độ dài token BERT (Train+Val Scope):\n"
+                  "  - Median: 30.0 tokens | p90: 94.0 | p95: 121.0 | Max: 425 tokens.\n"
+                  "  - Cắt cụt tại 128: 3.93% | Cắt cụt tại 256: 0.09%.\n"
+                  "  - Quyết định: Chọn MAX_LENGTH = 128 tối ưu cho GPU 8GB VRAM.")
 
     len_img = os.path.join(FIGURES_DIR, "token_length_distribution.png")
     if not os.path.exists(len_img):

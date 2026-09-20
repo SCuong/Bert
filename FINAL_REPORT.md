@@ -46,18 +46,25 @@ Dự án được triển khai **mới hoàn toàn từ đầu; không tái sử
 
 - **Quy mô & Nguồn gốc:** 20,000 bài đánh giá khách sạn bằng tiếng Anh (`data/dts_20k_raw.csv` do giảng viên cung cấp - teacher-provided dataset).
 - **Phân bố ban đầu:** 10,000 mẫu Tích cực (1) và 10,000 mẫu Tiêu cực (0) — Cân bằng 1:1 ở tập dữ liệu thô.
-- **Tiền kiểm định & Làm sạch tối thiểu (Pre-split Audit & Minimal Cleaning):**
-  - Xử lý các dòng thiếu text hoặc thiếu nhãn.
-  - Xóa các thẻ HTML rác (`<br />`, `<p>`) và chuẩn hóa khoảng trắng.
-  - Loại bỏ các dòng văn bản rỗng sau khi làm sạch.
-  - Phát hiện và loại bỏ các văn bản có nhãn xung đột (Conflicting Labels).
-  - Loại bỏ các văn bản trùng lặp hoàn toàn (Exact Duplicates) để ngăn chặn triệt để rò rỉ qua Test Set.
-  - **Giữ nguyên 100% từ ngữ tự nhiên, dấu câu, chữ hoa/thường và từ phủ định** nhằm phục vụ thuật toán WordPiece và Positional Embeddings của BERT.
+- **Kết quả kiểm toán dữ liệu thực tế (Data Audit Report - `artifacts/metrics/data_audit.json`):**
+  - Mẫu thiếu text/label: 0.
+  - Mẫu rỗng sau khi làm sạch: 5.
+  - Mẫu có nhãn xung đột (Conflicting labels): 127 mẫu (từ 20 cụm văn bản trùng lặp gắn cả nhãn 0 và 1) — Đã loại bỏ để tránh nhiễu nhãn.
+  - Mẫu trùng lặp văn bản hoàn toàn (Exact duplicates): 123 mẫu — Đã loại bỏ để chống rò rỉ dữ liệu.
+  - Tổng số mẫu bị loại: 255 mẫu.
+  - Số mẫu hợp lệ duy nhất: **19,745** mẫu (9,921 Negative - 50.25%, 9,824 Positive - 49.75%).
+  - **Giữ nguyên từ ngữ tự nhiên, dấu câu, chữ hoa/thường và từ phủ định** nhằm phục vụ thuật toán WordPiece và Positional Embeddings của BERT.
 - **Phân chia dữ liệu (Stratified Split, seed=42):**
-  - **Train Set:** 70.0% — Dùng để cập nhật gradient.
-  - **Validation Set:** 10.0% — Dùng để chọn checkpoint và Early Stopping.
-  - **Test Set:** 20.0% — Hoàn toàn độc lập, chỉ nạp đúng 1 lần khi đánh giá cuối cùng.
-  - **Tính tái lập:** Được kiểm soát chặt chẽ (`controlled for reproducibility with fixed seeds and documented environment`).
+  - **Train Set:** 13,821 mẫu (70.0%) | 6,945 Negative, 6,876 Positive.
+  - **Validation Set:** 1,975 mẫu (10.0%) | 992 Negative, 983 Positive.
+  - **Test Set:** 3,949 mẫu (20.0%) | 1,984 Negative, 1,965 Positive.
+  - **Xác thực chống rò rỉ (Zero Overlap):** Xác nhận 0 mẫu trùng lặp giữa Train, Val và Test (`artifacts/metrics/data_audit.json`).
+- **Thống kê phân vị độ dài token BERT thực tế (Train + Val Scope, 15,796 mẫu - `artifacts/metrics/token_length_stats.json`):**
+  - Mean: 42.33 tokens | Std: 37.32 tokens | Min: 3 tokens | Median (p50): 30.0 tokens.
+  - p90: 94.0 tokens | p95: 121.0 tokens | p99: 168.0 tokens | Max: 425 tokens.
+  - Tỷ lệ cắt cụt tại 128 tokens: **3.93%** (bảo toàn 96.07% văn bản).
+  - Tỷ lệ cắt cụt tại 256 tokens: **0.09%** (bảo toàn 99.91% văn bản).
+  - **Quyết định cấu hình:** Chọn **`MAX_LENGTH = 128`** vì bao phủ trên 96% độ dài thực tế (p95 là 121), tối ưu chi phí tính toán Self-Attention $\mathcal{O}(L^2)$ và đảm bảo an toàn bộ nhớ trên GPU 8GB VRAM (RTX 5050 / Colab T4).
 
 ---
 
@@ -164,7 +171,7 @@ streamlit run app/app.py
 ## 10. Các Giới Hạn Còn Lại & Hướng Phát Triển (Remaining Limitations)
 
 1. **Giới hạn bài toán nhị phân:** Chỉ phân loại 2 thái cực 0 và 1, chưa phân loại được các đánh giá trung tính (Neutral - 3 sao).
-2. **Hiện tượng cắt cụt văn bản (Truncation):** Cần đối sánh phân vị độ dài token từ EDA (p90, p95, p99) giữa ngưỡng candidate 128 và 256 để cân bằng giữa chi phí tính toán và bảo toàn nội dung.
+2. **Hiện tượng cắt cụt văn bản (Truncation):** Lựa chọn `MAX_LENGTH = 128` dựa trên phân tích phân vị EDA (p95 = 121 tokens trên tập Train+Val) bảo toàn trọn vẹn 96.07% văn bản thực tế và chỉ cắt cụt 3.93% văn bản dài nhằm tối ưu bộ nhớ GPU 8GB và chi phí tính toán $\mathcal{O}(L^2)$.
 3. **Độ trễ suy luận:** BERT có 110 triệu tham số nên thời gian suy luận trên CPU/GPU sẽ lớn hơn đáng kể so với mô hình tuyến tính TF-IDF + Logistic Regression (cần được đo lường thực tế sau khi huấn luyện).
 4. **Hướng phát triển tiếp theo:** Triển khai Phân tích Cảm xúc Đa Khía cạnh (Aspect-Based Sentiment Analysis) và nén mô hình bằng DistilBERT hoặc ONNX Runtime.
 

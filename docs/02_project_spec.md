@@ -71,7 +71,7 @@ Bám sát tinh thần AI Project Cycle, dự án không đặt các chỉ số v
 - **Tài nguyên tính toán:** Dự án hỗ trợ chạy trên GPU cục bộ hoặc phương án dự phòng trên Google Colab T4 GPU.
 - **Ràng buộc dữ liệu:** Sử dụng tập dữ liệu `dts_20k_raw.csv` do giảng viên cung cấp (teacher-provided dataset).
 - **Ràng buộc tiền xử lý:** BERT đã có tokenizer WordPiece được huấn luyện trước trên văn bản tự nhiên, do đó KHÔNG loại bỏ stopwords và KHÔNG lemmatize câu làm phá hủy ngữ pháp tự nhiên.
-- **Độ dài chuỗi (Max Length):** Thiết lập mặc định ban đầu là candidate 128; sẽ được kiểm chứng qua phân vị độ dài token từ EDA trước khi chốt cấu hình huấn luyện chính thức.
+- **Độ dài chuỗi (Max Length):** Đã xác nhận lựa chọn **128** dựa trên phân vị độ dài token thực tế từ EDA trên tập Train+Val (p95 = 121 tokens, chỉ cắt cụt 3.93%) giúp tối ưu hóa chi phí tính toán $\mathcal{O}(L^2)$ và đảm bảo an toàn bộ nhớ trên GPU 8GB VRAM (RTX 5050 / Colab T4).
 
 ---
 

@@ -36,6 +36,7 @@ from src.config import (
     FIGURES_DIR,
     METRICS_DIR,
     TOKEN_STATS_PATH,
+    DATA_AUDIT_PATH,
     RANDOM_SEED,
     TRAIN_RATIO,
     VAL_RATIO,
@@ -57,7 +58,7 @@ def clean_text_minimal(text: str) -> str:
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
-def load_and_validate_data(file_path: str = None) -> pd.DataFrame:
+def load_and_validate_data(file_path: str = None, return_audit: bool = False):
     """
     Nạp dữ liệu, thực hiện Data Audit toàn diện và loại bỏ duplicate/rò rỉ trước khi split.
     Xử lý rõ ràng và không double-count:
@@ -140,6 +141,20 @@ def load_and_validate_data(file_path: str = None) -> pd.DataFrame:
     assert total_dropped == (missing_rows_count + empty_text_count + conflicting_rows_count + exact_duplicates_count), \
         f"Lệch kiểm toán mẫu: {total_dropped} != {missing_rows_count} + {empty_text_count} + {conflicting_rows_count} + {exact_duplicates_count}"
 
+    audit_stats = {
+        "raw_row_count": initial_count,
+        "missing_text_count": null_text_count,
+        "missing_label_count": null_label_count,
+        "missing_rows_count": missing_rows_count,
+        "empty_after_clean_count": empty_text_count,
+        "conflicting_label_row_count": conflicting_rows_count,
+        "conflicting_unique_texts": conflicting_unique_texts,
+        "exact_duplicates_removed": exact_duplicates_count,
+        "total_dropped": total_dropped,
+        "final_unique_valid_sample_count": final_count,
+        "final_class_distribution": {int(k): int(v) for k, v in df["label"].value_counts().items()}
+    }
+
     print("\n" + "="*55)
     print("BÁO CÁO TOÀN VẸN DỮ LIỆU (DATA AUDIT REPORT):")
     print(f"- Số mẫu ban đầu:                {initial_count}")
@@ -149,9 +164,11 @@ def load_and_validate_data(file_path: str = None) -> pd.DataFrame:
     print(f"- Mẫu trùng lặp text (Dropped):  {exact_duplicates_count}")
     print(f"- Tổng số mẫu bị loại bỏ:        {total_dropped}")
     print(f"- Số mẫu hợp lệ duy nhất:        {final_count}")
-    print(f"- Phân bố nhãn sau làm sạch:     {df['label'].value_counts().to_dict()}")
+    print(f"- Phân bố nhãn sau làm sạch:     {audit_stats['final_class_distribution']}")
     print("="*55 + "\n")
 
+    if return_audit:
+        return df, audit_stats
     return df
 
 def split_data(df: pd.DataFrame, train_ratio=TRAIN_RATIO, val_ratio=VAL_RATIO, test_ratio=TEST_RATIO, random_state=RANDOM_SEED):
@@ -198,10 +215,51 @@ def split_data(df: pd.DataFrame, train_ratio=TRAIN_RATIO, val_ratio=VAL_RATIO, t
 
     return train_df, val_df, test_df
 
-def analyze_and_plot_data(df: pd.DataFrame, output_dir: str = None):
+def save_data_audit_report(audit_stats: dict, train_df: pd.DataFrame, val_df: pd.DataFrame, test_df: pd.DataFrame, output_path: str = DATA_AUDIT_PATH):
     """
-    Đo lường độ dài token thực tế bằng BERT Tokenizer và xuất các biểu đồ trực quan hóa.
+    Lưu trữ toàn bộ số liệu kiểm toán dữ liệu vào file JSON có cấu trúc.
+    """
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    train_texts = set(train_df["text"])
+    val_texts = set(val_df["text"])
+    test_texts = set(test_df["text"])
+
+    leakage_train_test = len(train_texts.intersection(test_texts))
+    leakage_val_test = len(val_texts.intersection(test_texts))
+    leakage_train_val = len(train_texts.intersection(val_texts))
+
+    audit_payload = {
+        **audit_stats,
+        "split_counts": {
+            "train": len(train_df),
+            "val": len(val_df),
+            "test": len(test_df),
+            "total_split": len(train_df) + len(val_df) + len(test_df)
+        },
+        "split_class_distribution": {
+            "train": {int(k): int(v) for k, v in train_df["label"].value_counts().items()},
+            "val": {int(k): int(v) for k, v in val_df["label"].value_counts().items()},
+            "test": {int(k): int(v) for k, v in test_df["label"].value_counts().items()}
+        },
+        "zero_overlap_verification": {
+            "train_test_overlap": leakage_train_test,
+            "val_test_overlap": leakage_val_test,
+            "train_val_overlap": leakage_train_val,
+            "passed": (leakage_train_test == 0 and leakage_val_test == 0 and leakage_train_val == 0)
+        }
+    }
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(audit_payload, f, indent=4, ensure_ascii=False)
+    print(f"[+] Đã lưu báo cáo kiểm toán dữ liệu tại: {output_path}")
+    return audit_payload
+
+def analyze_and_plot_data(train_val_df: pd.DataFrame, full_df: pd.DataFrame = None, output_dir: str = None):
+    """
+    Đo lường độ dài token thực tế bằng BERT Tokenizer trên tập Train + Validation (không dùng Test Set).
     Tính toán các phân vị: median, p90, p95, p99, tỷ lệ cắt cụt tại 128 và 256.
+    Xuất các biểu đồ trực quan hóa.
     KHÔNG huấn luyện bất kỳ mô hình nào tại bước này.
     """
     if output_dir is None:
@@ -209,10 +267,11 @@ def analyze_and_plot_data(df: pd.DataFrame, output_dir: str = None):
     os.makedirs(output_dir, exist_ok=True)
     os.makedirs(METRICS_DIR, exist_ok=True)
 
-    # 1. Vẽ phân bố nhãn
+    # 1. Vẽ phân bố nhãn (trên full clean dataset hoặc train_val)
+    plot_df = full_df if full_df is not None else train_val_df
     plt.figure(figsize=(6, 4))
     sns.set_theme(style="whitegrid")
-    ax = sns.countplot(data=df, x="label", palette=["#e74c3c", "#2ecc71"])
+    ax = sns.countplot(data=plot_df, x="label", palette=["#e74c3c", "#2ecc71"])
     plt.title("Class Distribution (0: Negative, 1: Positive)", fontsize=13, fontweight="bold", pad=12)
     plt.xlabel("Sentiment Label", fontsize=11)
     plt.ylabel("Number of Samples", fontsize=11)
@@ -225,19 +284,22 @@ def analyze_and_plot_data(df: pd.DataFrame, output_dir: str = None):
     plt.close()
     print(f"[+] Đã lưu biểu đồ phân bố nhãn tại: {class_fig_path}")
 
-    # 2. Đo lường Token Length bằng BERT Tokenizer thực tế
+    # 2. Đo lường Token Length bằng BERT Tokenizer thực tế trên Train + Validation
     try:
         from transformers import AutoTokenizer
         print(f"[*] Đang tải tokenizer thực tế '{MODEL_NAME}' để đo lường phân bố độ dài token...")
+        print("[*] Phạm vi đo lường (Scope): Train + Validation (Test Set được giữ độc lập, không ảnh hưởng tới quyết định MAX_LENGTH).")
         tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
-        token_lengths = [len(tokenizer.encode(t, truncation=False)) for t in df["text"]]
+        token_lengths = [len(tokenizer.encode(t, truncation=False)) for t in train_val_df["text"]]
         token_lengths_arr = np.array(token_lengths)
-        df_copy = df.copy()
+        df_copy = train_val_df.copy()
         df_copy["token_length"] = token_lengths
 
         # Tính toán các chỉ số phân vị theo yêu cầu
         stats_dict = {
+            "scope": "train_val",
+            "description": "Calculated on Train + Validation sets (80% of clean data) to prevent data snooping on the held-out Test Set.",
             "total_samples": int(len(token_lengths_arr)),
             "mean": float(np.mean(token_lengths_arr)),
             "std": float(np.std(token_lengths_arr)),
@@ -254,6 +316,7 @@ def analyze_and_plot_data(df: pd.DataFrame, output_dir: str = None):
 
         print("\n" + "="*55)
         print("THỐNG KÊ PHÂN VỊ ĐỘ DÀI TOKEN THỰC TẾ (BERT TOKENIZER):")
+        print(f"- Phạm vi đo lường (Scope):    {stats_dict['scope']} (Train + Validation)")
         print(f"- Tổng số mẫu kiểm tra:       {stats_dict['total_samples']:,}")
         print(f"- Giá trị trung bình (Mean):   {stats_dict['mean']:.2f} tokens")
         print(f"- Độ lệch chuẩn (Std):         {stats_dict['std']:.2f} tokens")
@@ -265,7 +328,7 @@ def analyze_and_plot_data(df: pd.DataFrame, output_dir: str = None):
         print(f"- Giá trị lớn nhất (Max):      {stats_dict['max']} tokens")
         print(f"- Tỷ lệ cắt cụt nếu chọn 128:  {stats_dict['pct_truncated_at_128']:.2f}%")
         print(f"- Tỷ lệ cắt cụt nếu chọn 256:  {stats_dict['pct_truncated_at_256']:.2f}%")
-        print(f"- Ngưỡng candidate hiện tại:   {MAX_LENGTH}")
+        print(f"- Ngưỡng candidate ban đầu:    {MAX_LENGTH}")
         print("="*55 + "\n")
 
         with open(TOKEN_STATS_PATH, "w", encoding="utf-8") as f:
@@ -277,7 +340,7 @@ def analyze_and_plot_data(df: pd.DataFrame, output_dir: str = None):
         sns.histplot(data=df_copy, x="token_length", hue="label", bins=50, kde=True, palette=["#e74c3c", "#2ecc71"], alpha=0.5)
         plt.axvline(x=128, color="#34495e", linestyle="--", linewidth=1.5, label=f"Cutoff 128 ({stats_dict['pct_truncated_at_128']:.1f}% truncated)")
         plt.axvline(x=256, color="#8e44ad", linestyle=":", linewidth=1.5, label=f"Cutoff 256 ({stats_dict['pct_truncated_at_256']:.1f}% truncated)")
-        plt.title(f"BERT Token Length Distribution ({MODEL_NAME})", fontsize=13, fontweight="bold", pad=12)
+        plt.title(f"BERT Token Length Distribution (Train+Val Scope, {MODEL_NAME})", fontsize=13, fontweight="bold", pad=12)
         plt.xlabel("Number of Tokens", fontsize=11)
         plt.ylabel("Frequency", fontsize=11)
         plt.legend(loc="upper right")
@@ -293,6 +356,10 @@ def analyze_and_plot_data(df: pd.DataFrame, output_dir: str = None):
         print("[!] Giữ trạng thái phân tích độ dài token là [PENDING EXPERIMENT].")
 
 if __name__ == "__main__":
-    df = load_and_validate_data()
+    df, audit_stats = load_and_validate_data(return_audit=True)
     train_df, val_df, test_df = split_data(df)
-    analyze_and_plot_data(df)
+    save_data_audit_report(audit_stats, train_df, val_df, test_df)
+
+    # Scope for token-length EDA: Train + Validation only (Test set held-out)
+    train_val_df = pd.concat([train_df, val_df], ignore_index=True)
+    analyze_and_plot_data(train_val_df=train_val_df, full_df=df)

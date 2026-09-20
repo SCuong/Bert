@@ -32,10 +32,11 @@
 - **Multi-Head Attention (12 heads):** Mỗi đầu chú ý học một mối liên kết cú pháp/ngữ nghĩa độc lập.
 
 ### Slide 5: Phân Tích Dữ Liệu Khách Sạn (Data & EDA)
-- **Tập dữ liệu:** `dts_20k_raw.csv` (Teacher-provided hotel-review sentiment dataset).
-- **Phân bố nhãn:** Cân bằng ban đầu 50% Positive (10,000) và 50% Negative (10,000).
-- **Phân tích độ dài token:** Sử dụng Tokenizer BERT thực tế để đo phân vị (p90, p95, p99) -> Đối chiếu với candidate `max_length = 128` trước khi quyết định.
-- **Đặc thù văn bản:** Chứa các marker phong cách Booking.com (như `"No Negative"`) cần bảo tồn ngữ nghĩa tự nhiên.
+- **Tập dữ liệu:** `dts_20k_raw.csv` (Teacher-provided hotel-review sentiment dataset, 20,000 mẫu ban đầu).
+- **Kiểm toán dữ liệu (Data Audit):** Loại bỏ 255 mẫu (5 rỗng, 127 nhãn xung đột, 123 trùng lặp), còn 19,745 mẫu sạch (9,921 Negative, 9,824 Positive).
+- **Phân chia Stratified Split (70/10/20, seed=42):** Train (13,821), Val (1,975), Test (3,949) — Xác nhận Zero Data Leakage.
+- **Phân vị độ dài token BERT (Train+Val Scope, 15,796 mẫu):** Mean: 42.33 | Median: 30.0 | p90: 94.0 | p95: 121.0 | Max: 425 tokens.
+- **Quyết định cấu hình:** Chọn `MAX_LENGTH = 128` (chỉ cắt cụt 3.93%, tối ưu cho GPU 8GB VRAM).
 
 ### Slide 6: Quy Trình Nghiên Cứu Chuẩn Mực (Project Pipeline)
 - **Sơ đồ luồng xử lý:** Raw Data -> Pre-split Audit (Missing, Duplicates, Conflicting) -> Stratified Split (70/10/20, seed=42) -> Baseline -> BERT Fine-tuning -> Comprehensive Evaluation -> Demo App.
@@ -50,7 +51,7 @@
 - **Lựa chọn mô hình:** `google-bert/bert-base-uncased` (12 tầng, 768 chiều ẩn, 12 attention heads, ~110M tham số).
 - **Đồng bộ Tokenizer & Model:** AutoTokenizer và AutoModel uncased, từ điển 30,522 WordPiece tokens.
 - **Cấu hình siêu tham số:**
-  - Candidate Max Length: 128 (sẽ đối chiếu phân vị EDA để chốt).
+  - Max Length: 128 (đã xác nhận dựa trên phân vị p95 = 121 tokens từ EDA trên tập Train+Val).
   - Optimizer: AdamW với Decoupled Weight Decay = 0.01.
   - Learning rate: $2 \times 10^{-5}$ kết hợp Linear Warmup Scheduler (10% số bước).
   - Số epochs: 2–3 epochs (kiểm soát chặt chẽ qua Validation Loss & Macro F1).
