@@ -78,10 +78,9 @@
 1. **`artifacts/metrics/baseline_test_metrics.json` & `artifacts/metrics/bert_test_metrics.json`**: Chưa được sinh (do chưa chạy `evaluate.py`).
 2. **`artifacts/metrics/comparative_metrics.json`**: Chưa được sinh (do chưa chạy `evaluate.py`).
 3. **`artifacts/metrics/error_cases.json`**: Chưa được sinh (do chưa chạy trích xuất lỗi).
-4. **`artifacts/figures/training_history.png` & `artifacts/figures/*_test_confusion_matrix.png`**: Chưa được sinh (các biểu đồ EDA và `baseline_val_confusion_matrix.png` đã hoàn thành).
-5. **`artifacts/model/bert_best_model/`**: Trọng số mô hình BERT chưa được lưu.
+4. **`artifacts/figures/*_test_confusion_matrix.png`**: Chưa được sinh (do chưa chạy `evaluate.py`).
 
-*(Lưu ý: `artifacts/metrics/baseline_validation_metrics.json`, `artifacts/figures/baseline_val_confusion_matrix.png` và mô hình local `artifacts/model/baseline_tfidf_lr.joblib` đã được sinh và kiểm chứng thành công).*
+*(Lưu ý: `artifacts/metrics/baseline_validation_metrics.json`, `artifacts/figures/baseline_val_confusion_matrix.png`, `artifacts/metrics/bert_validation_metrics.json`, `artifacts/figures/bert_val_confusion_matrix.png`, `artifacts/metrics/bert_training_history.json`, `artifacts/figures/training_history.png`, cùng mô hình local `artifacts/model/baseline_tfidf_lr.joblib` và `artifacts/model/bert_best_model/` đã được sinh và kiểm chứng tính hoàn thiện 100%).*
 
 ---
 
@@ -93,9 +92,9 @@
 2. **Baseline Training & Validation Evaluation:** **ĐÃ THỰC THI (EXECUTED)**
    - Lệnh: `python -m src.train_baseline`
    - Kết quả: Huấn luyện TF-IDF + Logistic Regression trên Train Set (13,821 mẫu), đánh giá phát triển trên Validation Set (1,975 mẫu). Đạt Accuracy 81.01%, Macro Precision 0.8116, Macro Recall 0.8100, Macro F1 0.8098, Weighted F1 0.8099. Thời gian huấn luyện 0.68s, thời gian suy luận 0.114s (~17,378 mẫu/s). Ma trận nhầm lẫn: 838 TN, 154 FP, 221 FN, 762 TP. Đã lưu `artifacts/metrics/baseline_validation_metrics.json`, `artifacts/figures/baseline_val_confusion_matrix.png` cùng mô hình local `artifacts/model/baseline_tfidf_lr.joblib`. Tập Test Set được niêm phong hoàn toàn.
-3. **BERT Fine-Tuning:** `CHƯA CHẠY (NOT YET EXECUTED)`
+3. **BERT Fine-Tuning & Validation Evaluation:** **ĐÃ THỰC THI (EXECUTED)**
    - Lệnh: `python -m src.train_bert`
-   - Mục tiêu: Huấn luyện `bert-base-uncased` trong 2-3 epochs trên GPU/CPU, chọn checkpoint tốt nhất theo Validation Macro F1/Loss và ghi nhận đường cong học tập thực tế (Train Loss & Val Loss).
+   - Kết quả: Huấn luyện `google-bert/bert-base-uncased` trong 3 epochs (2,592 steps) trên Train Set (13,821 mẫu). Đánh giá phát triển trên Validation Set (1,975 mẫu). Đạt Accuracy 83.90%, Macro Precision 0.8393, Macro Recall 0.8389, Macro F1 0.8389, Weighted F1 0.8389. Thời gian huấn luyện 15,617.19s (~260.29 phút trên CPU), thời gian suy luận 171.58s (~11.5 mẫu/s). Ma trận nhầm lẫn: 848 TN, 144 FP, 174 FN, 809 TP. Tự động chọn checkpoint tốt nhất `checkpoint-2592`. Đã lưu `artifacts/metrics/bert_validation_metrics.json`, `artifacts/figures/bert_val_confusion_matrix.png`, `artifacts/metrics/bert_training_history.json`, `artifacts/figures/training_history.png` và mô hình local `artifacts/model/bert_best_model/`. Toàn bộ quá trình giữ nguyên niêm phong tập Test Set.
 4. **Comparative Test Set Evaluation & Error Extraction:** `CHƯA CHẠY (NOT YET EXECUTED)`
    - Lệnh: `python -m src.evaluate`
    - Mục tiêu: Đánh giá so sánh đối đầu cả Baseline và BERT trên cùng tập Test Set độc lập; lưu `artifacts/metrics/baseline_test_metrics.json`, `artifacts/metrics/bert_test_metrics.json`, `artifacts/metrics/comparative_metrics.json` và trích xuất 20 ca lỗi thực tế (False Positives và False Negatives) vào `artifacts/metrics/error_cases.json`. Fail-fast nếu thiếu artifact mô hình.

@@ -1,0 +1,46 @@
+{
+    "model_name": "google-bert/bert-base-uncased",
+    "evaluation_split": "validation",
+    "sample_count": 1975,
+    "accuracy": 0.838987341772152,
+    "macro_precision": 0.8393219065141904,
+    "macro_recall": 0.8389147770157188,
+    "macro_f1": 0.8389245324053936,
+    "weighted_f1": 0.8389390268746455,
+    "class_0_precision": 0.8297455968688845,
+    "class_0_recall": 0.8548387096774194,
+    "class_0_f1": 0.8421052631578947,
+    "class_1_precision": 0.8488982161594963,
+    "class_1_recall": 0.8229908443540183,
+    "class_1_f1": 0.8357438016528925,
+    "inference_time_seconds": 171.57556247711182,
+    "confusion_matrix": [
+        [
+            848,
+            144
+        ],
+        [
+            174,
+            809
+        ]
+    ],
+    "best_checkpoint": "A:\\Bert\\artifacts\\model\\bert_checkpoints\\checkpoint-2592",
+    "best_metric": 0.8389245324053936,
+    "metric_for_best_model": "macro_f1",
+    "training_configuration": {
+        "epochs": 3,
+        "batch_size": 16,
+        "learning_rate": 2e-05,
+        "max_length": 128,
+        "weight_decay": 0.01,
+        "warmup_ratio": 0.1,
+        "warmup_steps": 259,
+        "seed": 42,
+        "fp16": false
+    },
+    "training_time_seconds": 15617.187813282013,
+    "device": "cpu",
+    "gpu_name": "N/A",
+    "peak_vram_allocated_gb": null,
+    "peak_vram_reserved_gb": null
+}

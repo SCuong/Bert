@@ -123,6 +123,19 @@ python -m src.train_bert
 ```
 *Tự động nhận diện phần cứng (GPU/CPU), fine-tune mô hình `bert-base-uncased`, lưu checkpoint tốt nhất vào `artifacts/model/bert_best_model` và vẽ đường cong học tập (Train Loss + Val Loss) tại `artifacts/figures/training_history.png`.*
 
+**Kết quả thực nghiệm trên tập Validation (Development Evaluation - Đã hoàn thành):**
+- **Validation Accuracy:** 83.90%
+- **Validation Macro Precision:** 0.8393
+- **Validation Macro Recall:** 0.8389
+- **Validation Macro F1:** 0.8389
+- **Validation Weighted F1:** 0.8389
+- **Thời gian huấn luyện:** 15,617.19 giây (260.29 phút / 4.34 giờ trên CPU, 2,592 steps)
+- **Thời gian suy luận Validation:** 171.58 giây (~11.5 mẫu/giây)
+- **Ma trận nhầm lẫn (Validation):** 848 TN, 144 FP, 174 FN, 809 TP (Tổng: 1,975 mẫu)
+- **Quan sát phát triển sơ bộ trên tập Validation:** BERT vượt trội Baseline trên tập Validation (+2.89% Accuracy, +0.0291 Macro F1).  
+*(Lưu ý: Đây là chỉ số phát triển trên tập Validation, không phải kết quả trên tập Test Set. Tập Test Set vẫn được niêm phong hoàn toàn cho bước đánh giá đối đầu cuối cùng).*
+
+
 ### 4.5. Đánh giá trên tập kiểm thử (Comparative Test Evaluation)
 ```bash
 python -m src.evaluate

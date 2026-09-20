@@ -33,7 +33,7 @@ from transformers import (
     Trainer,
     TrainerCallback
 )
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 
 # Import cấu hình tập trung
 from src.config import (
@@ -48,7 +48,11 @@ from src.config import (
     BERT_BEST_MODEL_DIR,
     BERT_CHECKPOINTS_DIR,
     FIGURES_DIR,
-    BERT_TRAINING_HISTORY_PATH
+    BERT_TRAINING_HISTORY_PATH,
+    BERT_VAL_METRICS_PATH,
+    BERT_VAL_CM_PATH,
+    BERT_COMPLETION_MANIFEST_PATH,
+    check_bert_model_completeness
 )
 from src.data import load_and_validate_data, get_train_val_split
 
@@ -141,33 +145,41 @@ def train_bert(epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, lr=LEARNING_RATE, max_l
     model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME, num_labels=2)
     model.to(device)
 
-    # Thư mục lưu checkpoint và artifacts
+    # Thư mục lưu checkpoint và artifacts (LƯU Ý: Không tạo trước BERT_BEST_MODEL_DIR để đảm bảo nguyên tắc artifact guard)
     os.makedirs(BERT_CHECKPOINTS_DIR, exist_ok=True)
-    os.makedirs(BERT_BEST_MODEL_DIR, exist_ok=True)
     os.makedirs(FIGURES_DIR, exist_ok=True)
     os.makedirs(os.path.dirname(BERT_TRAINING_HISTORY_PATH), exist_ok=True)
 
     # 4. Cấu hình TrainingArguments
-    training_args = TrainingArguments(
-        output_dir=BERT_CHECKPOINTS_DIR,
-        eval_strategy="epoch",
-        save_strategy="epoch",
-        learning_rate=lr,
-        per_device_train_batch_size=batch_size,
-        per_device_eval_batch_size=batch_size * 2,
-        num_train_epochs=epochs,
-        weight_decay=WEIGHT_DECAY,
-        warmup_ratio=WARMUP_RATIO,
-        fp16=(device == "cuda"),
-        load_best_model_at_end=True,
-        metric_for_best_model="macro_f1",
-        greater_is_better=True,
-        logging_strategy="steps",
-        logging_steps=50,
-        save_total_limit=2,
-        seed=seed,
-        report_to="none"
-    )
+    total_train_steps = int(np.ceil(len(train_ds) / batch_size) * epochs)
+    warmup_steps = int(total_train_steps * WARMUP_RATIO)
+
+    training_args_params = inspect.signature(TrainingArguments.__init__).parameters
+    training_args_kwargs = {
+        "output_dir": BERT_CHECKPOINTS_DIR,
+        "eval_strategy": "epoch",
+        "save_strategy": "epoch",
+        "learning_rate": lr,
+        "per_device_train_batch_size": batch_size,
+        "per_device_eval_batch_size": batch_size * 2,
+        "num_train_epochs": epochs,
+        "weight_decay": WEIGHT_DECAY,
+        "fp16": (device == "cuda"),
+        "load_best_model_at_end": True,
+        "metric_for_best_model": "macro_f1",
+        "greater_is_better": True,
+        "logging_strategy": "steps",
+        "logging_steps": 50,
+        "save_total_limit": 2,
+        "seed": seed,
+        "report_to": "none"
+    }
+    if "warmup_ratio" in training_args_params:
+        training_args_kwargs["warmup_ratio"] = WARMUP_RATIO
+    else:
+        training_args_kwargs["warmup_steps"] = warmup_steps
+
+    training_args = TrainingArguments(**training_args_kwargs)
 
     history_cb = LossHistoryCallback()
 
@@ -201,7 +213,100 @@ def train_bert(epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, lr=LEARNING_RATE, max_l
     tokenizer.save_pretrained(BERT_BEST_MODEL_DIR)
     print("[+] Mô hình và Tokenizer đã được lưu thành công.")
 
-    # 7. Trích xuất lịch sử huấn luyện chi tiết từ trainer.state.log_history (bao gồm cả Train Loss và Val Loss)
+    # 7. Đánh giá mô hình tốt nhất trên tập Validation độc lập (Development Evaluation)
+    print("\n[*] Đang đánh giá checkpoint tốt nhất trên tập Validation...")
+    val_eval_start = time.time()
+    val_predict_output = trainer.predict(val_ds)
+    val_inference_time = time.time() - val_eval_start
+
+    val_logits = val_predict_output.predictions
+    val_preds = np.argmax(val_logits, axis=1)
+    val_labels = val_predict_output.label_ids
+
+    val_acc = accuracy_score(val_labels, val_preds)
+    val_prec_macro = precision_score(val_labels, val_preds, average="macro", zero_division=0)
+    val_rec_macro = recall_score(val_labels, val_preds, average="macro", zero_division=0)
+    val_f1_macro = f1_score(val_labels, val_preds, average="macro", zero_division=0)
+    val_f1_weighted = f1_score(val_labels, val_preds, average="weighted", zero_division=0)
+
+    val_prec_per_class = precision_score(val_labels, val_preds, average=None, zero_division=0)
+    val_rec_per_class = recall_score(val_labels, val_preds, average=None, zero_division=0)
+    val_f1_per_class = f1_score(val_labels, val_preds, average=None, zero_division=0)
+    val_cm = confusion_matrix(val_labels, val_preds)
+
+    assert val_cm.sum() == len(val_ds), f"Ma trận nhầm lẫn có tổng ({val_cm.sum()}) khác số mẫu validation ({len(val_ds)})"
+
+    print(f"BERT Val Accuracy:        {val_acc*100:.2f}%")
+    print(f"BERT Val Macro Precision: {val_prec_macro:.4f}")
+    print(f"BERT Val Macro Recall:    {val_rec_macro:.4f}")
+    print(f"BERT Val Macro F1:        {val_f1_macro:.4f}")
+    print(f"BERT Val Weighted F1:     {val_f1_weighted:.4f}")
+    print(f"BERT Val Inference Time:  {val_inference_time:.3f}s ({len(val_ds)/val_inference_time:.1f} samples/s)")
+    print(f"BERT Val Confusion Matrix:\n{val_cm}")
+
+    peak_allocated_gb = float(torch.cuda.max_memory_allocated() / (1024**3)) if device == "cuda" else None
+    peak_reserved_gb = float(torch.cuda.max_memory_reserved() / (1024**3)) if device == "cuda" else None
+    gpu_name = torch.cuda.get_device_name(0) if device == "cuda" else "N/A"
+
+    # Lưu metrics validation
+    os.makedirs(os.path.dirname(BERT_VAL_METRICS_PATH), exist_ok=True)
+    bert_val_metrics = {
+        "model_name": MODEL_NAME,
+        "evaluation_split": "validation",
+        "sample_count": len(val_ds),
+        "accuracy": float(val_acc),
+        "macro_precision": float(val_prec_macro),
+        "macro_recall": float(val_rec_macro),
+        "macro_f1": float(val_f1_macro),
+        "weighted_f1": float(val_f1_weighted),
+        "class_0_precision": float(val_prec_per_class[0]),
+        "class_0_recall": float(val_rec_per_class[0]),
+        "class_0_f1": float(val_f1_per_class[0]),
+        "class_1_precision": float(val_prec_per_class[1]),
+        "class_1_recall": float(val_rec_per_class[1]),
+        "class_1_f1": float(val_f1_per_class[1]),
+        "inference_time_seconds": float(val_inference_time),
+        "confusion_matrix": val_cm.tolist(),
+        "best_checkpoint": str(trainer.state.best_model_checkpoint),
+        "best_metric": float(trainer.state.best_metric) if trainer.state.best_metric is not None else None,
+        "metric_for_best_model": "macro_f1",
+        "training_configuration": {
+            "epochs": epochs,
+            "batch_size": batch_size,
+            "learning_rate": lr,
+            "max_length": max_length,
+            "weight_decay": WEIGHT_DECAY,
+            "warmup_ratio": WARMUP_RATIO,
+            "warmup_steps": warmup_steps,
+            "seed": seed,
+            "fp16": (device == "cuda")
+        },
+        "training_time_seconds": float(training_time),
+        "device": device,
+        "gpu_name": gpu_name,
+        "peak_vram_allocated_gb": peak_allocated_gb,
+        "peak_vram_reserved_gb": peak_reserved_gb
+    }
+
+    with open(BERT_VAL_METRICS_PATH, "w", encoding="utf-8") as f:
+        json.dump(bert_val_metrics, f, indent=4, ensure_ascii=False)
+    print(f"[+] Đã lưu BERT validation metrics tại: {BERT_VAL_METRICS_PATH}")
+
+    # Lưu confusion matrix figure
+    plt.figure(figsize=(6, 5))
+    sns.heatmap(val_cm, annot=True, fmt="d", cmap="Blues", cbar=False,
+                xticklabels=["Negative (0)", "Positive (1)"],
+                yticklabels=["Negative (0)", "Positive (1)"],
+                annot_kws={"size": 14, "weight": "bold"})
+    plt.title("BERT Validation Confusion Matrix", fontsize=13, fontweight="bold", pad=12)
+    plt.xlabel("Predicted Label", fontsize=11)
+    plt.ylabel("True Label", fontsize=11)
+    plt.tight_layout()
+    plt.savefig(BERT_VAL_CM_PATH, dpi=300)
+    plt.close()
+    print(f"[+] Đã lưu BERT validation confusion matrix tại: {BERT_VAL_CM_PATH}")
+
+    # 8. Trích xuất lịch sử huấn luyện chi tiết từ trainer.state.log_history (bao gồm cả Train Loss và Val Loss)
     train_loss_points = []
     eval_points = []
     for entry in trainer.state.log_history:
@@ -238,7 +343,7 @@ def train_bert(epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, lr=LEARNING_RATE, max_l
         json.dump(history_payload, f, indent=4, ensure_ascii=False)
     print(f"[+] Đã lưu lịch sử huấn luyện tại: {BERT_TRAINING_HISTORY_PATH}")
 
-    # 8. Vẽ đồ thị Train Loss, Validation Loss & Validation Metrics qua các Epoch
+    # 9. Vẽ đồ thị Train Loss, Validation Loss & Validation Metrics qua các Epoch
     if len(eval_points) > 0:
         val_epochs = [h["epoch"] for h in eval_points]
         val_losses = [h["eval_loss"] for h in eval_points]
@@ -276,7 +381,31 @@ def train_bert(epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, lr=LEARNING_RATE, max_l
         plt.close()
         print(f"[+] Đã lưu đồ thị quá trình huấn luyện tại: {curve_path}")
 
+    # 10. Ghi Manifest hoàn thành và kiểm tra artifact guard
+    manifest_data = {
+        "model_name": MODEL_NAME,
+        "completion_timestamp": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
+        "training_time_seconds": float(training_time),
+        "best_checkpoint": str(trainer.state.best_model_checkpoint),
+        "best_validation_macro_f1": float(val_f1_macro),
+        "validation_accuracy": float(val_acc),
+        "status": "COMPLETED",
+        "files_verified": [
+            f for f in os.listdir(BERT_BEST_MODEL_DIR) if os.path.isfile(os.path.join(BERT_BEST_MODEL_DIR, f))
+        ]
+    }
+    with open(BERT_COMPLETION_MANIFEST_PATH, "w", encoding="utf-8") as f:
+        json.dump(manifest_data, f, indent=4, ensure_ascii=False)
+    print(f"[+] Đã lưu completion manifest tại: {BERT_COMPLETION_MANIFEST_PATH}")
+
+    # Kiểm tra tính toàn vẹn thông qua hàm dùng chung
+    completeness_issues = check_bert_model_completeness(BERT_BEST_MODEL_DIR)
+    if completeness_issues:
+        raise RuntimeError(f"Lỗi kiểm tra tính hoàn thiện của mô hình BERT: {completeness_issues}")
+    print("[+] Kiểm tra tính hoàn thiện artifact mô hình BERT: 100% HỢP LỆ")
+
     return BERT_BEST_MODEL_DIR
 
 if __name__ == "__main__":
     train_bert()
+

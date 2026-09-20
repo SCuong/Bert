@@ -30,6 +30,12 @@ BERT_CHECKPOINTS_DIR = os.path.join(MODEL_DIR, "bert_checkpoints")
 BASELINE_VAL_METRICS_PATH = os.path.join(METRICS_DIR, "baseline_validation_metrics.json")
 BASELINE_VAL_CM_PATH = os.path.join(FIGURES_DIR, "baseline_val_confusion_matrix.png")
 
+BERT_VAL_METRICS_PATH = os.path.join(METRICS_DIR, "bert_validation_metrics.json")
+BERT_VAL_CM_PATH = os.path.join(FIGURES_DIR, "bert_val_confusion_matrix.png")
+
+# Completion Marker / Manifest (Chỉ ghi khi quá trình huấn luyện và đánh giá validation hoàn tất thành công)
+BERT_COMPLETION_MANIFEST_PATH = os.path.join(BERT_BEST_MODEL_DIR, "model_completion_manifest.json")
+
 # Metrics & Figures paths - Final Test Evaluation
 BASELINE_TEST_METRICS_PATH = os.path.join(METRICS_DIR, "baseline_test_metrics.json")
 BASELINE_TEST_CM_PATH = os.path.join(FIGURES_DIR, "baseline_test_confusion_matrix.png")
@@ -42,6 +48,47 @@ ERROR_CASES_PATH = os.path.join(METRICS_DIR, "error_cases.json")
 BERT_TRAINING_HISTORY_PATH = os.path.join(METRICS_DIR, "bert_training_history.json")
 TOKEN_STATS_PATH = os.path.join(METRICS_DIR, "token_length_stats.json")
 DATA_AUDIT_PATH = os.path.join(METRICS_DIR, "data_audit.json")
+
+def check_bert_model_completeness(model_dir: str = BERT_BEST_MODEL_DIR) -> list[str]:
+    """
+    Kiểm tra tính hoàn thiện của artifact mô hình BERT:
+    1. Thư mục tồn tại
+    2. config.json tồn tại
+    3. Trọng số mô hình tồn tại (model.safetensors hoặc pytorch_model.bin)
+    4. Tokenizer files tồn tại (tokenizer_config.json và vocab.txt/tokenizer.json)
+    5. Manifest hoàn thành (model_completion_manifest.json) tồn tại
+    Trả về danh sách các lỗi/thiếu sót (rỗng nếu hoàn thiện 100%).
+    """
+    missing = []
+    if not os.path.isdir(model_dir):
+        missing.append(f"Directory does not exist: {model_dir}")
+        return missing
+
+    # 1. Config
+    if not os.path.isfile(os.path.join(model_dir, "config.json")):
+        missing.append("config.json is missing")
+
+    # 2. Trọng số mô hình
+    has_weights = os.path.isfile(os.path.join(model_dir, "model.safetensors")) or \
+                  os.path.isfile(os.path.join(model_dir, "pytorch_model.bin"))
+    if not has_weights:
+        missing.append("model weights missing (neither model.safetensors nor pytorch_model.bin found)")
+
+    # 3. Tokenizer files
+    if not os.path.isfile(os.path.join(model_dir, "tokenizer_config.json")):
+        missing.append("tokenizer_config.json is missing")
+    has_vocab = os.path.isfile(os.path.join(model_dir, "vocab.txt")) or \
+                os.path.isfile(os.path.join(model_dir, "tokenizer.json"))
+    if not has_vocab:
+        missing.append("tokenizer vocab missing (neither vocab.txt nor tokenizer.json found)")
+
+    # 4. Manifest hoàn thành
+    manifest_path = os.path.join(model_dir, "model_completion_manifest.json")
+    if not os.path.isfile(manifest_path):
+        missing.append("model_completion_manifest.json is missing (training may be incomplete or interrupted)")
+
+    return missing
+
 
 # Backward compatibility aliases
 BASELINE_METRICS_PATH = BASELINE_TEST_METRICS_PATH

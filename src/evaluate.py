@@ -41,6 +41,7 @@ from src.config import (
     RANDOM_SEED,
     BASELINE_MODEL_PATH,
     BERT_BEST_MODEL_DIR,
+    check_bert_model_completeness,
     BASELINE_TEST_METRICS_PATH,
     BASELINE_TEST_CM_PATH,
     BERT_TEST_METRICS_PATH,
@@ -53,21 +54,25 @@ from src.data import load_and_validate_data, split_data
 
 def check_model_artifacts():
     """
-    Fail-fast guard: Kiểm tra sự tồn tại của cả hai mô hình trước khi cho phép nạp Test Set.
+    Fail-fast guard: Kiểm tra sự tồn tại và tính hoàn thiện của cả hai mô hình
+    trước khi cho phép nạp Test Set.
     """
     missing = []
-    if not os.path.exists(BASELINE_MODEL_PATH):
+    if not os.path.isfile(BASELINE_MODEL_PATH):
         missing.append(f"Baseline model not found at: {BASELINE_MODEL_PATH}")
-    if not os.path.exists(BERT_BEST_MODEL_DIR):
-        missing.append(f"BERT best model directory not found at: {BERT_BEST_MODEL_DIR}")
+
+    bert_missing = check_bert_model_completeness(BERT_BEST_MODEL_DIR)
+    if bert_missing:
+        missing.append(f"BERT best model artifact incomplete at: {BERT_BEST_MODEL_DIR} (reasons: {', '.join(bert_missing)})")
 
     if missing:
         raise RuntimeError(
-            "FAIL-FAST GUARD: Không thể thực thi đánh giá trên Test Set vì thiếu artifact mô hình:\n"
+            "FAIL-FAST GUARD: Không thể thực thi đánh giá trên Test Set vì thiếu hoặc chưa hoàn thiện artifact mô hình:\n"
             + "\n".join(f"  - {m}" for m in missing)
             + "\n\nYêu cầu: Hãy hoàn thành 'python -m src.train_baseline' và 'python -m src.train_bert' "
             "trước khi thực hiện đánh giá tập kiểm thử cuối cùng."
         )
+
 
 def evaluate_baseline_on_test(test_df: pd.DataFrame):
     """

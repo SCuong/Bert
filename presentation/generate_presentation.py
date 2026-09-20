@@ -38,15 +38,22 @@ from src.config import (
     PROJECT_ROOT,
     FIGURES_DIR,
     BASELINE_VAL_METRICS_PATH,
+    BERT_VAL_METRICS_PATH,
     BASELINE_METRICS_PATH,
     BERT_METRICS_PATH
 )
 
 def create_presentation(is_draft=False):
+    """
+    Hàm tạo bài thuyết trình 15 slide.
+    Nếu is_draft=True: Cho phép tạo khi chưa có metrics thực nghiệm, đóng dấu watermark DRAFT.
+    Nếu is_draft=False: Bắt buộc phải có đầy đủ metrics thực tế từ thực nghiệm (Fail Fast).
+    """
     # Guard kiểm tra tính trung thực của thực nghiệm
     has_baseline_metrics = os.path.exists(BASELINE_METRICS_PATH)
     has_bert_metrics = os.path.exists(BERT_METRICS_PATH)
     has_val_metrics = os.path.exists(BASELINE_VAL_METRICS_PATH)
+    has_bert_val_metrics = os.path.exists(BERT_VAL_METRICS_PATH)
 
     if not (has_baseline_metrics and has_bert_metrics) and not is_draft:
         raise RuntimeError(
@@ -74,9 +81,13 @@ def create_presentation(is_draft=False):
     baseline_metrics = {}
     bert_metrics = {}
     val_metrics = {}
+    bert_val_metrics = {}
     if has_val_metrics:
         with open(BASELINE_VAL_METRICS_PATH, "r", encoding="utf-8") as f:
             val_metrics = json.load(f)
+    if has_bert_val_metrics:
+        with open(BERT_VAL_METRICS_PATH, "r", encoding="utf-8") as f:
+            bert_val_metrics = json.load(f)
     if has_baseline_metrics:
         with open(BASELINE_METRICS_PATH, "r", encoding="utf-8") as f:
             baseline_metrics = json.load(f)
@@ -467,17 +478,42 @@ def create_presentation(is_draft=False):
                   "  - Đưa qua mô hình ở chế độ eval() với torch.no_grad().\n"
                   "  - Trả về nhãn dự đoán, xác suất Softmax và danh sách token WordPiece.")
 
+    if has_bert_val_metrics:
+        val_samples = bert_val_metrics.get("sample_count", 1975)
+        inf_time = bert_val_metrics.get("inference_time_seconds", 171.58)
+        train_time = bert_val_metrics.get("training_time_seconds", 15617.19)
+        train_min = train_time / 60.0
+        train_hr = train_min / 60.0
+        throughput = val_samples / inf_time if inf_time > 0 else 0
+        bert_val_body = (
+            f"• Đánh giá phát triển trên Validation Set ({val_samples:,} mẫu):\n\n"
+            f"  - Validation Accuracy:  {bert_val_metrics.get('accuracy', 0.0)*100:.2f}%\n"
+            f"  - Macro Precision:      {bert_val_metrics.get('macro_precision', 0.0):.4f}\n"
+            f"  - Macro Recall:         {bert_val_metrics.get('macro_recall', 0.0):.4f}\n"
+            f"  - Macro F1-Score:       {bert_val_metrics.get('macro_f1', 0.0):.4f}\n"
+            f"  - Thời gian huấn luyện: {train_time:.1f}s ({train_min:.1f} phút / {train_hr:.2f}h)\n"
+            f"  - Tốc độ suy luận:       {throughput:.1f} mẫu/s\n\n"
+            "• Ghi chú niêm phong Test Set:\n"
+            "  - Đây là chỉ số phát triển đo trên tập Validation.\n"
+            "  - Tập Test Set được niêm phong cho đánh giá so sánh cuối cùng (evaluate.py)."
+        )
+    else:
+        bert_val_body = (
+            "• Giám sát độ mất mát (Loss Monitoring):\n"
+            "  - Ghi nhận Train Loss và Validation Loss qua từng epoch.\n"
+            "  - Phát hiện sớm hiện tượng phân kỳ (Overfitting).\n\n"
+            "• Quản lý Artifacts:\n"
+            "  - Trọng số tốt nhất lưu tại artifacts/model/bert_best_model/.\n"
+            "  - Metrics lưu dạng JSON tại artifacts/metrics/.\n"
+            "  - Biểu đồ xuất định dạng 300 DPI tại artifacts/figures/.\n\n"
+            "• Tính độc lập:\n"
+            "  - Toàn bộ pipeline triển khai độc lập mới từ đầu; không tái sử dụng mã nguồn tham khảo."
+        )
+
     add_card(s9, Inches(6.8), Inches(1.6), Inches(5.7), Inches(5.2),
-             title="Kiểm Soát Quá Trình Huấn Luyện",
-             body="• Giám sát độ mất mát (Loss Monitoring):\n"
-                  "  - Ghi nhận Train Loss và Validation Loss qua từng epoch.\n"
-                  "  - Phát hiện sớm hiện tượng phân kỳ (Overfitting).\n\n"
-                  "• Quản lý Artifacts:\n"
-                  "  - Trọng số tốt nhất lưu tại artifacts/model/bert_best_model/.\n"
-                  "  - Metrics lưu dạng JSON tại artifacts/metrics/.\n"
-                  "  - Biểu đồ xuất định dạng 300 DPI tại artifacts/figures/.\n\n"
-                  "• Tính độc lập:\n"
-                  "  - Toàn bộ pipeline triển khai độc lập mới từ đầu; không tái sử dụng mã nguồn tham khảo.")
+             title="Kết Quả Thực Nghiệm BERT (Validation)",
+             body=bert_val_body)
+
 
     # =========================================================================
     # SLIDE 10: Experimental Results Table (FIXED SIZE: 6 ROWS x 6 COLS)

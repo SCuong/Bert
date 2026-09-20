@@ -89,11 +89,23 @@ Dự án được triển khai **mới hoàn toàn từ đầu; không tái sử
 - **Phân loại chuỗi:** Vector đại diện `[CLS]` (768 chiều) $\rightarrow$ `Dropout(p=0.1)` $\rightarrow$ `Linear(768, 2)` $\rightarrow$ `Softmax`.
 - **Cấu hình tối ưu:**
   - Optimizer: AdamW với Decoupled Weight Decay = 0.01.
-  - Learning rate: $2 \times 10^{-5}$ kết hợp Linear Warmup Scheduler (10% tổng số bước).
-  - Epochs: 2–3 epochs.
-  - Batch size: 16 (FP16 mixed precision nếu có GPU).
+  - Learning rate: $2 \times 10^{-5}$ kết hợp Linear Warmup Scheduler (259 steps ~ 10% tổng số bước).
+  - Epochs: 3 epochs (2,592 steps).
+  - Batch size: 16 (Huấn luyện trên CPU với PyTorch 2.14.0+cpu).
   - Tự động nạp lại checkpoint có Validation F1 cao nhất (`load_best_model_at_end=True`).
-  - Ghi nhận đầy đủ đường cong học tập (Train Loss và Validation Loss) qua từng epoch.
+  - Ghi nhận đầy đủ đường cong học tập (Train Loss và Validation Loss) qua từng epoch (`artifacts/metrics/bert_training_history.json`).
+- **Kết quả thực nghiệm trên Validation Set (1,975 mẫu - `artifacts/metrics/bert_validation_metrics.json`):**
+  - **Validation Accuracy:** 83.90%
+  - **Validation Macro Precision:** 0.8393
+  - **Validation Macro Recall:** 0.8389
+  - **Validation Macro F1-score:** 0.8389
+  - **Validation Weighted F1:** 0.8389
+  - **Thời gian huấn luyện:** 15,617.19 giây (260.29 phút / 4.34 giờ trên CPU)
+  - **Thời gian suy luận Validation:** 171.58 giây (~11.5 mẫu/giây)
+  - **Ma trận nhầm lẫn Validation:** 848 True Negatives, 144 False Positives, 174 False Negatives, 809 True Positives.
+  - **Checkpoint tốt nhất:** `checkpoint-2592` (Epoch 3, Validation Macro F1 = 0.8389).
+  - *(Lưu ý: Tập Test Set được niêm phong hoàn toàn và chỉ được đánh giá tại bước so sánh cuối cùng).*
+
 
 ---
 
@@ -199,6 +211,7 @@ streamlit run app/app.py
   - `app/app.py`: Hoàn thành.
   - `presentation/generate_presentation.py`: Hoàn thành.
 - **Thực nghiệm thực tế:**
-  - `Baseline training`: `NOT YET EXECUTED` (Sẵn sàng chạy).
-  - `BERT Fine-Tuning`: `NOT YET EXECUTED` (Sẵn sàng chạy).
-  - `Test set evaluation`: `NOT YET EXECUTED` (Sẵn sàng chạy).
+  - `Baseline training`: `EXECUTED` (Validation Accuracy: 81.01%, Macro F1: 0.8098 - `artifacts/metrics/baseline_validation_metrics.json`).
+  - `BERT Fine-Tuning`: `EXECUTED` (Validation Accuracy: 83.90%, Macro F1: 0.8389 - `artifacts/metrics/bert_validation_metrics.json`).
+  - `Test set evaluation`: `NOT YET EXECUTED` (Sẵn sàng chạy so sánh đối đầu trên Test Set sau khi cả hai mô hình đã hoàn thiện).
+

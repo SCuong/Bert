@@ -61,8 +61,15 @@
 ### Slide 9: Triển Khai Kỹ Thuật Fine-Tuning BERT
 - **Kiến trúc thuần PyTorch:** Kế thừa trực tiếp `torch.utils.data.Dataset`, không phụ thuộc thư viện ngoài `datasets`.
 - **Tương thích API:** Sử dụng `processing_class` cho các phiên bản Hugging Face Transformers mới.
-- **Giám sát quá trình huấn luyện:** Ghi nhận cả đường cong Train Loss và Validation Loss qua từng epoch.
-- **Quản lý Artifacts:** Trọng số mô hình, metrics JSON và biểu đồ 300 DPI.
+- **Giám sát quá trình huấn luyện:** Ghi nhận cả đường cong Train Loss và Validation Loss qua 3 epochs (2,592 steps).
+- **Kết quả thực nghiệm trên Validation Set (1,975 mẫu - Đã hoàn thành):**
+  - Validation Accuracy: 83.90% | Macro Precision: 0.8393 | Macro Recall: 0.8389 | Macro F1: 0.8389.
+  - Thời gian huấn luyện: 15,617.19s (~260.29 phút trên CPU) | Thời gian suy luận: 171.58s (~11.5 mẫu/s).
+  - Ma trận nhầm lẫn Validation: 848 TN, 144 FP, 174 FN, 809 TP.
+  - Checkpoint tốt nhất: `checkpoint-2592` (Epoch 3).
+  - *(Lưu ý: Tập Test Set vẫn được niêm phong hoàn toàn cho bước đánh giá đối đầu cuối cùng).*
+- **Quản lý Artifacts:** Trọng số mô hình `artifacts/model/bert_best_model/`, metrics JSON và biểu đồ 300 DPI.
+
 
 ### Slide 10: Bảng So Sánh Kết Quả Thực Nghiệm Tổng Hợp
 - Bảng so sánh phương pháp trên cùng tập dữ liệu:
