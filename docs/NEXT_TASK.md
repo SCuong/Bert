@@ -1,94 +1,116 @@
 # NEXT TASK
 
-task_id: overnight-001
-reviewed_commit_sha: aef160b22be9648367bfce6753eec71870c4f5a8
+task_id: overnight-002
+reviewed_commit_sha: 0a47a1ea9f131da41d014457e5dc815ff89e4726
 status: READY
 
 ## Goal
 
-Resolve the final pre-experiment runtime and methodology issues before any model training.
+Run the real data audit + token-length EDA only, use those measurements to make the MAX_LENGTH decision, and update documentation with measured data facts. Do not train any model yet.
+
+## Reviewer decision on overnight-001
+
+The pre-experiment runtime/methodology fixes are accepted with one important refinement for this phase:
+
+- Data integrity audit may describe the full supplied dataset.
+- Any hyperparameter choice that could influence training, especially MAX_LENGTH, must be based on training/validation data only, not on the held-out Test Set.
+- Do not use Test Set text distribution to choose 128 vs 256.
 
 ## Required work
 
-1. Standardize Python entrypoints from repository root. Because source files use `from src...`, document and verify:
-   - `python -m src.data`
-   - `python -m src.train_baseline`
-   - `python -m src.train_bert`
-   - `python -m src.evaluate`
-   - `python -m src.predict`
-   Update README, FINAL_REPORT, PRE_EXPERIMENT_REVIEW, and related docs. Ensure presentation/app imports also work from root.
+1. Run the real data audit on the teacher-provided dataset using:
+   `python -m src.data`
 
-2. Fix `src/data.py` entrypoint so `python -m src.data` performs only:
-   - load/validate data,
-   - missing/empty/duplicate/conflicting-label audit,
-   - split leakage validation,
-   - BERT-tokenizer token-length EDA,
-   - figure/stat generation.
-   It must not train any model.
+2. Before using token-length statistics to choose MAX_LENGTH, ensure the implementation computes selection statistics from:
+   - Train + Validation only, or
+   - Train only.
+   
+   Prefer Train + Validation for descriptive preprocessing analysis if no labels/predictions from Test are used, but document the scope explicitly.
 
-3. Fix missing-label handling. Do not count missing labels and then fail later at `.astype(int)`. Either drop them with an accurate audit report or fail deliberately with a clear validation error. Avoid double-counting dropped rows.
+   The held-out Test Set must not influence the MAX_LENGTH decision.
 
-4. Update Hugging Face Trainer usage for the installed/current API: prefer `processing_class=tokenizer` instead of deprecated/removed `tokenizer=tokenizer`. Smoke-check the installed Transformers API without training.
+3. Produce and persist real audit statistics, including at minimum:
+   - raw row count;
+   - missing text count;
+   - missing label count;
+   - empty-after-clean count;
+   - conflicting-label row count and unique conflicting texts;
+   - exact duplicate rows removed;
+   - final unique valid sample count;
+   - final class distribution;
+   - exact Train / Validation / Test counts after stratified split;
+   - explicit zero-overlap verification result.
 
-5. In `train_bert.py`, do not construct a test dataset during training. Training may use only train + validation. The test set remains reserved for final evaluation.
+4. Produce and persist BERT token-length statistics using `google-bert/bert-base-uncased` tokenizer for the allowed selection scope:
+   - mean;
+   - median;
+   - p90;
+   - p95;
+   - p99;
+   - max;
+   - percentage longer than 128 tokens;
+   - percentage longer than 256 tokens.
 
-6. Treat `MAX_LENGTH = 128` as a candidate until EDA is executed. Do not claim it is EDA-selected yet. The later EDA report must include median, p90, p95, p99, and truncation rates at 128 and 256 before the final choice.
+5. Save the results in machine-readable artifacts. Reuse `artifacts/metrics/token_length_stats.json` and, if useful, add:
+   - `artifacts/metrics/data_audit.json`
 
-7. Clean documentation claims across README, FINAL_REPORT, data/README, docs/02_project_spec.md, PRE_EXPERIMENT_REVIEW, presentation outline/notes/source:
-   - use "teacher-provided hotel-review sentiment dataset" unless provenance is independently verified;
-   - Booking.com-style markers may be described as format observations, not provenance proof;
-   - remove arbitrary pre-experiment KPIs such as Accuracy >= 88%, Macro F1 >= 0.88, and +5–8% improvement;
-   - main research questions should focus on baseline vs fine-tuned BERT, contextual representation, and error patterns;
-   - keep old-code analysis internal/reference-only rather than making it a main research objective;
-   - if historical notebooks only report Accuracy, mark other historical metrics as "Not reported";
-   - do not put epochs in a "Training time" column;
-   - remove/pending-mark unverified empty-row counts, split counts, truncation percentages, inference-time estimates, or other generated-looking numbers;
-   - replace "100% reproducible" with "controlled for reproducibility with fixed seeds and documented environment";
-   - describe implementation as "independent implementation from scratch; reference code was not reused" rather than claiming strict clean-room implementation.
+6. Save EDA figures, at minimum:
+   - class distribution;
+   - token-length distribution with 128 and 256 cutoffs.
 
-8. Report/PPT status must remain pre-experiment. If a final PPTX has not been generated from real metrics, say the generator is implemented and the final deck is pending experiment results.
+7. Decide MAX_LENGTH = 128 or 256 from the measured statistics and the practical 8 GB VRAM constraint.
 
-9. Align training-history claims with implementation. If presentation says both training loss and validation loss are tracked, persist/plot actual trainer log history for both; otherwise change the claim.
+   The decision must be explained in a short evidence-based note:
+   - truncation tradeoff;
+   - expected memory/compute cost;
+   - why the chosen value is appropriate for this course project.
 
-10. Do not run:
-    - TF-IDF baseline training,
-    - BERT fine-tuning,
-    - final test-set evaluation,
-    - final PPT generation.
+8. Update `src/config.py` only after the real measurements support the decision.
 
-Allowed verification:
-- syntax/compile,
-- module imports,
-- `--help`,
-- Trainer signature/API smoke-check,
-- presentation draft guard,
-- data-loader validation on a tiny/sample path only if it does not create experiment results.
+9. Update documentation with only measured facts:
+   - `README.md`
+   - `data/README.md`
+   - `FINAL_REPORT.md`
+   - `docs/02_project_spec.md`
+   - `docs/PRE_EXPERIMENT_REVIEW.md`
+   - presentation source/outline/notes where EDA facts or MAX_LENGTH are mentioned.
+
+10. Keep the project in PRE-BASELINE state. Do NOT run:
+    - TF-IDF baseline training;
+    - BERT fine-tuning;
+    - final Test Set model evaluation;
+    - final PowerPoint generation.
+
+11. Do not convert descriptive EDA into conclusions about model quality.
 
 ## Verification criteria
 
 Before completion, verify:
-- root-level module commands import correctly;
-- no runtime import error from `src`;
-- data audit handles missing labels/text consistently;
-- `src.data` entrypoint actually invokes EDA logic;
-- Trainer construction is compatible with the installed Transformers version;
-- training script does not instantiate/use test data;
-- docs no longer contain the unsupported KPI/provenance/reproducibility claims above;
-- no real experiment has been executed.
+- `python -m src.data` completes successfully on the real dataset;
+- artifacts contain real measured values rather than placeholders;
+- token-length selection statistics clearly state their scope (Train or Train+Val);
+- Test Set was not used to choose MAX_LENGTH;
+- `src/config.py` MAX_LENGTH matches the documented EDA decision;
+- no baseline/BERT model artifacts or evaluation metrics were created;
+- documentation numbers match the JSON artifacts exactly.
 
 ## Completion protocol
 
 When done:
-1. Run the allowed smoke checks.
-2. Commit with:
-   `fix: resolve pre-experiment runtime and methodology issues`
-3. Push to `main`.
-4. Create/update `docs/REVIEW_REQUEST.md` containing:
-   - request_commit_sha: the new pushed commit SHA
+1. Review the generated JSON and figures.
+2. Run only non-training consistency checks.
+3. Commit the EDA/config/docs changes with:
+   `data: run audited EDA and select sequence length`
+4. Push to `main`.
+5. Create/update `docs/REVIEW_REQUEST.md` containing:
+   - request_commit_sha: the new pushed implementation commit SHA
    - status: READY_FOR_REVIEW
-   - summary of changes
-   - smoke checks actually run and outputs
-   - files changed
+   - exact data-audit results
+   - token-length statistics
+   - chosen MAX_LENGTH and rationale
+   - files/artifacts changed
+   - verification commands actually run
    - known issues/blockers
    - proposed next phase
-5. Stop. Do not start experiments until a new NEXT_TASK arrives.
+6. Commit/push the review request if needed.
+7. Stop and wait for the next NEXT_TASK.
