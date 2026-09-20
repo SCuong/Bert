@@ -93,7 +93,7 @@ Trong khi đó, ở các cell trước trong cùng notebook:
 
 ## 3. Bảng Đối Chiếu Kỹ Thuật: Mã Cũ vs. Giải Pháp Chuẩn Mới
 
-| Tiêu chí | Mã cũ (`DL_Model.ipynb`) | Giải pháp mới của nhóm (Clean-Room BERT) | Cơ sở học thuật |
+| Tiêu chí | Mã cũ (`DL_Model.ipynb`) | Giải pháp mới của nhóm (Fine-Tuned BERT) | Cơ sở học thuật |
 | :--- | :--- | :--- | :--- |
 | **Mô hình nền tảng** | Small BERT (L=4, H=512, A=8) | `google-bert/bert-base-uncased` (L=12, H=768, A=12) | Chuẩn mực Devlin et al. (2018) |
 | **Tính tương thích Tokenizer** | Cased Preprocess + Uncased Model (Lệch vocab) | Đồng bộ tuyệt đối: `AutoTokenizer` đi cùng `AutoModel` | Đảm bảo đúng Token ID và đúng bảng mã |

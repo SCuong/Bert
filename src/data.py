@@ -1,6 +1,6 @@
 """
 data.py - Module nạp, kiểm tra tính toàn vẹn (Data Audit), xử lý rò rỉ dữ liệu và phân chia Train/Val/Test.
-Tuân thủ nghiêm ngặt nguyên tắc Clean-Room & Chống Data Leakage:
+Triển khai độc lập từ đầu (independent implementation from scratch; reference code was not reused) & Chống Data Leakage:
 1. Validate schema và miền giá trị nhãn {0, 1}.
 2. Kiểm tra missing values và chuỗi rỗng.
 3. Phân tích và loại bỏ trùng lặp tuyệt đối (Exact Duplicates) trước khi split.
@@ -108,7 +108,7 @@ def load_and_validate_data(file_path: str = None) -> pd.DataFrame:
 
     # 4. Validate và chuyển đổi nhãn (sau khi đã loại bỏ toàn bộ missing labels)
     try:
-        df["label"] = df["label"].astype(int)
+        df["label"] = pd.to_numeric(df["label"], errors="raise").astype(int)
     except Exception as e:
         raise ValueError(f"Không thể ép kiểu cột 'label' về số nguyên: {e}")
 

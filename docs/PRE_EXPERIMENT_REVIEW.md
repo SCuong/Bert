@@ -3,7 +3,7 @@
 **Dự án:** Ứng Dụng BERT Trong Phân Loại Cảm Xúc Đánh Giá Khách Sạn (Fine-Tuning BERT for Hotel Review Sentiment Classification)  
 **Trạng thái checkpoint:** `PRE-EXPERIMENT IMPLEMENTATION CHECKPOINT`  
 **Ngày thực hiện:** 20/09/2026  
-**Nguyên tắc:** Clean-Room Implementation độc lập 100%, chưa chạy huấn luyện mô hình, toàn bộ chỉ số thực nghiệm mới đang ở trạng thái `PLACEHOLDER`.
+**Nguyên tắc:** Triển khai độc lập mới hoàn toàn từ đầu; không tái sử dụng mã nguồn tham khảo (independent implementation from scratch; reference code was not reused), chưa chạy huấn luyện mô hình, toàn bộ chỉ số thực nghiệm mới đang ở trạng thái `PLACEHOLDER`.
 
 ---
 
@@ -16,7 +16,7 @@
 ├── requirements.txt                  # Danh sách thư viện và phiên bản
 ├── FINAL_REPORT.md                   # Báo cáo tổng kết 11 mục chuẩn học thuật
 ├── data/
-│   ├── README.md                     # Đặc tả tập dữ liệu và nguồn gốc Booking.com
+│   ├── README.md                     # Đặc tả tập dữ liệu (teacher-provided dataset)
 │   └── dts_20k_raw.csv               # Dữ liệu gốc (20,000 mẫu, local only, gitignored)
 ├── docs/
 │   ├── 01_material_audit.md          # Khảo sát & audit toàn bộ tài liệu cũ

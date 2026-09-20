@@ -175,7 +175,7 @@ def create_presentation(is_draft=False):
 
     p = tf1.add_paragraph()
     draft_tag = " • [DRAFT / PRE-EXPERIMENT]" if is_draft else ""
-    p.text = f"Quy trình chuẩn mực tuân thủ AI Project Cycle • Thực nghiệm độc lập & Tái lập 100%{draft_tag}"
+    p.text = f"Quy trình chuẩn mực tuân thủ AI Project Cycle • Thực nghiệm độc lập & Tái lập có kiểm soát{draft_tag}"
     p.font.size = Pt(13)
     p.font.color.rgb = MUTED if not is_draft else DRAFT_RED
     p.font.name = "Arial"
@@ -183,7 +183,7 @@ def create_presentation(is_draft=False):
 
     add_card(s1, Inches(1.2), Inches(5.4), Inches(10.9), Inches(1.1),
              title="Thông Tin Báo Cáo",
-             body=f"Mô hình: {MODEL_NAME} | Baseline: TF-IDF + Logistic Regression | Dữ liệu: Teacher-provided dataset\nPhương pháp: Clean-Room Implementation | Tái lập: Seed={RANDOM_SEED}")
+             body=f"Mô hình: {MODEL_NAME} | Baseline: TF-IDF + Logistic Regression | Dữ liệu: Teacher-provided dataset\nPhương pháp: Independent Implementation from scratch | Tái lập: Seed={RANDOM_SEED}")
 
     # =========================================================================
     # SLIDE 2: Scope & Problem Statement
@@ -288,7 +288,7 @@ def create_presentation(is_draft=False):
                   "  - Kiểm tra missing values và chuỗi rỗng.\n"
                   "  - Phân tích và loại bỏ exact duplicate texts.\n"
                   "  - Loại bỏ các văn bản có nhãn xung đột (Conflicting labels).\n"
-                  "  - Đảm bảo 100% không có dữ liệu trùng giữa Train và Test.\n\n"
+                  "  - Đảm bảo không có dữ liệu trùng giữa Train và Test (Zero Data Leakage).\n\n"
                   "• Nhận diện đặc trưng cấu trúc:\n"
                   "  - Xuất hiện các marker phổ biến như 'No Negative' trong review tích cực.\n"
                   "  - Giữ nguyên cấu trúc tự nhiên, không xóa stopwords để bảo tồn ngữ nghĩa.")
@@ -451,8 +451,8 @@ def create_presentation(is_draft=False):
                   "  - Trọng số tốt nhất lưu tại artifacts/model/bert_best_model/.\n"
                   "  - Metrics lưu dạng JSON tại artifacts/metrics/.\n"
                   "  - Biểu đồ xuất định dạng 300 DPI tại artifacts/figures/.\n\n"
-                  "• Tính độc lập Clean-Room:\n"
-                  "  - Toàn bộ pipeline tự vận hành độc lập 100%.")
+                  "• Tính độc lập:\n"
+                  "  - Toàn bộ pipeline triển khai độc lập mới từ đầu; không tái sử dụng mã nguồn tham khảo.")
 
     # =========================================================================
     # SLIDE 10: Experimental Results Table (FIXED SIZE: 6 ROWS x 6 COLS)
@@ -628,11 +628,11 @@ def create_presentation(is_draft=False):
              body="• 1. Hoàn thành trọn vẹn quy trình AI Project Cycle:\n"
                   "  - Từ Scope, Data, Baseline, BERT Fine-Tuning đến Demo và Error Analysis.\n\n"
                   "• 2. Triển khai chuẩn mực học thuật:\n"
-                  "  - Pipeline Clean-Room độc lập 100%, kiểm soát rò rỉ dữ liệu và chống overfitting.\n\n"
+                  "  - Pipeline triển khai độc lập mới từ đầu, kiểm soát rò rỉ dữ liệu và chống overfitting.\n\n"
                   "• 3. So sánh khách quan:\n"
                   "  - Đối sánh thực nghiệm giữa Machine Learning truyền thống và Transformer.\n\n"
-                  "• 4. Tính tái lập 100%:\n"
-                  f"  - Cố định seed={RANDOM_SEED} và tài liệu hóa toàn diện.")
+                  "• 4. Tính tái lập có kiểm soát:\n"
+                  f"  - Cố định seed={RANDOM_SEED} và tài liệu hóa toàn diện môi trường.")
 
     add_card(s15, Inches(6.8), Inches(1.6), Inches(5.7), Inches(5.2),
              title="Tài Liệu Tham Khảo Chính",

@@ -2,7 +2,7 @@
 
 > [!IMPORTANT]
 > **TRẠNG THÁI HIỆN TẠI:** `PRE-EXPERIMENT IMPLEMENTATION CHECKPOINT`  
-> Toàn bộ mã nguồn, cấu trúc dữ liệu, baseline và pipeline fine-tuning BERT đã được triển khai độc lập (Clean-Room Implementation) và vượt qua các bài kiểm tra cú pháp/import.  
+> Toàn bộ mã nguồn, cấu trúc dữ liệu, baseline và pipeline fine-tuning BERT đã được triển khai độc lập từ đầu; không tái sử dụng mã nguồn tham khảo (independent implementation from scratch; reference code was not reused) và vượt qua các bài kiểm tra cú pháp/import.  
 > Các thực nghiệm huấn luyện và đánh giá trên Test Set **CHƯA ĐƯỢC CHẠY (NOT YET EXECUTED)** nhằm phục vụ quá trình rà soát mã nguồn của người dùng.  
 > Mọi chỉ số thực nghiệm mới trong tài liệu này hiện được đánh dấu rõ ràng là `PLACEHOLDER — TO BE GENERATED AFTER EXPERIMENT`.
 
@@ -29,7 +29,7 @@ Qua quá trình khảo sát, kiểm tra toàn bộ workspace giảng viên cung 
 
 ## 2. Những Gì Nhóm Đã Xây Dựng (What I Built)
 
-Dự án được triển khai **mới hoàn toàn từ đầu (Clean-Room Implementation)**, độc lập 100% tại repository root:
+Dự án được triển khai **mới hoàn toàn từ đầu; không tái sử dụng mã nguồn tham khảo (independent implementation from scratch; reference code was not reused)**, độc lập tại repository root:
 1. **Pipeline dữ liệu (`src/data.py`):** Làm sạch tối thiểu bảo toàn ngữ cảnh cho Transformer, phân chia dữ liệu Stratified (70% Train, 10% Val, 20% Test) với seed cố định `42`.
 2. **Mô hình cơ sở (`src/train_baseline.py`):** Xây dựng mô hình TF-IDF (10,000 unigram + bigram) kết hợp Logistic Regression.
 3. **Mô hình BERT Fine-Tuning (`src/train_bert.py`):** Tinh chỉnh mô hình chính thức `google-bert/bert-base-uncased` bằng Hugging Face Transformers và PyTorch, sử dụng AdamW (lr=2e-5, weight decay=0.01), huấn luyện 2-3 epochs có kiểm soát checkpoint.
@@ -97,7 +97,7 @@ Dự án được triển khai **mới hoàn toàn từ đầu (Clean-Room Imple
 
 ## 6. Vì Sao Pipeline BERT Mới Khác Biệt Hoàn Toàn Code Cũ
 
-| Tiêu chí kỹ thuật | Triển khai cũ (`DL_Model.ipynb`) | Triển khai mới của nhóm (Our Clean-Room BERT) |
+| Tiêu chí kỹ thuật | Triển khai cũ (`DL_Model.ipynb`) | Triển khai mới của nhóm (Fine-Tuned BERT) |
 | :--- | :--- | :--- |
 | **Tính tương thích từ vựng** | Cased Preprocess ghép với Uncased Model $\rightarrow$ **Lệch token ID** | Đồng bộ tuyệt đối: `AutoTokenizer` và `AutoModel` cùng bản **uncased** |
 | **Cơ chế huấn luyện** | Đóng băng Encoder (`trainable=False`) $\rightarrow$ **Chỉ trích xuất đặc trưng** | Mở khóa toàn bộ tham số $\rightarrow$ **True Fine-Tuning** |
@@ -164,8 +164,8 @@ streamlit run app/app.py
 ## 10. Các Giới Hạn Còn Lại & Hướng Phát Triển (Remaining Limitations)
 
 1. **Giới hạn bài toán nhị phân:** Chỉ phân loại 2 thái cực 0 và 1, chưa phân loại được các đánh giá trung tính (Neutral - 3 sao).
-2. **Hiện tượng cắt cụt văn bản (Truncation):** Lựa chọn `max_length = 128` giúp tối ưu GPU nhưng làm mất đoạn kết luận của khoảng 10% các bài đánh giá dài.
-3. **Độ trễ suy luận:** BERT có 110 triệu tham số, thời gian suy luận (~15-25ms/câu) chậm hơn đáng kể so với Logistic Regression (<0.5ms/câu).
+2. **Hiện tượng cắt cụt văn bản (Truncation):** Cần đối sánh phân vị độ dài token từ EDA (p90, p95, p99) giữa ngưỡng candidate 128 và 256 để cân bằng giữa chi phí tính toán và bảo toàn nội dung.
+3. **Độ trễ suy luận:** BERT có 110 triệu tham số nên thời gian suy luận trên CPU/GPU sẽ lớn hơn đáng kể so với mô hình tuyến tính TF-IDF + Logistic Regression (cần được đo lường thực tế sau khi huấn luyện).
 4. **Hướng phát triển tiếp theo:** Triển khai Phân tích Cảm xúc Đa Khía cạnh (Aspect-Based Sentiment Analysis) và nén mô hình bằng DistilBERT hoặc ONNX Runtime.
 
 ---
