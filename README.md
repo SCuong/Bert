@@ -21,25 +21,22 @@ Bài toán đặt ra: **Tự động phân loại cảm xúc (Sentiment Analysis
 
 - **Mô hình cốt lõi:** `google-bert/bert-base-uncased` (110M tham số), fine-tuning có kiểm soát bằng PyTorch và Hugging Face Transformers.
 - **Mô hình cơ sở (Baseline):** TF-IDF (10,000 unigram + bigram) kết hợp Logistic Regression.
-- **Tập dữ liệu:** 20,000 bài đánh giá khách sạn từ nền tảng Booking.com (`data/dts_20k_raw.csv`), cân bằng 50/50.
+- **Tập dữ liệu:** Teacher-provided hotel-review sentiment dataset (`data/dts_20k_raw.csv`), cân bằng ban đầu 50/50, chứa các marker đặc thù phong cách Booking.com (như `"No Negative"` trong các bài đánh giá hài lòng).
 
 ---
 
 ## 2. Bảng So Sánh Kết Quả (Results Table)
 
 > [!NOTE]
-> Các kết quả của NNLM, BiLSTM và Old BERT được trích xuất trực tiếp từ notebook tham khảo `DL_Model.ipynb` và được ghi nhận dưới dạng kết quả lịch sử.  
-> Các chỉ số của mô hình mới (TF-IDF + LR và Fine-Tuned BERT) sẽ được cập nhật sau khi hoàn tất thực nghiệm.
+> Các chỉ số thực nghiệm của nhóm (TF-IDF + LR và Fine-Tuned BERT) sẽ được ghi nhận trực tiếp sau khi hoàn tất thực thi trên tập kiểm thử độc lập.  
+> Các kết quả tham khảo từ notebook cũ (`DL_Model.ipynb`) chỉ công bố chỉ số Accuracy (NNLM: 79.00%, BiLSTM: 75.00%, Old BERT: 65.20%); các chỉ số Precision, Recall, Macro F1 không được tài liệu cũ báo cáo (`Not reported`).
 
-| Mô Hình / Phương Pháp | Nguồn / Phân Loại | Accuracy | Macro Precision | Macro Recall | Macro F1 | Thời Gian Train |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **NNLM (Google Embedding)** | *Historical result from supplied notebook* | 79.00% | 0.7900 | 0.7900 | 0.7900 | ~10 epochs |
-| **BiLSTM (2-layer)** | *Historical result from supplied notebook* | 75.00% | 0.7500 | 0.7500 | 0.7500 | ~50 epochs |
-| **Old "BERT" (Bị lỗi kỹ thuật)** | *Historical result from supplied notebook* | 65.20% | 0.6550 | 0.6520 | 0.6500 | ~100 epochs |
-| **TF-IDF + Logistic Regression** | *Baseline mới của nhóm* | `[PLACEHOLDER]` | `[PLACEHOLDER]` | `[PLACEHOLDER]` | `[PLACEHOLDER]` | `[PLACEHOLDER]` |
-| **Fine-Tuned BERT (Ours)** | *Mô hình chính của nhóm* | `[PLACEHOLDER]` | `[PLACEHOLDER]` | `[PLACEHOLDER]` | `[PLACEHOLDER]` | `[PLACEHOLDER]` |
+| Mô Hình / Phương Pháp | Vai Trò / Phân Loại | Accuracy | Macro Precision | Macro Recall | Macro F1 |
+| :--- | :--- | :---: | :---: | :---: | :---: |
+| **TF-IDF + Logistic Regression** | *Baseline mới của nhóm* | `[PENDING]` | `[PENDING]` | `[PENDING]` | `[PENDING]` |
+| **Fine-Tuned BERT (Ours)** | *Mô hình chính mới của nhóm* | `[PENDING]` | `[PENDING]` | `[PENDING]` | `[PENDING]` |
 
-*Chi tiết phân tích lỗi kỹ thuật của mô hình cũ xem tại:* [`docs/03_old_bert_analysis.md`](docs/03_old_bert_analysis.md)
+*Tham khảo kết quả lịch sử (`DL_Model.ipynb`):* NNLM: Acc 79.00% | BiLSTM: Acc 75.00% | Old BERT: Acc 65.20% (Chi tiết phân tích lỗi kỹ thuật xem tại [`docs/03_old_bert_analysis.md`](docs/03_old_bert_analysis.md)).
 
 ---
 
@@ -51,12 +48,12 @@ Bài toán đặt ra: **Tự động phân loại cảm xúc (Sentiment Analysis
 ├── requirements.txt              # Danh sách thư viện và phiên bản phụ thuộc
 ├── FINAL_REPORT.md               # Báo cáo tổng kết 11 mục chuẩn học thuật
 ├── data/
-│   ├── README.md                 # Đặc tả dữ liệu và phân tích nguồn gốc Booking.com
-│   └── dts_20k_raw.csv           # File dữ liệu thô (20,000 mẫu, local only)
+│   ├── README.md                 # Đặc tả dữ liệu và phân tích đặc trưng văn bản
+│   └── dts_20k_raw.csv           # File dữ liệu thô (20,000 mẫu, local only, gitignored)
 ├── docs/
 │   ├── 01_material_audit.md      # Khảo sát & audit toàn bộ tài liệu cũ
 │   ├── 02_project_spec.md        # Đặc tả bài toán theo AI Project Cycle
-│   ├── 03_old_bert_analysis.md   # Phân tích nguyên nhân thất bại của code BERT cũ
+│   ├── 03_old_bert_analysis.md   # Phân tích nguyên nhân thất bại của code BERT cũ (tham khảo)
 │   ├── 04_error_analysis.md      # Khung phân tích định tính ca dự đoán sai của BERT
 │   ├── STUDY_GUIDE.md            # Cẩm nang giải thích 25 khái niệm cốt lõi (Tiếng Việt)
 │   ├── DEFENSE_QA.md             # Bộ 25+ câu hỏi & câu trả lời phản biện trước Hội đồng
@@ -68,7 +65,7 @@ Bài toán đặt ra: **Tự động phân loại cảm xúc (Sentiment Analysis
 ├── src/
 │   ├── __init__.py
 │   ├── config.py                 # Cấu hình tập trung (Single Source of Truth)
-│   ├── data.py                   # Nạp dữ liệu, làm sạch tối thiểu, phân chia Stratified
+│   ├── data.py                   # Nạp dữ liệu, làm sạch tối thiểu, audit leakage, Stratified split
 │   ├── train_baseline.py         # Huấn luyện mô hình cơ sở TF-IDF + Logistic Regression
 │   ├── train_bert.py             # Huấn luyện & fine-tuning mô hình BERT chính thức
 │   ├── evaluate.py               # Đánh giá độc lập trên Test Set & trích xuất ca lỗi
@@ -76,22 +73,21 @@ Bài toán đặt ra: **Tự động phân loại cảm xúc (Sentiment Analysis
 ├── app/
 │   └── app.py                    # Ứng dụng Web tương tác bằng Streamlit
 ├── artifacts/
-│   ├── metrics/                  # Kết quả định lượng dạng JSON (baseline, bert, errors)
+│   ├── metrics/                  # Kết quả định lượng dạng JSON (baseline, bert, errors, token stats)
 │   ├── figures/                  # Biểu đồ trực quan hóa (EDA, Confusion Matrix, History)
 │   └── model/                    # Trọng số mô hình đã huấn luyện (loại trừ qua .gitignore)
 └── presentation/
-    ├── BERT_Project.pptx         # File slide PowerPoint học thuật 15 trang
-    ├── generate_presentation.py  # Script Python tự động sinh slide
+    ├── generate_presentation.py  # Script Python tự động sinh slide PowerPoint
     ├── presentation_outline.md   # Dàn ý chi tiết 15 slide
     └── speaker_notes.md          # Kịch bản thuyết trình mẫu 8-10 phút
 ```
 
 ---
 
-## 4. Hướng Dẫn Cài Đặt & Chạy Dự Án
+## 4. Hướng Dẫn Cài Đặt & Chạy Dự Án (Chạy Dạng Package từ Root)
 
 ### 4.1. Thiết lập môi trường
-Khuyến nghị sử dụng Python 3.10 hoặc 3.11.
+Khuyến nghị sử dụng Python 3.10 hoặc 3.11. Toàn bộ quy trình được kiểm soát tính tái lập (`controlled for reproducibility with fixed seeds and documented environment`).
 
 ```bash
 # Cài đặt toàn bộ thư viện cần thiết từ thư mục gốc
@@ -100,33 +96,37 @@ pip install -r requirements.txt
 
 ### 4.2. Khám phá & Làm sạch dữ liệu (EDA)
 ```bash
-python src/data.py
+python -m src.data
 ```
-*Lệnh này sẽ tự động nạp dữ liệu, kiểm tra tính toàn vẹn, thực hiện Stratified Split và xuất biểu đồ `class_distribution.png` cùng `length_distribution.png` vào thư mục `artifacts/figures/`.*
+*Lệnh này sẽ tự động nạp dữ liệu, kiểm toán missing/rỗng/conflicting/duplicates, thực hiện Stratified Split, tính toán phân vị độ dài token BERT thực tế và xuất biểu đồ `class_distribution.png` cùng `token_length_distribution.png` vào thư mục `artifacts/figures/`.*
 
 ### 4.3. Huấn luyện mô hình cơ sở (Baseline)
 ```bash
-python src/train_baseline.py
+python -m src.train_baseline
 ```
 *Huấn luyện mô hình TF-IDF + Logistic Regression, lưu kết quả vào `artifacts/metrics/baseline_metrics.json` và vẽ `artifacts/figures/baseline_confusion_matrix.png`.*
 
 ### 4.4. Huấn luyện & Fine-tuning BERT
 ```bash
-python src/train_bert.py
+python -m src.train_bert
 ```
-*Tự động nhận diện phần cứng, fine-tune mô hình `bert-base-uncased`, lưu checkpoint tốt nhất vào `artifacts/model/bert_best_model` và vẽ đường cong học tập `artifacts/figures/training_history.png`.*
+*Tự động nhận diện phần cứng (GPU/CPU), fine-tune mô hình `bert-base-uncased`, lưu checkpoint tốt nhất vào `artifacts/model/bert_best_model` và vẽ đường cong học tập (Train Loss + Val Loss) tại `artifacts/figures/training_history.png`.*
 
 ### 4.5. Đánh giá trên tập kiểm thử (Test Evaluation)
 ```bash
-python src/evaluate.py
+python -m src.evaluate
 ```
-*Nạp mô hình tốt nhất, đánh giá duy nhất 1 lần trên 3,999 mẫu Test Set, lưu `artifacts/metrics/bert_metrics.json` và trích xuất 20 ca lỗi vào `artifacts/metrics/error_cases.json`.*
+*Nạp mô hình tốt nhất, đánh giá duy nhất 1 lần trên Test Set, lưu `artifacts/metrics/bert_metrics.json` và trích xuất 20 ca lỗi vào `artifacts/metrics/error_cases.json`.*
 
 ### 4.6. Tạo slide PowerPoint thuyết trình
 ```bash
-python presentation/generate_presentation.py
+# Tạo bản nháp kiểm tra định dạng khi chưa chạy thực nghiệm
+python -m presentation.generate_presentation --draft
+
+# Tạo bài thuyết trình chính thức sau khi đã có kết quả thực nghiệm thực tế
+python -m presentation.generate_presentation
 ```
-*Sinh file PowerPoint học thuật hoàn chỉnh `presentation/BERT_Project.pptx`.*
+*(Trạng thái hiện tại: presentation generator implemented; final deck pending experiment results).*
 
 ### 4.7. Khởi chạy ứng dụng Web Demo (Streamlit)
 ```bash

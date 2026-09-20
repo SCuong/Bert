@@ -14,10 +14,10 @@
 - **Thông tin:** Giảng viên hướng dẫn & Nhóm sinh viên thực hiện
 
 ### Slide 2: Bối Cảnh & Mục Tiêu (Scope & Problem Statement)
-- **Bối cảnh:** Sự bùng nổ của đánh giá trực tuyến (Booking.com, TripAdvisor) và nhu cầu tự động hóa phân tích phản hồi khách hàng.
+- **Bối cảnh:** Sự bùng nổ của đánh giá khách sạn trực tuyến và nhu cầu tự động hóa phân tích phản hồi khách hàng.
 - **Phát biểu bài toán:** Input văn bản tiếng Anh -> Output nhãn nhị phân (Positive / Negative) kèm xác suất tin cậy.
 - **Bên liên quan (Stakeholders):** Khách sạn, khách lưu trú, đội ngũ kỹ sư AI.
-- **Tiêu chí thành công (Success KPIs):** Accuracy $\ge 88\%$, Macro F1 $\ge 0.88$, tính tái lập và khả năng giải thích lỗi.
+- **Tiêu chí thành công (Success Criteria):** Pipeline chuẩn mực, Zero Data Leakage, so sánh công bằng giữa Baseline và BERT, kiểm soát tính tái lập (`controlled for reproducibility with fixed seeds and documented environment`), giải thích ca lỗi.
 
 ### Slide 3: Tiến Hóa Kiến Trúc: Từ RNN/LSTM Đến Transformer
 - **Hạn chế của RNN/LSTM:** Xử lý tuần tự không song song hóa được, tắc nghẽn gradient trên chuỗi dài (Vanishing Gradient).
@@ -32,13 +32,13 @@
 - **Multi-Head Attention (12 heads):** Mỗi đầu chú ý học một mối liên kết cú pháp/ngữ nghĩa độc lập.
 
 ### Slide 5: Phân Tích Dữ Liệu Khách Sạn (Data & EDA)
-- **Tập dữ liệu:** `dts_20k_raw.csv` (20,000 đánh giá từ nền tảng Booking.com).
-- **Phân bố nhãn:** Cân bằng hoàn hảo 50% Positive (10,000) và 50% Negative (10,000).
-- **Phân tích độ dài văn bản:** Trung vị 25 từ, 90% dưới 128 từ, 97% dưới 256 từ -> Căn cứ lựa chọn `max_length = 128/256`.
-- **Đặc thù Booking.com:** Cụm từ `"No Negative"` xuất hiện tự nhiên trong các đánh giá hài lòng.
+- **Tập dữ liệu:** `dts_20k_raw.csv` (Teacher-provided hotel-review sentiment dataset).
+- **Phân bố nhãn:** Cân bằng ban đầu 50% Positive (10,000) và 50% Negative (10,000).
+- **Phân tích độ dài token:** Sử dụng Tokenizer BERT thực tế để đo phân vị (p90, p95, p99) -> Đối chiếu với candidate `max_length = 128` trước khi quyết định.
+- **Đặc thù văn bản:** Chứa các marker phong cách Booking.com (như `"No Negative"`) cần bảo tồn ngữ nghĩa tự nhiên.
 
 ### Slide 6: Quy Trình Nghiên Cứu Chuẩn Mực (Project Pipeline)
-- **Sơ đồ luồng xử lý:** Raw Data -> Minimal Cleaning -> Stratified Split (70/10/20, seed=42) -> Baseline -> BERT Fine-tuning -> Comprehensive Evaluation -> Demo App.
+- **Sơ đồ luồng xử lý:** Raw Data -> Pre-split Audit (Missing, Duplicates, Conflicting) -> Stratified Split (70/10/20, seed=42) -> Baseline -> BERT Fine-tuning -> Comprehensive Evaluation -> Demo App.
 - **Nguyên tắc chống rò rỉ dữ liệu (No Data Leakage):** Tập Test chỉ được đánh giá duy nhất một lần ở bước cuối cùng.
 
 ### Slide 7: Mô Hình Cơ Sở (Baseline): TF-IDF + Logistic Regression
@@ -46,33 +46,33 @@
 - **Kiến trúc Baseline:** N-gram (1, 2), 10,000 features, Sublinear TF scaling kết hợp Logistic Regression (L-BFGS).
 - **Kết quả đạt được:** Thiết lập mốc đối sánh vững chắc trước khi áp dụng Deep Learning.
 
-### Slide 8: Khảo Sát & Chỉ Ra Sai Sót Trong Mô Hình BERT Cũ
-- **Phân tích kỹ thuật notebook `DL_Model.ipynb`:**
-  1. *Lệch bảng từ vựng:* Cased Preprocess đi cùng Uncased Encoder (mã hóa sai token).
-  2. *Đóng băng mô hình:* `trainable=False` (chỉ là Feature Extraction của Small BERT, không phải Fine-tuning).
-  3. *Tốc độ học quá cao:* `lr=0.001` (gấp 50 lần mức khuyến nghị).
-  4. *Overfitting cực nặng:* Train 100 epochs với MLP head sâu không dropout -> Train Acc 97.1%, nhưng Test Acc tụt xuống **65.2%**.
+### Slide 8: Thiết Kế Thực Nghiệm & Chiến Lược Fine-Tuning
+- **Lựa chọn mô hình:** `google-bert/bert-base-uncased` (12 tầng, 768 chiều ẩn, 12 attention heads, ~110M tham số).
+- **Đồng bộ Tokenizer & Model:** AutoTokenizer và AutoModel uncased, từ điển 30,522 WordPiece tokens.
+- **Cấu hình siêu tham số:**
+  - Candidate Max Length: 128 (sẽ đối chiếu phân vị EDA để chốt).
+  - Optimizer: AdamW với Decoupled Weight Decay = 0.01.
+  - Learning rate: $2 \times 10^{-5}$ kết hợp Linear Warmup Scheduler (10% số bước).
+  - Số epochs: 2–3 epochs (kiểm soát chặt chẽ qua Validation Loss & Macro F1).
+- **Chiến lược Checkpoint:** Tự động chọn và phục hồi Checkpoint có Validation F1 tốt nhất.
 
-### Slide 9: Phương Pháp Fine-Tuning BERT Chuẩn Của Nhóm
-- **Mô hình:** `google-bert/bert-base-uncased` (110M tham số).
-- **Đồng bộ Tokenizer & Model:** `AutoTokenizer` và `BertForSequenceClassification`.
-- **Cấu hình tối ưu:**
-  - Optimizer: AdamW với Weight Decay = 0.01.
-  - Learning rate: $2 \times 10^{-5}$ với Linear Warmup Scheduler.
-  - Số epochs: 2–3 epochs (kiểm soát chặt chẽ qua Validation Loss).
-  - Tự động nạp Checkpoint tốt nhất (`load_best_model_at_end=True`).
+### Slide 9: Triển Khai Kỹ Thuật Fine-Tuning BERT
+- **Kiến trúc thuần PyTorch:** Kế thừa trực tiếp `torch.utils.data.Dataset`, không phụ thuộc thư viện ngoài `datasets`.
+- **Tương thích API:** Sử dụng `processing_class` cho các phiên bản Hugging Face Transformers mới.
+- **Giám sát quá trình huấn luyện:** Ghi nhận cả đường cong Train Loss và Validation Loss qua từng epoch.
+- **Quản lý Artifacts:** Trọng số mô hình, metrics JSON và biểu đồ 300 DPI.
 
 ### Slide 10: Bảng So Sánh Kết Quả Thực Nghiệm Tổng Hợp
-- Bảng so sánh 5 phương pháp trên cùng tập dữ liệu:
-  1. TF-IDF + Logistic Regression (Mô hình cơ sở mới — Placeholder)
-  2. NNLM Google Embedding (Historical result from supplied notebook: 79.0%)
-  3. BiLSTM (Historical result from supplied notebook: 75.0%)
-  4. Old "BERT" (Historical result from supplied notebook: 65.2%)
-  5. Fine-tuned BERT (Mô hình mới của nhóm — Placeholder)
-- **Các chỉ số đối sánh:** Accuracy, Macro Precision, Macro Recall, Macro F1, Thời gian huấn luyện.
+- Bảng so sánh phương pháp trên cùng tập dữ liệu:
+  1. TF-IDF + Logistic Regression (Mô hình cơ sở mới của nhóm — Pending Experiment)
+  2. Fine-Tuned BERT (Mô hình chính mới của nhóm — Pending Experiment)
+  3. NNLM Google Embedding (Tham khảo: 79.00%, Precision/Recall/F1: Not reported)
+  4. BiLSTM (Tham khảo: 75.00%, Precision/Recall/F1: Not reported)
+  5. Old "BERT" (Tham khảo: 65.20%, Precision/Recall/F1: Not reported)
+- **Các chỉ số đối sánh:** Accuracy, Macro Precision, Macro Recall, Macro F1.
 
 ### Slide 11: Ma Trận Nhầm Lẫn & Phân Tích Độ Chính Xác Từng Lớp
-- Biểu đồ Heatmap Confusion Matrix của Baseline vs. BERT trên 4,000 mẫu Test.
+- Biểu đồ Heatmap Confusion Matrix của Baseline vs. BERT trên Test Set.
 - So sánh chi tiết độ chính xác của lớp Tiêu cực (0) và lớp Tích cực (1) (Sẽ sinh tự động sau khi chạy `train_baseline.py` và `evaluate.py`).
 
 ### Slide 12: Khung Phân Tích Lỗi Định Tính (Error Analysis Framework)
@@ -94,5 +94,5 @@
 - **Hướng phát triển:** Phân loại cảm xúc đa khía cạnh (Aspect-Based Sentiment Analysis - ABSA); nén mô hình bằng DistilBERT hoặc ONNX Runtime để tăng tốc suy luận.
 
 ### Slide 15: Kết Luận & Tài Liệu Tham Khảo
-- Tóm tắt 3 kết quả chính: Khắc phục lỗi kỹ thuật cũ, chứng minh sự vượt trội của BERT, đóng gói sản phẩm hoàn chỉnh.
-- Trích dẫn học thuật chuẩn mực: Vaswani et al. (2017), Devlin et al. (2018), Hugging Face, Booking.com dataset.
+- Tóm tắt 3 kết quả chính: Pipeline chuẩn mực không rò rỉ, đánh giá khách quan giữa Baseline và BERT, đóng gói sản phẩm hoàn chỉnh.
+- Trích dẫn học thuật chuẩn mực: Vaswani et al. (2017), Devlin et al. (2018), Hugging Face Transformers.

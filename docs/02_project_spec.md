@@ -41,47 +41,44 @@ Dựa theo Slide 4 của `AI Project Cycle.pptx`:
 ---
 
 ## 5. Project Objective (Mục tiêu dự án)
-1. Xây dựng một quy trình chuẩn từ dữ liệu thô, làm sạch phù hợp với Transformer, phân chia dữ liệu không rò rỉ.
-2. Thiết lập mô hình cơ sở vững chắc (**TF-IDF + Logistic Regression**) làm mốc so sánh tối thiểu.
-3. Phân tích nguyên nhân thất bại của triển khai BERT cũ trong tài liệu môn học (`DL_Model.ipynb`).
-4. Triển khai fine-tuning chuẩn mực mô hình `google-bert/bert-base-uncased` với thư viện Hugging Face `transformers` và `PyTorch`.
-5. Đánh giá toàn diện mô hình trên tập kiểm thử độc lập (Test Set) qua các chỉ số: Accuracy, Precision, Recall, Macro/Weighted F1 và Confusion Matrix.
-6. Thực hiện phân tích lỗi chuyên sâu (Error Analysis) trên các mẫu dự đoán sai.
-7. Đóng gói ứng dụng demo tương tác trực quan bằng `Streamlit` và xây dựng bộ slide thuyết trình học thuật hoàn chỉnh.
+1. Xây dựng một quy trình chuẩn từ dữ liệu thô, làm sạch phù hợp với Transformer, phân chia dữ liệu không rò rỉ (Zero Data Leakage).
+2. Thiết lập mô hình cơ sở vững chắc (**TF-IDF + Logistic Regression**) làm mốc so sánh tối thiểu theo tinh thần AI Project Cycle.
+3. Triển khai fine-tuning chuẩn mực mô hình `google-bert/bert-base-uncased` với thư viện Hugging Face `transformers` và `PyTorch`.
+4. Đánh giá toàn diện mô hình trên tập kiểm thử độc lập (Test Set) qua các chỉ số: Accuracy, Precision, Recall, Macro/Weighted F1 và Confusion Matrix.
+5. Thực hiện phân tích lỗi chuyên sâu (Error Analysis) trên các mẫu dự đoán sai.
+6. Đóng gói ứng dụng demo tương tác trực quan bằng `Streamlit` và triển khai bộ công cụ sinh slide thuyết trình học thuật.
 
 ---
 
 ## 6. Research Questions (Câu hỏi nghiên cứu)
-1. **RQ1:** Mô hình BERT được fine-tune đúng chuẩn có thực sự đem lại hiệu năng vượt trội so với mô hình học máy truyền thống (TF-IDF + Logistic Regression) trên tập dữ liệu đánh giá khách sạn hay không?
-2. **RQ2:** Tại sao mô hình "BERT" trong notebook mẫu cũ (`DL_Model.ipynb`) lại chỉ đạt 65.2% (thấp hơn cả BiLSTM 75% và NNLM 79%)? Bản chất kỹ thuật đằng sau hiện tượng này là gì?
-3. **RQ3:** Những trường hợp ngôn ngữ nào (phủ định, câu phức vừa khen vừa chê, châm biếm, độ dài quá dài) vẫn khiến mô hình BERT dự đoán sai?
+1. **RQ1 (Baseline vs. Fine-Tuned BERT):** Mô hình BERT được fine-tune đúng chuẩn có thực sự đem lại hiệu năng vượt trội so với mô hình học máy truyền thống (TF-IDF + Logistic Regression) trên tập dữ liệu đánh giá khách sạn hay không?
+2. **RQ2 (Contextual Representation Impact):** Biểu diễn ngữ cảnh sâu hai chiều (deep bidirectional contextual representation) của BERT giải quyết các sắc thái ngôn ngữ (từ đa nghĩa, trật tự từ, từ phủ định, cấu trúc nhượng bộ) tốt hơn mô hình túi từ như thế nào?
+3. **RQ3 (Error Patterns):** Những trường hợp ngôn ngữ nào (cảm xúc pha trộn, đảo ngữ phức tạp, châm biếm/mỉa mai, giới hạn độ dài cắt cụt) vẫn là thách thức khiến mô hình dự đoán sai?
 
 ---
 
-## 7. Success Metrics & KPIs
-Tuân thủ Slide 3 của `AI Project Cycle.pptx`:
-- **Chỉ số định lượng:**
-  - **Accuracy (Độ chính xác tổng quát):** $\ge 88\%$ trên tập kiểm thử độc lập.
-  - **Macro F1-Score:** $\ge 0.88$ (đảm bảo cân bằng giữa cả 2 lớp Positive và Negative).
-  - **F1-Score cải thiện so với Baseline (TF-IDF + LR):** Tối thiểu $+5\%$ đến $+8\%$.
-- **Chỉ số chất lượng kỹ thuật:**
-  - **Tính tái lập (Reproducibility):** Cố định random seed `42` cho toàn bộ quá trình tách dữ liệu và khởi tạo mô hình.
-  - **Không rò rỉ dữ liệu (No Data Leakage):** Tập Test (20%) chỉ được đưa vào đánh giá duy nhất một lần ở bước cuối cùng, không tham gia vào bất kỳ khâu tiền xử lý hay chọn siêu tham số nào.
-  - **Khả năng giải thích (Explainability):** Sinh viên có thể giải thích từng cơ chế tính toán trong Transformer/BERT và chỉ ra nguyên nhân của từng ca dự đoán sai.
+## 7. Success Criteria (Tiêu chí thành công)
+Bám sát tinh thần AI Project Cycle, dự án không đặt các chỉ số võ đoán trước thực nghiệm mà xác định các tiêu chí cốt lõi:
+1. **Pipeline chuẩn mực và toàn vẹn:** Tiền xử lý tối thiểu bảo tồn ngữ cảnh, không lỗi tương thích API thư viện (`processing_class`).
+2. **Không rò rỉ dữ liệu (Zero Data Leakage):** Tập Test (20%) hoàn toàn độc lập, chỉ được nạp đúng một lần khi đánh giá cuối cùng; kiểm toán không trùng lặp văn bản giữa các tập.
+3. **So sánh đối đầu công bằng (Fair Comparison):** Baseline (TF-IDF + LR) và Fine-Tuned BERT được đánh giá trên cùng tập Test với cùng tiêu chuẩn đo lường.
+4. **Trung thực trong báo cáo (Honest Reporting):** Toàn bộ kết quả thực nghiệm được ghi nhận trực tiếp từ log thực thi, không tự ý suy diễn các chỉ số chưa được chạy.
+5. **Tính tái lập có kiểm soát (Controlled Reproducibility):** Cố định random seed `42` và tài liệu hóa chi tiết môi trường thực thi (`controlled for reproducibility with fixed seeds and documented environment`).
 
 ---
 
 ## 8. Constraints & Assumptions (Ràng buộc & Giả định)
-- **Tài nguyên tính toán:** Dự án phải chạy được trên GPU cục bộ (NVIDIA RTX 5050 8GB VRAM) và đồng thời có phương án dự phòng hoàn hảo trên Google Colab T4 GPU miễn phí.
-- **Ràng buộc dữ liệu:** Sử dụng chính xác tập dữ liệu `dts_20k_raw.csv` do giảng viên cung cấp, không tự ý thay đổi dataset khác.
+- **Tài nguyên tính toán:** Dự án hỗ trợ chạy trên GPU cục bộ hoặc phương án dự phòng trên Google Colab T4 GPU.
+- **Ràng buộc dữ liệu:** Sử dụng tập dữ liệu `dts_20k_raw.csv` do giảng viên cung cấp (teacher-provided dataset).
 - **Ràng buộc tiền xử lý:** BERT đã có tokenizer WordPiece được huấn luyện trước trên văn bản tự nhiên, do đó KHÔNG loại bỏ stopwords và KHÔNG lemmatize câu làm phá hủy ngữ pháp tự nhiên.
+- **Độ dài chuỗi (Max Length):** Thiết lập mặc định ban đầu là candidate 128; sẽ được kiểm chứng qua phân vị độ dài token từ EDA trước khi chốt cấu hình huấn luyện chính thức.
 
 ---
 
 ## 9. Project Pipeline
 ```mermaid
 flowchart LR
-    A["Raw Data (dts_20k_raw.csv)"] --> B["Minimal Cleaning & Validation"]
+    A["Raw Data (dts_20k_raw.csv)"] --> B["Minimal Cleaning & Pre-split Audit"]
     B --> C["Stratified Split (70/10/20, seed=42)"]
     C --> D1["TF-IDF + Logistic Regression"]
     C --> D2["bert-base-uncased Tokenizer"]
@@ -89,17 +86,17 @@ flowchart LR
     D1 --> F1["Baseline Metrics"]
     E --> F2["BERT Metrics"]
     F1 & F2 --> G["Comparative Evaluation"]
-    G --> H["Error Analysis (15-20 cases)"]
+    G --> H["Error Analysis (20 cases)"]
     E --> I["Streamlit Demo App"]
-    G & H --> J["Academic Presentation (PPTX)"]
+    G & H --> J["Presentation Generator (PPTX)"]
 ```
 
 ---
 
 ## 10. Expected Deliverables (Sản phẩm bàn giao)
-1. **Mã nguồn hoàn chỉnh (`src/`):** `data.py`, `train_baseline.py`, `train_bert.py`, `evaluate.py`, `predict.py`.
-2. **Tài liệu học thuật (`docs/`):** Audit tài liệu, Đặc tả bài toán, Phân tích mã nguồn cũ, Phân tích lỗi, Cẩm nang học tập (`STUDY_GUIDE.md`), Bộ câu hỏi phản biện (`DEFENSE_QA.md`).
+1. **Mã nguồn hoàn chỉnh (`src/`):** `data.py`, `train_baseline.py`, `train_bert.py`, `evaluate.py`, `predict.py` (chạy dạng module `python -m src.<module>`).
+2. **Tài liệu học thuật (`docs/`):** Audit tài liệu, Đặc tả bài toán, Phân tích mã nguồn cũ (tham khảo nội bộ), Khung phân tích lỗi, Cẩm nang học tập (`STUDY_GUIDE.md`), Bộ câu hỏi phản biện (`DEFENSE_QA.md`).
 3. **Artifacts thực nghiệm:** Toàn bộ metrics dạng JSON và biểu đồ trực quan hóa độ phân giải cao trong `artifacts/`.
 4. **Notebook Google Colab (`notebooks/`):** Hỗ trợ tính năng "Run All" trơn tru cho sinh viên.
 5. **Ứng dụng Demo (`app/app.py`):** Giao diện Streamlit trực quan, hiển thị xác suất và tokenization.
-6. **Báo cáo & Bài thuyết trình (`presentation/` & `FINAL_REPORT.md`):** Slide PowerPoint 15 trang chuẩn academic và báo cáo tổng kết 11 mục.
+6. **Báo cáo & Bài thuyết trình (`presentation/` & `FINAL_REPORT.md`):** Presentation generator implemented; final deck pending experiment results.

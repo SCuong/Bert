@@ -25,6 +25,11 @@ if hasattr(sys.stdout, 'reconfigure'):
 if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8')
 
+# Đảm bảo repository root luôn có trong sys.path khi chạy trực tiếp hoặc dạng module
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+
 # Import cấu hình tập trung
 from src.config import (
     MAX_LENGTH,

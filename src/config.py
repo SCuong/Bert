@@ -30,6 +30,7 @@ BASELINE_METRICS_PATH = os.path.join(METRICS_DIR, "baseline_metrics.json")
 BERT_METRICS_PATH = os.path.join(METRICS_DIR, "bert_metrics.json")
 ERROR_CASES_PATH = os.path.join(METRICS_DIR, "error_cases.json")
 BERT_TRAINING_HISTORY_PATH = os.path.join(METRICS_DIR, "bert_training_history.json")
+TOKEN_STATS_PATH = os.path.join(METRICS_DIR, "token_length_stats.json")
 
 # =============================================================================
 # THIẾT LẬP MÔ HÌNH & TÁI LẬP (MODEL & REPRODUCIBILITY CONFIG)
@@ -42,7 +43,9 @@ TRAIN_RATIO = 0.70
 VAL_RATIO = 0.10
 TEST_RATIO = 0.20
 
-# Độ dài chuỗi tối đa (Sẽ được xác nhận/hiệu chỉnh sau khi chạy EDA token length thực tế)
+# Độ dài chuỗi tối đa: Giá trị mặc định / ứng viên ban đầu (Candidate: 128)
+# Sẽ được kiểm chứng qua các phân vị (p90, p95, p99) và tỷ lệ cắt cụt từ EDA token-length thực tế
+# để quyết định giữ 128 hay chuyển sang 256.
 MAX_LENGTH = 128
 
 # Siêu tham số huấn luyện BERT

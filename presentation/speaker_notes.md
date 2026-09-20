@@ -15,9 +15,9 @@
 ---
 
 ### Slide 2: Bối cảnh & Mục tiêu (00:30 - 01:15)
-> *"Về bối cảnh, trên các nền tảng đặt phòng trực tuyến như Booking.com hay Agoda, mỗi ngày có hàng chục ngàn đánh giá mới. Việc phân loại thủ công cảm xúc khách hàng là bất khả thi về mặt nhân lực.  
+> *"Về bối cảnh, trên các nền tảng đánh giá khách sạn trực tuyến, mỗi ngày có hàng chục ngàn đánh giá mới. Việc phân loại thủ công cảm xúc khách hàng là bất khả thi về mặt nhân lực.  
 > Mục tiêu của đồ án là xây dựng một hệ thống AI tự động phân loại nhận xét của khách hàng thành hai sắc thái: Tích cực hoặc Tiêu cực.  
-> Bám sát giai đoạn 'Scope & Plan' trong AI Project Cycle, chúng em xác định rõ các bên liên quan gồm ban quản lý khách sạn và khách hàng, đồng thời đặt ra các tiêu chí thành công cụ thể: Độ chính xác tổng quát trên 88%, F1-score trên 0.88, và quan trọng nhất là phải chứng minh được BERT có thực sự đem lại lợi ích vượt trội so với các phương pháp truyền thống hay không."*
+> Bám sát giai đoạn 'Scope & Plan' trong AI Project Cycle, chúng em xác định rõ các bên liên quan gồm ban quản lý khách sạn và khách hàng, đồng thời đặt ra các tiêu chí cốt lõi: Pipeline đúng chuẩn học thuật, đánh giá không rò rỉ dữ liệu (Zero Data Leakage), so sánh đối đầu công bằng giữa Baseline và BERT, kiểm soát tính tái lập qua cố định seed 42 và giải thích sâu sắc các ca lỗi thực nghiệm."*
 
 ---
 
@@ -37,58 +37,56 @@
 
 ### Slide 5: Phân tích dữ liệu khách sạn (03:00 - 04:00)
 > *"Bám sát giai đoạn 'Data' trong AI Project Cycle, chúng em sử dụng tập dữ liệu 20,000 đánh giá khách sạn do giảng viên cung cấp.  
-> Qua phân tích khám phá (EDA), chúng em ghi nhận dữ liệu có độ cân bằng hoàn hảo: đúng 10,000 mẫu tích cực và 10,000 mẫu tiêu cực.  
-> Về độ dài, 90% số bài đánh giá có độ dài dưới 128 từ và 97% dưới 256 từ. Đây là cơ sở khoa học để chúng em lựa chọn max_length phù hợp, tránh lãng phí bộ nhớ GPU.  
-> Đặc biệt, chúng em phát hiện dữ liệu bắt nguồn từ Booking.com, nơi khách hàng điền cụm mặc định 'No Negative' khi hài lòng. Điều này sẽ dẫn đến một sai lầm chết người nếu áp dụng tiền xử lý xóa stopword cổ điển."*
+> Dữ liệu thô ban đầu có độ cân bằng hoàn hảo: 10,000 mẫu tích cực và 10,000 mẫu tiêu cực.  
+> Để chọn độ dài chuỗi tối ưu, chúng em không đoán mò bằng số từ mà dùng trực tiếp Tokenizer thực tế của BERT để đo lường phân vị (p90, p95, p99). Ngưỡng candidate ban đầu là 128 và sẽ được đối chiếu với tỷ lệ cắt cụt để quyết định giữ 128 hay đổi sang 256.  
+> Đặc biệt, dữ liệu chứa các marker đặc thù phong cách Booking.com như 'No Negative' trong các bài đánh giá hài lòng, nhắc nhở chúng em phải giữ nguyên cấu trúc tự nhiên và từ ngữ phủ định thay vì xóa bỏ stopword như cách làm cổ điển."*
 
 ---
 
 ### Slide 6: Quy trình nghiên cứu chuẩn mực (04:00 - 04:45)
-> *"Để đảm bảo tính khoa học và ngăn chặn rò rỉ dữ liệu (Data Leakage), chúng em phân chia dữ liệu thành Train (70%), Validation (10%) và Test (20%) theo phương pháp Stratified Split, cố định random seed 42.  
-> Tập Test gồm 4,000 mẫu hoàn toàn độc lập, chỉ được nạp đúng một lần khi đánh giá mô hình cuối cùng.  
-> Khác với cách làm cũ, chúng em áp dụng tiền xử lý tối thiểu (Minimal Cleaning), giữ nguyên toàn bộ từ ngữ tự nhiên, dấu câu và các từ phủ định quan trọng như 'not', 'no', 'never' để phục vụ cho bộ mã hóa của BERT."*
+> *"Để đảm bảo tính khoa học và ngăn chặn rò rỉ dữ liệu (Data Leakage), chúng em thực hiện kiểm toán tiền phân chia (Pre-split Audit), loại bỏ các dòng thiếu, rỗng, xung đột nhãn và trùng lặp hoàn toàn.  
+> Sau đó phân chia dữ liệu thành Train (70%), Validation (10%) và Test (20%) theo Stratified Split, cố định random seed 42 và kiểm tra giao tập (Zero Overlap).  
+> Tập Test hoàn toàn độc lập, chỉ được nạp đúng một lần khi đánh giá mô hình cuối cùng."*
 
 ---
 
 ### Slide 7: Mô hình cơ sở (Baseline): TF-IDF + Logistic Regression (04:45 - 05:30)
 > *"Theo đúng lời dạy trong slide bài giảng: 'We should start from simple to more complex models', chúng em không vội vàng áp dụng ngay Deep Learning mà xây dựng mô hình cơ sở: **TF-IDF kết hợp Logistic Regression**.  
-> Mô hình baseline đạt độ chính xác tương đối tốt và thời gian huấn luyện cực kỳ nhanh (dưới 5 giây). Đây là mốc đối sánh vững chắc để trả lời câu hỏi nghiên cứu số 1: 'Liệu sự phức tạp của BERT có thực sự xứng đáng?'"*
+> Mô hình baseline đạt độ chính xác khá tốt và thời gian huấn luyện cực kỳ nhanh. Đây là mốc đối sánh vững chắc để trả lời câu hỏi nghiên cứu số 1: 'Liệu sự phức tạp của BERT có thực sự đem lại giá trị vượt trội so với giải pháp tuyến tính compact?'"*
 
 ---
 
-### Slide 8: Khảo sát & Chỉ ra sai sót trong mô hình BERT cũ (05:30 - 06:45)
-> *"Khi nghiên cứu notebook mẫu của môn học (`DL_Model.ipynb`), chúng em phát hiện mô hình BERT lưu trong notebook chỉ đạt 65.2% - thấp hơn cả BiLSTM (75%) và NNLM (79%).  
-> Qua audit kỹ thuật chi tiết, chúng em đã chỉ ra 5 nguyên nhân gốc rễ:  
-> 1. Bộ tiền xử lý là Cased nhưng lại ghép với mô hình Uncased, dẫn đến việc lệch ID từ vựng.  
-> 2. Encoder bị đặt `trainable=False`, nghĩa là mô hình bị đóng băng hoàn toàn, đây KHÔNG PHẢI là Fine-tuning mà chỉ là trích xuất đặc trưng tĩnh từ Small BERT.  
-> 3. Tốc độ học bị đặt là 0.001 - cao gấp 50 lần mức khuyến nghị.  
-> 4. Classifier head xếp chồng 5 tầng Dense liên tiếp và xóa bỏ toàn bộ Dropout.  
-> 5. Huấn luyện tới 100 epochs dẫn đến Overfitting cực độ: Train Accuracy lên tới 97% nhưng Test Loss tăng vọt lên 2.61 và Test Accuracy tụt xuống 65.2%."*
+### Slide 8: Thiết kế thực nghiệm & Chiến lược Fine-Tuning (05:30 - 06:45)
+> *"Tiếp theo, chúng em thiết kế thực nghiệm Fine-tuning cho mô hình BERT:  
+> Lựa chọn mô hình nền tảng `google-bert/bert-base-uncased` với 12 tầng Transformer, 768 chiều ẩn và 110 triệu tham số.  
+> Đồng bộ tuyệt đối Tokenizer và Model uncased.  
+> Cập nhật toàn bộ trọng số Encoder (True Fine-Tuning) để mô hình thích ứng với ngôn ngữ đánh giá khách sạn.  
+> Cấu hình bộ tối ưu hóa AdamW với Weight Decay 0.01, tốc độ học chuẩn 2e-5 kết hợp Linear Warmup Scheduler trong 10% số bước.  
+> Huấn luyện có kiểm soát trong 2-3 epochs, tự động lưu và phục hồi checkpoint có Validation Macro F1 tốt nhất."*
 
 ---
 
-### Slide 9: Phương pháp Fine-Tuning BERT chuẩn của nhóm (06:45 - 07:30)
-> *"Để giải quyết triệt để các vấn đề trên, nhóm đã xây dựng pipeline chuẩn mực:  
-> Sử dụng mô hình `bert-base-uncased` chính thức với 110 triệu tham số.  
-> Đồng bộ hoàn toàn Tokenizer và Model bằng Hugging Face Transformers.  
-> Cho phép cập nhật toàn bộ trọng số (True Fine-tuning).  
-> Sử dụng bộ tối ưu hóa AdamW với Weight Decay 0.01, tốc độ học 2e-5 kết hợp Linear Warmup Scheduler.  
-> Huấn luyện có kiểm soát trong 2-3 epochs, tự động lưu và phục hồi checkpoint có Validation Loss tốt nhất."*
+### Slide 9: Triển khai kỹ thuật Fine-Tuning BERT (06:45 - 07:30)
+> *"Về mặt triển khai kỹ thuật, nhóm xây dựng pipeline thuần PyTorch:  
+> Kế thừa trực tiếp `torch.utils.data.Dataset`, loại bỏ hoàn toàn phụ thuộc vào thư viện ngoài `datasets`.  
+> Tương thích với API Hugging Face Transformers hiện đại qua tham số `processing_class`.  
+> Trong quá trình huấn luyện, nhóm ghi nhận chi tiết cả đường cong Train Loss và Validation Loss qua từng epoch để phát hiện sớm hiện tượng phân kỳ (Overfitting).  
+> Toàn bộ artifacts gồm trọng số, metrics JSON và biểu đồ 300 DPI đều được quản lý tự động và có cấu trúc rõ ràng."*
 
 ---
 
 ### Slide 10: Kết quả thực nghiệm tổng hợp (07:30 - 08:30)
-> *"Kính thưa Thầy/Cô, đây là bảng kết quả thực nghiệm tổng hợp trên cùng tập dữ liệu:  
-> [Trình bày các con số thực tế từ bảng so sánh]:  
-> - Baseline TF-IDF + Logistic Regression đạt Accuracy xấp xỉ ...%, Macro F1 ...  
-> - Kết quả lịch sử cũ của BiLSTM là 75.0%, NNLM là 79.0%, và BERT cũ bị lỗi chỉ đạt 65.2%.  
-> - Mô hình BERT chuẩn của chúng em đã bứt phá ngoạn mục, đạt Accuracy ...%, Macro F1 ...  
-> Kết quả này chứng minh rõ ràng: Khi được huấn luyện đúng kỹ thuật, BERT vượt trội hoàn toàn so với tất cả các phương pháp trước đó."*
+> *"Kính thưa Thầy/Cô, đây là bảng kết quả thực nghiệm tổng hợp trên cùng tập kiểm thử Test Set:  
+> Trọng tâm của bài toán là đối sánh giữa Baseline TF-IDF + Logistic Regression và Fine-Tuned BERT của nhóm.  
+> [Trình bày các con số thực tế từ bảng so sánh sau khi chạy thực nghiệm]:  
+> - Baseline TF-IDF + Logistic Regression đạt Accuracy ...%, Macro F1 ...  
+> - Mô hình Fine-Tuned BERT của chúng em đạt Accuracy ...%, Macro F1 ...  
+> Ngoài ra, để tham khảo ngữ cảnh môn học, các kết quả lịch sử ghi nhận trong notebook `DL_Model.ipynb` cho thấy NNLM đạt Accuracy 79.00%, BiLSTM đạt 75.00%, và mô hình BERT cũ chỉ đạt 65.20% (do bị đóng băng encoder và lệch tokenizer). Các chỉ số khác của các mô hình tham khảo này không được tài liệu cũ báo cáo."*
 
 ---
 
 ### Slide 11: Ma trận nhầm lẫn & Đánh giá chi tiết (08:30 - 09:00)
-> *"Quan sát ma trận nhầm lẫn trên 4,000 mẫu kiểm thử độc lập (sẽ được trích xuất tự động sau khi chạy mô hình), chúng em phân tích chi tiết mức độ cân bằng ở cả hai lớp:  
+> *"Quan sát ma trận nhầm lẫn trên tập kiểm thử độc lập (được sinh tự động sau khi chạy mô hình), chúng em phân tích chi tiết mức độ cân bằng ở cả hai lớp:  
 > [Đọc số liệu thực tế về True Positives, False Positives, True Negatives và False Negatives từ biểu đồ trên slide]."*
 
 ---
@@ -112,5 +110,5 @@
 ---
 
 ### Slide 14 & 15: Kết luận & Tài liệu tham khảo (10:15 - 10:45)
-> *"Tóm lại, đồ án đã hoàn thành xuất sắc các mục tiêu đề ra: Khảo sát và sửa chữa toàn bộ sai sót kỹ thuật của mã nguồn cũ, xây dựng pipeline Fine-tuning BERT chuẩn mực với kết quả kiểm chứng trung thực, và cung cấp đầy đủ tài liệu học tập cùng sản phẩm demo.  
+> *"Tóm lại, đồ án đã hoàn thành các mục tiêu đề ra: Xây dựng pipeline xử lý dữ liệu và mô hình hóa chuẩn mực không rò rỉ, đánh giá đối đầu công bằng giữa Baseline và Fine-Tuned BERT, và cung cấp đầy đủ tài liệu học tập cùng sản phẩm demo trực quan.  
 > Em xin chân thành cảm ơn Thầy/Cô và các bạn đã chú ý lắng nghe. Nhóm em rất mong nhận được những câu hỏi nhận xét và góp ý từ Hội đồng!"*

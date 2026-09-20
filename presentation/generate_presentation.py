@@ -22,6 +22,11 @@ if hasattr(sys.stdout, 'reconfigure'):
 if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8')
 
+# Đảm bảo repository root luôn có trong sys.path khi chạy trực tiếp hoặc dạng module
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+
 # Import cấu hình tập trung
 from src.config import (
     MODEL_NAME,
@@ -402,8 +407,8 @@ def create_presentation(is_draft=False):
                   "  - Mở khóa toàn bộ trọng số để thích ứng ngữ cảnh bài toán (True Fine-Tuning).\n\n"
                   "• Đồng bộ Tokenizer:\n"
                   "  - Sử dụng AutoTokenizer uncased đi kèm, từ điển 30,522 WordPiece tokens.\n\n"
-                  f"• Độ dài chuỗi tối đa (Max Length): {MAX_LENGTH}\n"
-                  "  - Căn cứ theo phân tích phân vị độ dài token từ EDA.\n\n"
+                  f"• Độ dài chuỗi tối đa: Candidate {MAX_LENGTH}\n"
+                  "  - Sẽ đối chiếu với phân vị p90, p95, p99 từ EDA token-length để quyết định 128 hay 256.\n\n"
                   "• Tầng phân loại (Sequence Classification Head):\n"
                   "  - Vector [CLS] (768 chiều) -> Dropout(0.1) -> Linear(768, 2) -> Softmax.")
 
@@ -418,7 +423,7 @@ def create_presentation(is_draft=False):
                   "• Chiến lược chọn Checkpoint:\n"
                   "  - Đánh giá trên Validation Set sau mỗi epoch.\n"
                   "  - Tự động lưu và phục hồi checkpoint có Validation F1 tốt nhất.\n\n"
-                  f"• Đảm bảo tái lập: Cố định seed={RANDOM_SEED} cho toàn bộ quá trình.")
+                  f"• Đảm bảo tái lập: Kiểm soát thông qua cố định seed={RANDOM_SEED} và tài liệu hóa môi trường.")
 
     # =========================================================================
     # SLIDE 9: BERT Fine-Tuning Pipeline
@@ -455,7 +460,7 @@ def create_presentation(is_draft=False):
     s10 = prs.slides.add_slide(blank_layout)
     add_header(s10, "09. Bảng So Sánh Kết Quả Thực Nghiệm Tổng Hợp", "Đánh giá độc lập trên cùng tập kiểm thử Test Set")
 
-    # SỬA LỖI KÍCH THƯỚC: 1 Header + 5 Model Rows = 6 Rows!
+    # Bảng 6 hàng x 6 cột: 1 Header + 2 Nhóm Models + 3 Reference Models
     rows, cols = 6, 6
     left, top, width, height = Inches(0.8), Inches(1.8), Inches(11.7), Inches(4.8)
     table_shape = s10.shapes.add_table(rows, cols, left, top, width, height)
@@ -484,11 +489,11 @@ def create_presentation(is_draft=False):
     bert_f1_str = f"{bert_metrics['macro_f1']:.4f}" if "macro_f1" in bert_metrics else "[PENDING]"
 
     data_rows = [
-        ["TF-IDF + Logistic Regression", "Mô hình cơ sở mới (Nhóm)", base_acc_str, base_prec_str, base_rec_str, base_f1_str],
-        ["NNLM (Google Embedding)", "Historical result from supplied notebook", "79.00%", "0.7900", "0.7900", "0.7900"],
-        ["BiLSTM (2-layer)", "Historical result from supplied notebook", "75.00%", "0.7500", "0.7500", "0.7500"],
-        ["Old 'BERT' (Reference)", "Historical result from supplied notebook", "65.20%", "0.6550", "0.6520", "0.6500"],
-        ["Fine-Tuned BERT (Ours)", "Mô hình chính mới (Nhóm)", bert_acc_str, bert_prec_str, bert_rec_str, bert_f1_str]
+        ["TF-IDF + Logistic Regression", "Baseline mới của nhóm", base_acc_str, base_prec_str, base_rec_str, base_f1_str],
+        ["Fine-Tuned BERT (Ours)", "Mô hình chính mới (Nhóm)", bert_acc_str, bert_prec_str, bert_rec_str, bert_f1_str],
+        ["NNLM (Google Embedding)", "Tham khảo (DL_Model.ipynb)", "79.00%", "Not reported", "Not reported", "Not reported"],
+        ["BiLSTM (2-layer)", "Tham khảo (DL_Model.ipynb)", "75.00%", "Not reported", "Not reported", "Not reported"],
+        ["Old 'BERT' (Reference)", "Tham khảo (DL_Model.ipynb)", "65.20%", "Not reported", "Not reported", "Not reported"]
     ]
 
     for i, row in enumerate(data_rows, 1):
@@ -496,16 +501,16 @@ def create_presentation(is_draft=False):
             cell = table.cell(i, j)
             cell.text = val
             cell.fill.solid()
-            # SỬA LỖI HIGHLIGHT: i == 5 là dòng Fine-Tuned BERT (Ours)
-            if i == 5:
+            # Highlight hàng Fine-Tuned BERT (Ours) ở vị trí i == 2
+            if i == 2:
                 cell.fill.fore_color.rgb = RGBColor(235, 248, 255)
             else:
                 cell.fill.fore_color.rgb = WHITE if i % 2 == 1 else BG_BOX
             for p in cell.text_frame.paragraphs:
                 p.font.size = Pt(12)
                 p.font.name = "Arial"
-                p.font.color.rgb = NAVY if i == 5 else CHARCOAL
-                if i == 5 or j == 0:
+                p.font.color.rgb = NAVY if i == 2 else CHARCOAL
+                if i == 2 or j == 0:
                     p.font.bold = True
                 p.alignment = PP_ALIGN.LEFT if j < 2 else PP_ALIGN.CENTER
 

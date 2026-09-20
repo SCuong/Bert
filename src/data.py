@@ -12,6 +12,7 @@ Tuân thủ nghiêm ngặt nguyên tắc Clean-Room & Chống Data Leakage:
 import os
 import sys
 import re
+import json
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit
@@ -23,11 +24,18 @@ if hasattr(sys.stdout, 'reconfigure'):
 if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8')
 
+# Đảm bảo repository root luôn có trong sys.path khi chạy trực tiếp hoặc dạng module
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+
 # Import cấu hình tập trung
 from src.config import (
     DEFAULT_DATA_PATH,
     FALLBACK_DATA_PATH,
     FIGURES_DIR,
+    METRICS_DIR,
+    TOKEN_STATS_PATH,
     RANDOM_SEED,
     TRAIN_RATIO,
     VAL_RATIO,
@@ -52,6 +60,13 @@ def clean_text_minimal(text: str) -> str:
 def load_and_validate_data(file_path: str = None) -> pd.DataFrame:
     """
     Nạp dữ liệu, thực hiện Data Audit toàn diện và loại bỏ duplicate/rò rỉ trước khi split.
+    Xử lý rõ ràng và không double-count:
+    1. Validate schema (phải có cột 'text' và 'label').
+    2. Missing values: Kiểm tra và loại bỏ các dòng có text null hoặc label null.
+    3. Empty text: Làm sạch tối thiểu và loại bỏ các dòng có text rỗng sau khi làm sạch.
+    4. Validate nhãn: Ép kiểu về int và kiểm tra nghiêm ngặt nhãn chỉ thuộc {0, 1}.
+    5. Conflicting labels: Phát hiện và loại bỏ các dòng có text trùng lặp nhưng nhãn khác nhau.
+    6. Exact duplicates: Loại bỏ các dòng trùng lặp text hoàn toàn để chống rò rỉ qua Test Set.
     """
     if file_path is None:
         if os.path.exists(DEFAULT_DATA_PATH):
@@ -73,55 +88,69 @@ def load_and_validate_data(file_path: str = None) -> pd.DataFrame:
     if not required_cols.issubset(df.columns):
         raise ValueError(f"Dữ liệu thiếu cột bắt buộc. Yêu cầu: {required_cols}, Hiện có: {df.columns.tolist()}")
 
-    # 2. Missing values & Minimal Cleaning
-    null_text_count = df["text"].isnull().sum()
-    null_label_count = df["label"].isnull().sum()
-    
+    # 2. Missing values handling (kiểm tra trước khi ép kiểu để tránh lỗi non-finite)
+    null_text_mask = df["text"].isnull()
+    null_label_mask = df["label"].isnull()
+    missing_rows_mask = null_text_mask | null_label_mask
+
+    null_text_count = int(null_text_mask.sum())
+    null_label_count = int(null_label_mask.sum())
+    missing_rows_count = int(missing_rows_mask.sum())
+
+    # Loại bỏ các dòng có text null hoặc label null
+    df = df[~missing_rows_mask].copy()
+
+    # 3. Minimal text cleaning & Empty text check
     df["text"] = df["text"].apply(clean_text_minimal)
-    empty_text_count = (df["text"].str.len() == 0).sum()
-    
-    # Loại bỏ null và rỗng
-    df = df[df["text"].str.len() > 0].copy()
-    
-    # 3. Validate Labels (phải thuộc {0, 1})
+    empty_text_mask = (df["text"].str.len() == 0)
+    empty_text_count = int(empty_text_mask.sum())
+    df = df[~empty_text_mask].copy()
+
+    # 4. Validate và chuyển đổi nhãn (sau khi đã loại bỏ toàn bộ missing labels)
     try:
         df["label"] = df["label"].astype(int)
     except Exception as e:
         raise ValueError(f"Không thể ép kiểu cột 'label' về số nguyên: {e}")
-        
+
     invalid_labels = set(df["label"].unique()) - {0, 1}
     if invalid_labels:
         raise ValueError(f"Phát hiện nhãn không hợp lệ ngoài miền {{0, 1}}: {invalid_labels}")
 
-    # 4. Duplicate & Data Leakage Audit trước khi split
-    # a. Kiểm tra văn bản trùng lặp nhưng xung đột nhãn (cùng text nhưng vừa gắn 0 vừa gắn 1)
+    # 5. Conflicting labels audit (cùng text nhưng vừa gắn 0 vừa gắn 1)
     text_label_counts = df.groupby("text")["label"].nunique()
     conflicting_texts = text_label_counts[text_label_counts > 1].index
-    conflicting_count = len(conflicting_texts)
-    
-    if conflicting_count > 0:
-        print(f"[!] CẢNH BÁO: Phát hiện {conflicting_count} văn bản có nhãn xung đột (Conflicting Labels). Loại bỏ toàn bộ để tránh nhiễu.")
-        df = df[~df["text"].isin(conflicting_texts)].copy()
+    conflicting_rows_mask = df["text"].isin(conflicting_texts)
+    conflicting_rows_count = int(conflicting_rows_mask.sum())
+    conflicting_unique_texts = len(conflicting_texts)
 
-    # b. Kiểm tra và loại bỏ exact duplicate text
-    exact_duplicates_count = df.duplicated(subset=["text"]).sum()
+    if conflicting_rows_count > 0:
+        print(f"[!] CẢNH BÁO: Phát hiện {conflicting_unique_texts} văn bản ({conflicting_rows_count} dòng) có nhãn xung đột (Conflicting Labels). Loại bỏ toàn bộ để tránh nhiễu.")
+        df = df[~conflicting_rows_mask].copy()
+
+    # 6. Exact duplicates audit (loại bỏ trùng lặp text giữ lại mẫu đầu tiên)
+    exact_duplicates_count = int(df.duplicated(subset=["text"]).sum())
     if exact_duplicates_count > 0:
-        print(f"[!] Phát hiện {exact_duplicates_count} mẫu trùng lặp hoàn toàn (Exact Duplicates). Loại bỏ để chống rò rỉ dữ liệu qua Test Set.")
+        print(f"[!] Phát hiện {exact_duplicates_count} mẫu trùng lặp văn bản hoàn toàn (Exact Duplicates). Loại bỏ để chống rò rỉ dữ liệu qua Test Set.")
         df = df.drop_duplicates(subset=["text"], keep="first").copy()
 
     final_count = len(df)
     total_dropped = initial_count - final_count
 
-    print("\n" + "="*50)
+    # Ràng buộc kiểm toán tính toàn vẹn: Không double-count số mẫu bị loại
+    assert total_dropped == (missing_rows_count + empty_text_count + conflicting_rows_count + exact_duplicates_count), \
+        f"Lệch kiểm toán mẫu: {total_dropped} != {missing_rows_count} + {empty_text_count} + {conflicting_rows_count} + {exact_duplicates_count}"
+
+    print("\n" + "="*55)
     print("BÁO CÁO TOÀN VẸN DỮ LIỆU (DATA AUDIT REPORT):")
-    print(f"- Số mẫu ban đầu:              {initial_count}")
-    print(f"- Mẫu bị thiếu / rỗng (Dropped): {empty_text_count + null_text_count + null_label_count}")
-    print(f"- Mẫu xung đột nhãn (Dropped):   {conflicting_count}")
+    print(f"- Số mẫu ban đầu:                {initial_count}")
+    print(f"- Mẫu thiếu text / label:        {missing_rows_count} (null text: {null_text_count}, null label: {null_label_count})")
+    print(f"- Mẫu rỗng sau khi làm sạch:     {empty_text_count}")
+    print(f"- Mẫu có nhãn xung đột (Dropped):{conflicting_rows_count} ({conflicting_unique_texts} cụm text)")
     print(f"- Mẫu trùng lặp text (Dropped):  {exact_duplicates_count}")
-    print(f"- Tổng số mẫu bị loại bỏ:       {total_dropped}")
+    print(f"- Tổng số mẫu bị loại bỏ:        {total_dropped}")
     print(f"- Số mẫu hợp lệ duy nhất:        {final_count}")
     print(f"- Phân bố nhãn sau làm sạch:     {df['label'].value_counts().to_dict()}")
-    print("="*50 + "\n")
+    print("="*55 + "\n")
 
     return df
 
@@ -160,7 +189,7 @@ def split_data(df: pd.DataFrame, train_ratio=TRAIN_RATIO, val_ratio=VAL_RATIO, t
             f"Val-Test overlap: {len(leakage_val_test)}, "
             f"Train-Val overlap: {len(leakage_train_val)}"
         )
-    print("[+] XÁC NHẬN: 100% không có rò rỉ dữ liệu (Zero Overlap giữa Train, Val và Test).")
+    print("[+] XÁC NHẬN: Không có rò rỉ dữ liệu (Zero Overlap giữa Train, Val và Test).")
 
     print(f"[*] Phân chia tập dữ liệu hoàn tất (seed={random_state}):")
     print(f"    - Train set: {len(train_df)} mẫu ({len(train_df)/len(df)*100:.1f}%) | Phân bố: {train_df['label'].value_counts().to_dict()}")
@@ -172,10 +201,13 @@ def split_data(df: pd.DataFrame, train_ratio=TRAIN_RATIO, val_ratio=VAL_RATIO, t
 def analyze_and_plot_data(df: pd.DataFrame, output_dir: str = None):
     """
     Đo lường độ dài token thực tế bằng BERT Tokenizer và xuất các biểu đồ trực quan hóa.
+    Tính toán các phân vị: median, p90, p95, p99, tỷ lệ cắt cụt tại 128 và 256.
+    KHÔNG huấn luyện bất kỳ mô hình nào tại bước này.
     """
     if output_dir is None:
         output_dir = FIGURES_DIR
     os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(METRICS_DIR, exist_ok=True)
 
     # 1. Vẽ phân bố nhãn
     plt.figure(figsize=(6, 4))
@@ -198,37 +230,69 @@ def analyze_and_plot_data(df: pd.DataFrame, output_dir: str = None):
         from transformers import AutoTokenizer
         print(f"[*] Đang tải tokenizer thực tế '{MODEL_NAME}' để đo lường phân bố độ dài token...")
         tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-        
-        # Tokenize không truncate để đo chiều dài thực
+
         token_lengths = [len(tokenizer.encode(t, truncation=False)) for t in df["text"]]
-        df["token_length"] = token_lengths
-        
-        print("\n" + "="*50)
-        print("THỐNG KÊ ĐỘ DÀI TOKEN THỰC TẾ (BERT TOKENIZER STATS):")
-        stats = df["token_length"].describe(percentiles=[0.25, 0.5, 0.75, 0.90, 0.95, 0.99])
-        print(stats)
-        print("="*50 + "\n")
-        
+        token_lengths_arr = np.array(token_lengths)
+        df_copy = df.copy()
+        df_copy["token_length"] = token_lengths
+
+        # Tính toán các chỉ số phân vị theo yêu cầu
+        stats_dict = {
+            "total_samples": int(len(token_lengths_arr)),
+            "mean": float(np.mean(token_lengths_arr)),
+            "std": float(np.std(token_lengths_arr)),
+            "min": int(np.min(token_lengths_arr)),
+            "median": float(np.median(token_lengths_arr)),
+            "p90": float(np.percentile(token_lengths_arr, 90)),
+            "p95": float(np.percentile(token_lengths_arr, 95)),
+            "p99": float(np.percentile(token_lengths_arr, 99)),
+            "max": int(np.max(token_lengths_arr)),
+            "pct_truncated_at_128": float((token_lengths_arr > 128).mean() * 100),
+            "pct_truncated_at_256": float((token_lengths_arr > 256).mean() * 100),
+            "candidate_max_length": MAX_LENGTH
+        }
+
+        print("\n" + "="*55)
+        print("THỐNG KÊ PHÂN VỊ ĐỘ DÀI TOKEN THỰC TẾ (BERT TOKENIZER):")
+        print(f"- Tổng số mẫu kiểm tra:       {stats_dict['total_samples']:,}")
+        print(f"- Giá trị trung bình (Mean):   {stats_dict['mean']:.2f} tokens")
+        print(f"- Độ lệch chuẩn (Std):         {stats_dict['std']:.2f} tokens")
+        print(f"- Giá trị nhỏ nhất (Min):      {stats_dict['min']} tokens")
+        print(f"- Trung vị (Median / p50):     {stats_dict['median']:.1f} tokens")
+        print(f"- Phân vị 90 (p90):            {stats_dict['p90']:.1f} tokens")
+        print(f"- Phân vị 95 (p95):            {stats_dict['p95']:.1f} tokens")
+        print(f"- Phân vị 99 (p99):            {stats_dict['p99']:.1f} tokens")
+        print(f"- Giá trị lớn nhất (Max):      {stats_dict['max']} tokens")
+        print(f"- Tỷ lệ cắt cụt nếu chọn 128:  {stats_dict['pct_truncated_at_128']:.2f}%")
+        print(f"- Tỷ lệ cắt cụt nếu chọn 256:  {stats_dict['pct_truncated_at_256']:.2f}%")
+        print(f"- Ngưỡng candidate hiện tại:   {MAX_LENGTH}")
+        print("="*55 + "\n")
+
+        with open(TOKEN_STATS_PATH, "w", encoding="utf-8") as f:
+            json.dump(stats_dict, f, indent=4, ensure_ascii=False)
+        print(f"[+] Đã lưu số liệu thống kê độ dài token tại: {TOKEN_STATS_PATH}")
+
         # Vẽ biểu đồ phân bố độ dài token
         plt.figure(figsize=(9, 4.5))
-        sns.histplot(data=df, x="token_length", hue="label", bins=50, kde=True, palette=["#e74c3c", "#2ecc71"], alpha=0.5)
-        plt.axvline(x=128, color="#34495e", linestyle="--", linewidth=1.5, label="Cutoff 128")
-        plt.axvline(x=256, color="#8e44ad", linestyle=":", linewidth=1.5, label="Cutoff 256")
+        sns.histplot(data=df_copy, x="token_length", hue="label", bins=50, kde=True, palette=["#e74c3c", "#2ecc71"], alpha=0.5)
+        plt.axvline(x=128, color="#34495e", linestyle="--", linewidth=1.5, label=f"Cutoff 128 ({stats_dict['pct_truncated_at_128']:.1f}% truncated)")
+        plt.axvline(x=256, color="#8e44ad", linestyle=":", linewidth=1.5, label=f"Cutoff 256 ({stats_dict['pct_truncated_at_256']:.1f}% truncated)")
         plt.title(f"BERT Token Length Distribution ({MODEL_NAME})", fontsize=13, fontweight="bold", pad=12)
         plt.xlabel("Number of Tokens", fontsize=11)
         plt.ylabel("Frequency", fontsize=11)
         plt.legend(loc="upper right")
-        plt.xlim(0, 400)
+        plt.xlim(0, max(400, int(stats_dict['p99'] * 1.2)))
         plt.tight_layout()
         token_fig_path = os.path.join(output_dir, "token_length_distribution.png")
         plt.savefig(token_fig_path, dpi=300)
         plt.close()
         print(f"[+] Đã lưu biểu đồ phân bố độ dài token tại: {token_fig_path}")
-        
+
     except Exception as e:
-        print(f"[!] Không thể chạy BERT tokenizer để đo token length (có thể do môi trường offline): {e}")
+        print(f"[!] Không thể chạy BERT tokenizer để đo token length: {e}")
         print("[!] Giữ trạng thái phân tích độ dài token là [PENDING EXPERIMENT].")
 
 if __name__ == "__main__":
     df = load_and_validate_data()
     train_df, val_df, test_df = split_data(df)
+    analyze_and_plot_data(df)

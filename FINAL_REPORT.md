@@ -44,17 +44,20 @@ Dự án được triển khai **mới hoàn toàn từ đầu (Clean-Room Imple
 
 ## 3. Dữ Liệu & Tiền Xử Lý (Data)
 
-- **Quy mô:** 20,000 bài đánh giá khách sạn bằng tiếng Anh (`data/dts_20k_raw.csv` lưu cục bộ).
-- **Phân bố:** 10,000 mẫu Tích cực (1) và 10,000 mẫu Tiêu cực (0) — Cân bằng hoàn hảo 1:1.
-- **Làm sạch tối thiểu (Minimal Cleaning):**
-  - Loại bỏ các mẫu rỗng hoặc chỉ chứa khoảng trắng.
-  - Xóa các thẻ HTML rác (`<br />`, `<p>`).
-  - Chuẩn hóa khoảng trắng.
+- **Quy mô & Nguồn gốc:** 20,000 bài đánh giá khách sạn bằng tiếng Anh (`data/dts_20k_raw.csv` do giảng viên cung cấp - teacher-provided dataset).
+- **Phân bố ban đầu:** 10,000 mẫu Tích cực (1) và 10,000 mẫu Tiêu cực (0) — Cân bằng 1:1 ở tập dữ liệu thô.
+- **Tiền kiểm định & Làm sạch tối thiểu (Pre-split Audit & Minimal Cleaning):**
+  - Xử lý các dòng thiếu text hoặc thiếu nhãn.
+  - Xóa các thẻ HTML rác (`<br />`, `<p>`) và chuẩn hóa khoảng trắng.
+  - Loại bỏ các dòng văn bản rỗng sau khi làm sạch.
+  - Phát hiện và loại bỏ các văn bản có nhãn xung đột (Conflicting Labels).
+  - Loại bỏ các văn bản trùng lặp hoàn toàn (Exact Duplicates) để ngăn chặn triệt để rò rỉ qua Test Set.
   - **Giữ nguyên 100% từ ngữ tự nhiên, dấu câu, chữ hoa/thường và từ phủ định** nhằm phục vụ thuật toán WordPiece và Positional Embeddings của BERT.
 - **Phân chia dữ liệu (Stratified Split, seed=42):**
   - **Train Set:** 70.0% — Dùng để cập nhật gradient.
   - **Validation Set:** 10.0% — Dùng để chọn checkpoint và Early Stopping.
   - **Test Set:** 20.0% — Hoàn toàn độc lập, chỉ nạp đúng 1 lần khi đánh giá cuối cùng.
+  - **Tính tái lập:** Được kiểm soát chặt chẽ (`controlled for reproducibility with fixed seeds and documented environment`).
 
 ---
 
@@ -73,22 +76,22 @@ Dự án được triển khai **mới hoàn toàn từ đầu (Clean-Room Imple
   - Epochs: 2–3 epochs.
   - Batch size: 16 (FP16 mixed precision nếu có GPU).
   - Tự động nạp lại checkpoint có Validation F1 cao nhất (`load_best_model_at_end=True`).
+  - Ghi nhận đầy đủ đường cong học tập (Train Loss và Validation Loss) qua từng epoch.
 
 ---
 
 ## 5. Kết Quả Thực Nghiệm Đối Đầu (Results)
 
 > [!NOTE]
-> Các kết quả của NNLM, BiLSTM và Old BERT được trích xuất trực tiếp từ cell đầu ra của notebook tham khảo `DL_Model.ipynb` và được ghi nhận dưới dạng kết quả lịch sử.  
-> Các chỉ số của mô hình mới (TF-IDF + LR và Fine-Tuned BERT) sẽ được ghi nhận sau khi người dùng phê duyệt chạy thực nghiệm.
+> Các chỉ số của mô hình nhóm (TF-IDF + LR và Fine-Tuned BERT) sẽ được ghi nhận trực tiếp sau khi hoàn tất thực thi trên tập kiểm thử độc lập.  
+> Các kết quả tham khảo từ notebook môn học (`DL_Model.ipynb`) chỉ báo cáo chỉ số Accuracy; các chỉ số Precision, Recall, Macro F1 không được công bố trong tài liệu gốc (`Not reported`).
 
-| Mô Hình / Phương Pháp | Bản Chất Kỹ Thuật | Accuracy | Precision | Recall | Macro F1 | Thời Gian Train |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **NNLM (Google Embedding)** | *Historical result from supplied notebook* | 79.00% | 0.7900 | 0.7900 | 0.7900 | ~10 epochs |
-| **BiLSTM (2-layer)** | *Historical result from supplied notebook* | 75.00% | 0.7500 | 0.7500 | 0.7500 | ~50 epochs |
-| **Old "BERT" (Bị lỗi kỹ thuật)** | *Historical result from supplied notebook* | 65.20% | 0.6550 | 0.6520 | 0.6500 | ~100 epochs |
-| **TF-IDF + Logistic Regression** | *Mô hình cơ sở mới (Nhóm)* | `[PLACEHOLDER]` | `[PLACEHOLDER]` | `[PLACEHOLDER]` | `[PLACEHOLDER]` | `[PLACEHOLDER]` |
-| **Fine-Tuned BERT (Ours)** | *Mô hình chính mới (Nhóm)* | `[PLACEHOLDER]` | `[PLACEHOLDER]` | `[PLACEHOLDER]` | `[PLACEHOLDER]` | `[PLACEHOLDER]` |
+| Mô Hình / Phương Pháp | Vai Trò / Phân Loại | Accuracy | Macro Precision | Macro Recall | Macro F1 |
+| :--- | :--- | :---: | :---: | :---: | :---: |
+| **TF-IDF + Logistic Regression** | *Mô hình cơ sở mới (Nhóm)* | `[PENDING]` | `[PENDING]` | `[PENDING]` | `[PENDING]` |
+| **Fine-Tuned BERT (Ours)** | *Mô hình chính mới (Nhóm)* | `[PENDING]` | `[PENDING]` | `[PENDING]` | `[PENDING]` |
+
+*Tham khảo kết quả lịch sử (`DL_Model.ipynb`):* NNLM: Acc 79.00% | BiLSTM: Acc 75.00% | Old BERT: Acc 65.20% (Chi tiết phân tích lỗi kỹ thuật xem tại [`docs/03_old_bert_analysis.md`](docs/03_old_bert_analysis.md)).
 
 ---
 
@@ -108,26 +111,26 @@ Dự án được triển khai **mới hoàn toàn từ đầu (Clean-Room Imple
 
 ## 7. Hướng Dẫn Cài Đặt & Khởi Chạy (How to Run)
 
-Toàn bộ các câu lệnh dưới đây đều hoạt động độc lập từ repository root:
+Toàn bộ các câu lệnh dưới đây được chuẩn hóa chạy dạng package từ repository root:
 
 ```bash
 # 1. Cài đặt các thư viện phụ thuộc
 pip install -r requirements.txt
 
-# 2. Phân tích dữ liệu & Xuất biểu đồ EDA
-python src/data.py
+# 2. Phân tích dữ liệu, kiểm toán leakage & Xuất biểu đồ EDA
+python -m src.data
 
 # 3. Huấn luyện và đánh giá mô hình cơ sở (Baseline)
-python src/train_baseline.py
+python -m src.train_baseline
 
 # 4. Huấn luyện & Fine-tuning mô hình BERT
-python src/train_bert.py
+python -m src.train_bert
 
 # 5. Đánh giá mô hình BERT trên Test Set & Trích xuất ca lỗi
-python src/evaluate.py
+python -m src.evaluate
 
-# 6. Tạo slide thuyết trình PowerPoint chuẩn học thuật
-python presentation/generate_presentation.py
+# 6. Tạo slide thuyết trình PowerPoint (Chế độ nháp hoặc chính thức)
+python -m presentation.generate_presentation --draft
 
 # 7. Khởi chạy ứng dụng Web Demo tương tác
 streamlit run app/app.py
@@ -137,7 +140,7 @@ streamlit run app/app.py
 
 ## 8. Vị Trí Slide Thuyết Trình & Sản Phẩm Demo
 
-- **File PowerPoint hoàn chỉnh:** `presentation/BERT_Project.pptx`
+- **Trình tạo Slide PowerPoint:** `presentation/generate_presentation.py` (*presentation generator implemented; final deck pending experiment results*)
 - **Dàn ý chi tiết 15 slide:** `presentation/presentation_outline.md`
 - **Kịch bản thuyết trình 8-10 phút:** `presentation/speaker_notes.md`
 - **Mã nguồn ứng dụng Demo:** `app/app.py`

@@ -85,18 +85,21 @@
 
 ## 4. Các Thực Nghiệm Chưa Chạy (Unexecuted Experiments)
 
-1. **Baseline Training & Evaluation:**
-   - Lệnh: `python src/train_baseline.py`
-   - Mục tiêu: Thiết lập mốc Accuracy, F1 và Confusion Matrix thực tế cho TF-IDF + Logistic Regression trên 4,000 mẫu Test.
-2. **BERT Fine-Tuning:**
-   - Lệnh: `python src/train_bert.py`
-   - Mục tiêu: Huấn luyện `bert-base-uncased` trong 2-3 epochs trên GPU/CPU, ghi nhận đường cong học tập thực tế.
-3. **BERT Test Set Evaluation & Error Extraction:**
-   - Lệnh: `python src/evaluate.py`
+1. **EDA & Token Length Distribution:**
+   - Lệnh: `python -m src.data`
+   - Mục tiêu: Thực hiện Data Audit, đo lường phân vị độ dài token BERT thực tế, xuất `class_distribution.png` và `token_length_distribution.png`.
+2. **Baseline Training & Evaluation:**
+   - Lệnh: `python -m src.train_baseline`
+   - Mục tiêu: Thiết lập mốc Accuracy, F1 và Confusion Matrix thực tế cho TF-IDF + Logistic Regression trên tập Test.
+3. **BERT Fine-Tuning:**
+   - Lệnh: `python -m src.train_bert`
+   - Mục tiêu: Huấn luyện `bert-base-uncased` trong 2-3 epochs trên GPU/CPU, ghi nhận đường cong học tập thực tế (Train Loss & Val Loss).
+4. **BERT Test Set Evaluation & Error Extraction:**
+   - Lệnh: `python -m src.evaluate`
    - Mục tiêu: Đánh giá duy nhất 1 lần trên Test Set và trích xuất 20 ca lỗi thực tế (False Positives và False Negatives).
-4. **PowerPoint Deck Generation:**
-   - Lệnh: `python presentation/generate_presentation.py`
-   - Mục tiêu: Nhúng các biểu đồ và số liệu thực nghiệm thực tế vào file `presentation/BERT_Project.pptx`.
+5. **PowerPoint Deck Generation:**
+   - Lệnh: `python -m presentation.generate_presentation` (hoặc `--draft` khi chưa chạy thực nghiệm)
+   - Mục tiêu: Nhúng các biểu đồ và số liệu thực nghiệm thực tế vào file slide PowerPoint.
 
 ---
 
@@ -105,20 +108,27 @@
 1. **Vấn đề mã hóa UTF-8 trên Windows Console (cp1252):**
    - *Hiện tượng:* Khi in tiếng Việt ra console Windows, Python gặp lỗi `UnicodeEncodeError: 'charmap' codec can't encode character`.
    - *Xử lý:* Đã bổ sung `sys.stdout.reconfigure(encoding='utf-8')` và `sys.stderr.reconfigure(encoding='utf-8')` vào đầu tất cả các file mã nguồn.
-2. **Loại bỏ phụ thuộc thư viện bên ngoài `datasets`:**
-   - *Hiện tượng:* Gói `datasets` của Hugging Face có thể gây xung đột phụ thuộc hoặc yêu cầu cấu hình bổ sung.
-   - *Xử lý:* Viết lại `HotelReviewDataset` bằng lớp `torch.utils.data.Dataset` thuần túy của PyTorch, giúp mã nguồn nhẹ hơn và hoàn toàn không phụ thuộc vào gói `datasets`.
-3. **Cô lập Dataset và Tránh rò rỉ vào Git:**
-   - *Hiện tượng:* File `dts_20k_raw.csv` có dung lượng tương đối lớn và không nên commit trực tiếp vào source control.
-   - *Xử lý:* Cấu hình `.gitignore` loại trừ file CSV và thư mục model weights, giữ dataset cục bộ trong `data/dts_20k_raw.csv` với cơ chế fallback tự động.
+2. **Tương thích API Hugging Face Transformers mới (`processing_class`):**
+   - *Hiện tượng:* Phiên bản Transformers mới loại bỏ tham số `tokenizer` trong `Trainer.__init__`, thay thế bằng `processing_class`.
+   - *Xử lý:* Kiểm tra tham số runtime bằng `inspect.signature` để tự động truyền `processing_class` hoặc `tokenizer` tương thích tuyệt đối.
+3. **Xử lý Missing Labels & Kiểm toán rò rỉ không double-count:**
+   - *Hiện tượng:* Ép kiểu `df['label'].astype(int)` trước khi xử lý missing values có thể gây lỗi non-finite value.
+   - *Xử lý:* Rà soát missing text và missing label độc lập, loại bỏ trước khi ép kiểu và xác thực miền `{0, 1}`, có assertion kiểm tra tính nhất quán số lượng loại bỏ.
+4. **Cô lập Test Dataset trong quá trình huấn luyện:**
+   - *Hiện tượng:* `train_bert.py` từng khởi tạo `test_ds` dù không dùng tới.
+   - *Xử lý:* Loại bỏ hoàn toàn `test_ds` khỏi `train_bert.py`; tập Test chỉ được nạp ở `evaluate.py`.
+5. **Chuẩn hóa Package Entrypoints:**
+   - *Hiện tượng:* Chạy `python src/xxx.py` trực tiếp có thể gây lỗi `ModuleNotFoundError: No module named 'src'`.
+   - *Xử lý:* Chuẩn hóa toàn bộ câu lệnh sang `python -m src.<module>`, đồng thời bổ sung `sys.path.insert(0, REPO_ROOT)` làm phương án dự phòng.
 
 ---
 
 ## 6. Các Giả Định Kỹ Thuật (Assumptions)
 
-1. **Dataset:** Sử dụng file `dts_20k_raw.csv` (20,000 mẫu) do giảng viên cung cấp, giữ nguyên câu tự nhiên cho BERT.
-2. **Hardware:** Máy hiện tại có Python 3.11, PyTorch và Transformers đã cài đặt sẵn sàng. Nếu huấn luyện trên GPU thì dùng FP16, nếu trên CPU thì tự động điều chỉnh số batch hoặc sử dụng Colab GPU notebook (`BERT_Training_Colab.ipynb`).
-3. **Random Seed:** Cố định `seed = 42` xuyên suốt để đảm bảo tính tái lập 100%.
+1. **Dataset:** Sử dụng tập dữ liệu `dts_20k_raw.csv` do giảng viên cung cấp (teacher-provided dataset), giữ nguyên câu tự nhiên cho BERT.
+2. **Hardware:** Máy hiện tại có Python 3.11, PyTorch và Transformers đã cài đặt sẵn sàng.
+3. **Random Seed & Tái lập:** Cố định `seed = 42` xuyên suốt (`controlled for reproducibility with fixed seeds and documented environment`).
+4. **Độ dài chuỗi (Max Length):** Candidate ban đầu là 128, sẽ được quyết định chính thức sau khi phân tích phân vị độ dài token từ EDA.
 
 ---
 
@@ -128,19 +138,19 @@ Khi người dùng phê duyệt tiến hành chạy thực nghiệm:
 
 ```powershell
 # Bước 1: Sinh biểu đồ phân tích khám phá dữ liệu (EDA)
-python src/data.py
+python -m src.data
 
 # Bước 2: Huấn luyện và đánh giá Baseline (TF-IDF + Logistic Regression)
-python src/train_baseline.py
+python -m src.train_baseline
 
 # Bước 3: Huấn luyện & Fine-tuning BERT
-python src/train_bert.py
+python -m src.train_bert
 
 # Bước 4: Đánh giá mô hình BERT trên Test Set & Trích xuất 20 ca lỗi thực tế
-python src/evaluate.py
+python -m src.evaluate
 
 # Bước 5: Sinh slide PowerPoint nhúng biểu đồ và số liệu thực tế
-python presentation/generate_presentation.py
+python -m presentation.generate_presentation
 
 # Bước 6: Khởi chạy ứng dụng Web Demo Streamlit
 streamlit run app/app.py
