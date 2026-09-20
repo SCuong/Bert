@@ -60,18 +60,18 @@ Dựa theo Slide 4 của `AI Project Cycle.pptx`:
 ## 7. Success Criteria (Tiêu chí thành công)
 Bám sát tinh thần AI Project Cycle, dự án không đặt các chỉ số võ đoán trước thực nghiệm mà xác định các tiêu chí cốt lõi:
 1. **Pipeline chuẩn mực và toàn vẹn:** Tiền xử lý tối thiểu bảo tồn ngữ cảnh, không lỗi tương thích API thư viện (`processing_class`).
-2. **Không rò rỉ dữ liệu (Zero Data Leakage):** Tập Test (20%) hoàn toàn độc lập, chỉ được nạp đúng một lần khi đánh giá cuối cùng; kiểm toán không trùng lặp văn bản giữa các tập.
-3. **So sánh đối đầu công bằng (Fair Comparison):** Baseline (TF-IDF + LR) và Fine-Tuned BERT được đánh giá trên cùng tập Test với cùng tiêu chuẩn đo lường.
+2. **Bảo vệ tập kiểm thử & Không rò rỉ dữ liệu (Sealed Test Set & Zero Data Leakage):** Tập Test (20%) hoàn toàn độc lập; không có bất kỳ nhãn, dự đoán hay chỉ số nào của Test Set được kiểm tra hoặc sử dụng cho việc ra quyết định mô hình/siêu tham số trước lượt đánh giá so sánh cuối cùng. Kiểm toán xác nhận 0 mẫu trùng lặp giữa các tập.
+3. **So sánh đối đầu công bằng (Fair Comparison):** Baseline (TF-IDF + LR) và Fine-Tuned BERT được đánh giá trên cùng tập Test với cùng tiêu chuẩn đo lường trong cùng một lượt chạy của `src/evaluate.py`.
 4. **Trung thực trong báo cáo (Honest Reporting):** Toàn bộ kết quả thực nghiệm được ghi nhận trực tiếp từ log thực thi, không tự ý suy diễn các chỉ số chưa được chạy.
 5. **Tính tái lập có kiểm soát (Controlled Reproducibility):** Cố định random seed `42` và tài liệu hóa chi tiết môi trường thực thi (`controlled for reproducibility with fixed seeds and documented environment`).
 
 ---
 
 ## 8. Constraints & Assumptions (Ràng buộc & Giả định)
-- **Tài nguyên tính toán:** Dự án hỗ trợ chạy trên GPU cục bộ hoặc phương án dự phòng trên Google Colab T4 GPU.
+- **Tài nguyên tính toán:** Dự án hỗ trợ chạy trên GPU cục bộ hoặc phương án dự phòng trên Google Colab GPU (T4).
 - **Ràng buộc dữ liệu:** Sử dụng tập dữ liệu `dts_20k_raw.csv` do giảng viên cung cấp (teacher-provided dataset).
 - **Ràng buộc tiền xử lý:** BERT đã có tokenizer WordPiece được huấn luyện trước trên văn bản tự nhiên, do đó KHÔNG loại bỏ stopwords và KHÔNG lemmatize câu làm phá hủy ngữ pháp tự nhiên.
-- **Độ dài chuỗi (Max Length):** Đã xác nhận lựa chọn **128** dựa trên phân vị độ dài token thực tế từ EDA trên tập Train+Val (p95 = 121 tokens, chỉ cắt cụt 3.93%) giúp tối ưu hóa chi phí tính toán $\mathcal{O}(L^2)$ và đảm bảo an toàn bộ nhớ trên GPU 8GB VRAM (RTX 5050 / Colab T4).
+- **Độ dài chuỗi (Max Length):** Đã xác nhận lựa chọn **128** dựa trên phân vị độ dài token thực tế từ EDA trên tập Train+Val (p95 = 121.0 tokens, chỉ cắt cụt 3.93%) giúp tối ưu hóa chi phí tính toán $\mathcal{O}(L^2)$ so với ngưỡng 256 (tăng $4\times$ kích thước ma trận chú ý nhưng chỉ tăng thêm 3.84% độ phủ văn bản). Mức tiêu thụ bộ nhớ và thời gian thực thi thực tế sẽ được đo lường cụ thể trong quá trình huấn luyện.
 
 ---
 
@@ -80,15 +80,17 @@ Bám sát tinh thần AI Project Cycle, dự án không đặt các chỉ số v
 flowchart LR
     A["Raw Data (dts_20k_raw.csv)"] --> B["Minimal Cleaning & Pre-split Audit"]
     B --> C["Stratified Split (70/10/20, seed=42)"]
-    C --> D1["TF-IDF + Logistic Regression"]
-    C --> D2["bert-base-uncased Tokenizer"]
+    C -->|Train| D1["TF-IDF + Logistic Regression"]
+    C -->|Train & Val| D2["bert-base-uncased Tokenizer"]
     D2 --> E["Fine-Tuning BERT (AdamW, lr=2e-5)"]
-    D1 --> F1["Baseline Metrics"]
-    E --> F2["BERT Metrics"]
-    F1 & F2 --> G["Comparative Evaluation"]
-    G --> H["Error Analysis (20 cases)"]
-    E --> I["Streamlit Demo App"]
-    G & H --> J["Presentation Generator (PPTX)"]
+    D1 -->|Val Only| F1["Baseline Val Metrics"]
+    E -->|Val Checkpoint| F2["Best BERT Model"]
+    C -->|Test - Sealed until here| G["Comparative Evaluation (evaluate.py)"]
+    D1 & F2 --> G
+    G --> H["Baseline & BERT Test Metrics"]
+    G --> I["Error Analysis (20 cases)"]
+    F2 --> J["Streamlit Demo App"]
+    H & I --> K["Presentation Generator (PPTX)"]
 ```
 
 ---

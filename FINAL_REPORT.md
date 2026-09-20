@@ -31,9 +31,9 @@ Qua quá trình khảo sát, kiểm tra toàn bộ workspace giảng viên cung 
 
 Dự án được triển khai **mới hoàn toàn từ đầu; không tái sử dụng mã nguồn tham khảo (independent implementation from scratch; reference code was not reused)**, độc lập tại repository root:
 1. **Pipeline dữ liệu (`src/data.py`):** Làm sạch tối thiểu bảo toàn ngữ cảnh cho Transformer, phân chia dữ liệu Stratified (70% Train, 10% Val, 20% Test) với seed cố định `42`.
-2. **Mô hình cơ sở (`src/train_baseline.py`):** Xây dựng mô hình TF-IDF (10,000 unigram + bigram) kết hợp Logistic Regression.
+2. **Mô hình cơ sở (`src/train_baseline.py`):** Xây dựng mô hình TF-IDF (10,000 unigram + bigram) kết hợp Logistic Regression, đánh giá phát triển trên Validation Set và niêm phong tập Test Set.
 3. **Mô hình BERT Fine-Tuning (`src/train_bert.py`):** Tinh chỉnh mô hình chính thức `google-bert/bert-base-uncased` bằng Hugging Face Transformers và PyTorch, sử dụng AdamW (lr=2e-5, weight decay=0.01), huấn luyện 2-3 epochs có kiểm soát checkpoint.
-4. **Mô-đun đánh giá độc lập (`src/evaluate.py`):** Đánh giá trên tập kiểm thử (Test Set) đúng 1 lần, xuất ma trận nhầm lẫn và trích xuất danh sách lỗi.
+4. **Mô-đun đánh giá so sánh đối đầu (`src/evaluate.py`):** Đánh giá đồng thời cả Baseline và BERT trên tập kiểm thử (Test Set) đúng 1 lần sau khi cả hai mô hình hoàn tất huấn luyện, tích hợp fail-fast guard nếu thiếu trọng số, xuất ma trận nhầm lẫn tách biệt và bảng so sánh tổng hợp.
 5. **Đường ống suy luận (`src/predict.py`):** Cung cấp hàm dự đoán cho cả Baseline và BERT kèm chi tiết bẻ từ WordPiece.
 6. **Ứng dụng Demo thời gian thực (`app/app.py`):** Giao diện tương tác Streamlit trực quan, hỗ trợ so sánh đối đầu giữa Baseline và BERT.
 7. **Hệ thống tài liệu học thuật (`docs/`):** Audit tài liệu (`01_material_audit.md`), Đặc tả bài toán (`02_project_spec.md`), Phân tích mô hình cũ (`03_old_bert_analysis.md`), Khung phân tích lỗi (`04_error_analysis.md`), Cẩm nang 25 khái niệm (`STUDY_GUIDE.md`), và Bộ 25 câu hỏi phản biện (`DEFENSE_QA.md`).
@@ -58,13 +58,13 @@ Dự án được triển khai **mới hoàn toàn từ đầu; không tái sử
   - **Train Set:** 13,821 mẫu (70.0%) | 6,945 Negative, 6,876 Positive.
   - **Validation Set:** 1,975 mẫu (10.0%) | 992 Negative, 983 Positive.
   - **Test Set:** 3,949 mẫu (20.0%) | 1,984 Negative, 1,965 Positive.
-  - **Xác thực chống rò rỉ (Zero Overlap):** Xác nhận 0 mẫu trùng lặp giữa Train, Val và Test (`artifacts/metrics/data_audit.json`).
+  - **Bảo vệ tập Test & Xác thực chống rò rỉ:** Xác nhận 0 mẫu trùng lặp giữa Train, Val và Test (`artifacts/metrics/data_audit.json`). Tập Test được niêm phong hoàn toàn trong quá trình phát triển mô hình.
 - **Thống kê phân vị độ dài token BERT thực tế (Train + Val Scope, 15,796 mẫu - `artifacts/metrics/token_length_stats.json`):**
   - Mean: 42.33 tokens | Std: 37.32 tokens | Min: 3 tokens | Median (p50): 30.0 tokens.
   - p90: 94.0 tokens | p95: 121.0 tokens | p99: 168.0 tokens | Max: 425 tokens.
   - Tỷ lệ cắt cụt tại 128 tokens: **3.93%** (bảo toàn 96.07% văn bản).
   - Tỷ lệ cắt cụt tại 256 tokens: **0.09%** (bảo toàn 99.91% văn bản).
-  - **Quyết định cấu hình:** Chọn **`MAX_LENGTH = 128`** vì bao phủ trên 96% độ dài thực tế (p95 là 121), tối ưu chi phí tính toán Self-Attention $\mathcal{O}(L^2)$ và đảm bảo an toàn bộ nhớ trên GPU 8GB VRAM (RTX 5050 / Colab T4).
+  - **Quyết định cấu hình:** Chọn **`MAX_LENGTH = 128`** vì bao phủ trên 96% độ dài thực tế (p95 là 121.0 tokens), tối ưu chi phí tính toán Self-Attention $\mathcal{O}(L^2)$ so với ngưỡng 256 (tăng $4\times$ kích thước ma trận chú ý nhưng chỉ tăng thêm 3.84% độ phủ). Mức tiêu thụ bộ nhớ và thời gian thực thi thực tế sẽ được đo lường cụ thể trong quá trình huấn luyện.
 
 ---
 
@@ -127,13 +127,13 @@ pip install -r requirements.txt
 # 2. Phân tích dữ liệu, kiểm toán leakage & Xuất biểu đồ EDA
 python -m src.data
 
-# 3. Huấn luyện và đánh giá mô hình cơ sở (Baseline)
+# 3. Huấn luyện mô hình cơ sở (Baseline) & Đánh giá trên Validation Set
 python -m src.train_baseline
 
 # 4. Huấn luyện & Fine-tuning mô hình BERT
 python -m src.train_bert
 
-# 5. Đánh giá mô hình BERT trên Test Set & Trích xuất ca lỗi
+# 5. Đánh giá so sánh đối đầu trên Test Set (Comparative Evaluation) & Trích xuất ca lỗi
 python -m src.evaluate
 
 # 6. Tạo slide thuyết trình PowerPoint (Chế độ nháp hoặc chính thức)
@@ -171,8 +171,8 @@ streamlit run app/app.py
 ## 10. Các Giới Hạn Còn Lại & Hướng Phát Triển (Remaining Limitations)
 
 1. **Giới hạn bài toán nhị phân:** Chỉ phân loại 2 thái cực 0 và 1, chưa phân loại được các đánh giá trung tính (Neutral - 3 sao).
-2. **Hiện tượng cắt cụt văn bản (Truncation):** Lựa chọn `MAX_LENGTH = 128` dựa trên phân tích phân vị EDA (p95 = 121 tokens trên tập Train+Val) bảo toàn trọn vẹn 96.07% văn bản thực tế và chỉ cắt cụt 3.93% văn bản dài nhằm tối ưu bộ nhớ GPU 8GB và chi phí tính toán $\mathcal{O}(L^2)$.
-3. **Độ trễ suy luận:** BERT có 110 triệu tham số nên thời gian suy luận trên CPU/GPU sẽ lớn hơn đáng kể so với mô hình tuyến tính TF-IDF + Logistic Regression (cần được đo lường thực tế sau khi huấn luyện).
+2. **Hiện tượng cắt cụt văn bản (Truncation):** Lựa chọn `MAX_LENGTH = 128` dựa trên phân tích phân vị EDA (p95 = 121.0 tokens trên tập Train+Val) bảo toàn trọn vẹn 96.07% văn bản thực tế và chỉ cắt cụt 3.93% văn bản dài nhằm tối ưu chi phí tính toán $\mathcal{O}(L^2)$ và bộ nhớ kích hoạt (activation memory).
+3. **Độ trễ suy luận:** BERT có 110 triệu tham số nên thời gian suy luận trên CPU/GPU sẽ lớn hơn so với mô hình tuyến tính TF-IDF + Logistic Regression (cần được đo lường thực tế sau khi huấn luyện).
 4. **Hướng phát triển tiếp theo:** Triển khai Phân tích Cảm xúc Đa Khía cạnh (Aspect-Based Sentiment Analysis) và nén mô hình bằng DistilBERT hoặc ONNX Runtime.
 
 ---

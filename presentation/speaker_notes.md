@@ -38,21 +38,21 @@
 ### Slide 5: Phân tích dữ liệu khách sạn (03:00 - 04:00)
 > *"Bám sát giai đoạn 'Data' trong AI Project Cycle, chúng em sử dụng tập dữ liệu 20,000 đánh giá khách sạn do giảng viên cung cấp.  
 > Qua quy trình kiểm toán dữ liệu (Data Audit), chúng em loại bỏ 255 mẫu gồm 5 mẫu rỗng, 127 mẫu xung đột nhãn và 123 mẫu trùng lặp văn bản, thu được 19,745 mẫu sạch duy nhất (9,921 Negative, 9,824 Positive).  
-> Để chọn độ dài chuỗi tối ưu, chúng em đo lường trực tiếp bằng Tokenizer WordPiece của BERT trên tập Train+Val (15,796 mẫu) để giữ tập Test hoàn toàn độc lập. Kết quả thực nghiệm cho thấy: độ dài trung bình là 42.33 tokens, trung vị 30 tokens, và phân vị 95 là 121 tokens.  
-> Với ngưỡng MAX_LENGTH = 128, chúng em bảo toàn trọn vẹn 96.07% toàn bộ văn bản (chỉ cắt cụt 3.93%), vừa tối ưu hóa chi phí tính toán O(L^2) vừa đảm bảo an toàn bộ nhớ trên GPU 8GB VRAM mà không lo tràn bộ nhớ (OOM)."*
+> Để chọn độ dài chuỗi tối ưu, chúng em đo lường trực tiếp bằng Tokenizer WordPiece của BERT trên tập Train+Val (15,796 mẫu) để giữ tập Test hoàn toàn độc lập. Kết quả thực nghiệm cho thấy: độ dài trung bình là 42.33 tokens, trung vị 30.0 tokens, và phân vị 95 là 121.0 tokens.  
+> Với ngưỡng MAX_LENGTH = 128, chúng em bảo toàn trọn vẹn 96.07% toàn bộ văn bản (chỉ cắt cụt 3.93%), vừa tối ưu hóa chi phí tính toán O(L^2) vừa tiết kiệm bộ nhớ kích hoạt (activation memory) và rút ngắn thời gian huấn luyện."*
 
 ---
 
 ### Slide 6: Quy trình nghiên cứu chuẩn mực (04:00 - 04:45)
 > *"Để đảm bảo tính khoa học và ngăn chặn rò rỉ dữ liệu (Data Leakage), chúng em thực hiện kiểm toán tiền phân chia (Pre-split Audit), loại bỏ các dòng thiếu, rỗng, xung đột nhãn và trùng lặp hoàn toàn.  
 > Sau đó phân chia dữ liệu thành Train (70%), Validation (10%) và Test (20%) theo Stratified Split, cố định random seed 42 và kiểm tra giao tập (Zero Overlap).  
-> Tập Test hoàn toàn độc lập, chỉ được nạp đúng một lần khi đánh giá mô hình cuối cùng."*
+> Tập Test hoàn toàn độc lập, được niêm phong và chỉ được nạp đúng một lần khi đánh giá mô hình cuối cùng."*
 
 ---
 
 ### Slide 7: Mô hình cơ sở (Baseline): TF-IDF + Logistic Regression (04:45 - 05:30)
 > *"Theo đúng lời dạy trong slide bài giảng: 'We should start from simple to more complex models', chúng em không vội vàng áp dụng ngay Deep Learning mà xây dựng mô hình cơ sở: **TF-IDF kết hợp Logistic Regression**.  
-> Mô hình baseline đạt độ chính xác khá tốt và thời gian huấn luyện cực kỳ nhanh. Đây là mốc đối sánh vững chắc để trả lời câu hỏi nghiên cứu số 1: 'Liệu sự phức tạp của BERT có thực sự đem lại giá trị vượt trội so với giải pháp tuyến tính compact?'"*
+> Trong quá trình phát triển, mô hình baseline được đánh giá trên Validation Set để thiết lập mốc đo lường chuẩn. Kết quả trên Test Set được bảo vệ cho bước đánh giá so sánh cuối cùng để trả lời câu hỏi nghiên cứu số 1: 'Liệu sự phức tạp của BERT có thực sự đem lại giá trị vượt trội so với giải pháp tuyến tính compact?'"*
 
 ---
 

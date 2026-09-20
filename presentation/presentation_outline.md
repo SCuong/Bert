@@ -36,7 +36,7 @@
 - **Kiểm toán dữ liệu (Data Audit):** Loại bỏ 255 mẫu (5 rỗng, 127 nhãn xung đột, 123 trùng lặp), còn 19,745 mẫu sạch (9,921 Negative, 9,824 Positive).
 - **Phân chia Stratified Split (70/10/20, seed=42):** Train (13,821), Val (1,975), Test (3,949) — Xác nhận Zero Data Leakage.
 - **Phân vị độ dài token BERT (Train+Val Scope, 15,796 mẫu):** Mean: 42.33 | Median: 30.0 | p90: 94.0 | p95: 121.0 | Max: 425 tokens.
-- **Quyết định cấu hình:** Chọn `MAX_LENGTH = 128` (chỉ cắt cụt 3.93%, tối ưu cho GPU 8GB VRAM).
+- **Quyết định cấu hình:** Chọn `MAX_LENGTH = 128` (chỉ cắt cụt 3.93%, tối ưu chi phí tính toán $\mathcal{O}(L^2)$ và bộ nhớ kích hoạt).
 
 ### Slide 6: Quy Trình Nghiên Cứu Chuẩn Mực (Project Pipeline)
 - **Sơ đồ luồng xử lý:** Raw Data -> Pre-split Audit (Missing, Duplicates, Conflicting) -> Stratified Split (70/10/20, seed=42) -> Baseline -> BERT Fine-tuning -> Comprehensive Evaluation -> Demo App.
@@ -45,13 +45,14 @@
 ### Slide 7: Mô Hình Cơ Sở (Baseline): TF-IDF + Logistic Regression
 - **Triết lý AI Project Cycle:** *"Start from simple to more complex models"*.
 - **Kiến trúc Baseline:** N-gram (1, 2), 10,000 features, Sublinear TF scaling kết hợp Logistic Regression (L-BFGS).
+- **Quy trình đánh giá:** Đánh giá hiệu năng phát triển trên Validation Set (`baseline_validation_metrics.json`); kết quả trên Test Set được bảo vệ cho bước đánh giá so sánh cuối cùng.
 - **Kết quả đạt được:** Thiết lập mốc đối sánh vững chắc trước khi áp dụng Deep Learning.
 
 ### Slide 8: Thiết Kế Thực Nghiệm & Chiến Lược Fine-Tuning
 - **Lựa chọn mô hình:** `google-bert/bert-base-uncased` (12 tầng, 768 chiều ẩn, 12 attention heads, ~110M tham số).
 - **Đồng bộ Tokenizer & Model:** AutoTokenizer và AutoModel uncased, từ điển 30,522 WordPiece tokens.
 - **Cấu hình siêu tham số:**
-  - Max Length: 128 (đã xác nhận dựa trên phân vị p95 = 121 tokens từ EDA trên tập Train+Val).
+  - Max Length: 128 (đã xác nhận dựa trên phân vị p95 = 121.0 tokens từ EDA trên tập Train+Val).
   - Optimizer: AdamW với Decoupled Weight Decay = 0.01.
   - Learning rate: $2 \times 10^{-5}$ kết hợp Linear Warmup Scheduler (10% số bước).
   - Số epochs: 2–3 epochs (kiểm soát chặt chẽ qua Validation Loss & Macro F1).
@@ -74,7 +75,7 @@
 
 ### Slide 11: Ma Trận Nhầm Lẫn & Phân Tích Độ Chính Xác Từng Lớp
 - Biểu đồ Heatmap Confusion Matrix của Baseline vs. BERT trên Test Set.
-- So sánh chi tiết độ chính xác của lớp Tiêu cực (0) và lớp Tích cực (1) (Sẽ sinh tự động sau khi chạy `train_baseline.py` và `evaluate.py`).
+- So sánh chi tiết độ chính xác của lớp Tiêu cực (0) và lớp Tích cực (1) (Sẽ sinh tự động sau khi chạy `evaluate.py`).
 
 ### Slide 12: Khung Phân Tích Lỗi Định Tính (Error Analysis Framework)
 - Phương pháp luận khảo sát định tính 4 nhóm nguyên nhân gây ra lỗi dự đoán:

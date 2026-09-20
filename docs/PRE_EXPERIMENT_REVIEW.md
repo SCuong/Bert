@@ -75,11 +75,12 @@
 
 ## 3. Các Tệp & Khâu Chưa Được Runtime Verified
 
-1. **`artifacts/metrics/baseline_metrics.json`**: Chưa được sinh (do chưa chạy `train_baseline.py`).
-2. **`artifacts/metrics/bert_metrics.json`**: Chưa được sinh (do chưa chạy `evaluate.py`).
-3. **`artifacts/metrics/error_cases.json`**: Chưa được sinh (do chưa chạy trích xuất lỗi).
-4. **`artifacts/figures/*.png`**: Biểu đồ confusion matrix và training history chưa được sinh (`class_distribution.png` và `token_length_distribution.png` đã hoàn thành).
-5. **`artifacts/model/bert_best_model/`**: Trọng số mô hình BERT chưa được lưu.
+1. **`artifacts/metrics/baseline_validation_metrics.json`**: Chưa được sinh (do chưa chạy `train_baseline.py`).
+2. **`artifacts/metrics/baseline_test_metrics.json` & `artifacts/metrics/bert_test_metrics.json`**: Chưa được sinh (do chưa chạy `evaluate.py`).
+3. **`artifacts/metrics/comparative_metrics.json`**: Chưa được sinh (do chưa chạy `evaluate.py`).
+4. **`artifacts/metrics/error_cases.json`**: Chưa được sinh (do chưa chạy trích xuất lỗi).
+5. **`artifacts/figures/*.png`**: Biểu đồ confusion matrix và training history chưa được sinh (`class_distribution.png` và `token_length_distribution.png` đã hoàn thành).
+6. **`artifacts/model/baseline_tfidf_lr.joblib` & `artifacts/model/bert_best_model/`**: Trọng số mô hình chưa được lưu.
 
 ---
 
@@ -87,19 +88,19 @@
 
 1. **EDA & Token Length Distribution:** **ĐÃ THỰC THI (EXECUTED)**
    - Lệnh: `python -m src.data`
-   - Kết quả: Data Audit loại bỏ 255 mẫu không hợp lệ/trùng lặp/xung đột, còn 19,745 mẫu sạch (Zero Data Leakage). Đo lường độ dài token trên tập Train+Val (15,796 mẫu) với p95 = 121 tokens, chỉ cắt cụt 3.93% tại 128. Đã chốt lựa chọn `MAX_LENGTH = 128` và xuất `artifacts/metrics/data_audit.json`, `artifacts/metrics/token_length_stats.json`, `artifacts/figures/class_distribution.png`, `artifacts/figures/token_length_distribution.png`.
-2. **Baseline Training & Evaluation:** `CHƯA CHẠY (NOT YET EXECUTED)`
+   - Kết quả: Data Audit loại bỏ 255 mẫu không hợp lệ/trùng lặp/xung đột, còn 19,745 mẫu sạch (Zero Data Leakage). Đo lường độ dài token trên tập Train+Val (15,796 mẫu) với p95 = 121.0 tokens, chỉ cắt cụt 3.93% tại 128. Đã chốt lựa chọn `MAX_LENGTH = 128` và xuất `artifacts/metrics/data_audit.json`, `artifacts/metrics/token_length_stats.json`, `artifacts/figures/class_distribution.png`, `artifacts/figures/token_length_distribution.png`.
+2. **Baseline Training & Validation Evaluation:** `CHƯA CHẠY (NOT YET EXECUTED)`
    - Lệnh: `python -m src.train_baseline`
-   - Mục tiêu: Thiết lập mốc Accuracy, F1 và Confusion Matrix thực tế cho TF-IDF + Logistic Regression trên tập Test.
+   - Mục tiêu: Huấn luyện TF-IDF + Logistic Regression trên Train Set, đánh giá hiệu năng phát triển trên Validation Set và lưu `artifacts/metrics/baseline_validation_metrics.json`, `artifacts/figures/baseline_val_confusion_matrix.png`, cùng mô hình `artifacts/model/baseline_tfidf_lr.joblib`. Tập Test được niêm phong hoàn toàn.
 3. **BERT Fine-Tuning:** `CHƯA CHẠY (NOT YET EXECUTED)`
    - Lệnh: `python -m src.train_bert`
-   - Mục tiêu: Huấn luyện `bert-base-uncased` trong 2-3 epochs trên GPU/CPU, ghi nhận đường cong học tập thực tế (Train Loss & Val Loss).
-4. **BERT Test Set Evaluation & Error Extraction:** `CHƯA CHẠY (NOT YET EXECUTED)`
+   - Mục tiêu: Huấn luyện `bert-base-uncased` trong 2-3 epochs trên GPU/CPU, chọn checkpoint tốt nhất theo Validation Macro F1/Loss và ghi nhận đường cong học tập thực tế (Train Loss & Val Loss).
+4. **Comparative Test Set Evaluation & Error Extraction:** `CHƯA CHẠY (NOT YET EXECUTED)`
    - Lệnh: `python -m src.evaluate`
-   - Mục tiêu: Đánh giá duy nhất 1 lần trên Test Set và trích xuất 20 ca lỗi thực tế (False Positives và False Negatives).
+   - Mục tiêu: Đánh giá so sánh đối đầu cả Baseline và BERT trên cùng tập Test Set độc lập; lưu `artifacts/metrics/baseline_test_metrics.json`, `artifacts/metrics/bert_test_metrics.json`, `artifacts/metrics/comparative_metrics.json` và trích xuất 20 ca lỗi thực tế (False Positives và False Negatives) vào `artifacts/metrics/error_cases.json`. Fail-fast nếu thiếu artifact mô hình.
 5. **PowerPoint Deck Generation:** `CHƯA CHẠY BẢN CHÍNH THỨC (CHỈ HỖ TRỢ --DRAFT)`
    - Lệnh: `python -m presentation.generate_presentation --draft`
-   - Mục tiêu: Nhúng các biểu đồ và số liệu thực nghiệm thực tế vào file slide PowerPoint sau khi hoàn tất training.
+   - Mục tiêu: Nhúng các biểu đồ và số liệu thực nghiệm thực tế vào file slide PowerPoint sau khi hoàn tất training và evaluation.
 
 ---
 

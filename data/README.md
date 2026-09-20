@@ -30,7 +30,7 @@ Nhằm đảm bảo tính khoa học và ngăn chặn hoàn toàn hiện tượn
 - **Tỷ lệ phân chia:**
   - **Train set:** 70% — Dùng để huấn luyện mô hình.
   - **Validation set:** 10% — Dùng để chọn checkpoint tốt nhất, theo dõi loss và tránh overfitting.
-  - **Test set:** 20% — Tập kiểm thử độc lập, chỉ được nạp đúng một lần khi đánh giá mô hình cuối cùng.
+  - **Test set:** 20% — Tập kiểm thử độc lập; nguyên tắc bất biến là không có bất kỳ nhãn, dự đoán hay chỉ số nào của Test Set được kiểm tra hoặc sử dụng cho việc ra quyết định mô hình/siêu tham số trước lượt đánh giá so sánh cuối cùng.
 - **Phương pháp phân chia:** `StratifiedShuffleSplit` từ thư viện `scikit-learn` nhằm bảo toàn tỷ lệ cân bằng của hai nhãn ở cả 3 tập sau khi đã loại bỏ trùng lặp.
 - **Tính tái lập:** Được kiểm soát chặt chẽ (`controlled for reproducibility with fixed seeds and documented environment`) với `seed = 42`.
 
@@ -82,7 +82,7 @@ Nhằm đảm bảo tính khoa học và ngăn chặn hoàn toàn hiện tượn
 * **Tỷ lệ cắt cụt tại 256 tokens:** **0.09%** (bảo toàn trọn vẹn 99.91% văn bản).
 
 ### 5.3. Quyết định lựa chọn `MAX_LENGTH = 128`
-Dựa trên số liệu đo lường thực tế và ràng buộc phần cứng (GPU 8GB VRAM):
-1. **Đánh đổi cắt cụt (Truncation Tradeoff):** Với `p95 = 121` tokens, ngưỡng 128 đã bao phủ hơn 96% toàn bộ văn bản đánh giá. Việc nâng lên 256 chỉ giúp giữ thêm 3.84% văn bản nhưng làm tăng gấp 4 lần chi phí tính toán Attention $\mathcal{O}(L^2)$.
-2. **Bộ nhớ & Thời gian tính toán:** Độ dài 128 với `batch_size = 16` tiêu tốn khoảng 4.5 GB VRAM ở chế độ FP16, hoàn toàn an toàn trên GPU 8GB mà không lo tràn bộ nhớ (OOM).
-3. **Tính phù hợp với đồ án môn học:** Ngưỡng 128 là điểm cân bằng tối ưu giữa bảo toàn ngữ cảnh và tốc độ huấn luyện nhanh (~5-8 phút/3 epochs), thuận tiện cho việc tái lập trên máy tính sinh viên hoặc Google Colab T4.
+Dựa trên số liệu đo lường thực tế từ EDA:
+1. **Đánh đổi cắt cụt (Truncation Tradeoff):** Với `p95 = 121.0` tokens, ngưỡng 128 đã bao phủ hơn 96% toàn bộ văn bản đánh giá. Việc nâng lên 256 chỉ giúp giữ thêm 3.84% văn bản nhưng làm tăng gấp 4 lần kích thước ma trận tính toán Attention $\mathcal{O}(L^2)$.
+2. **Hiệu năng & Tài nguyên:** Ngưỡng 128 giúp tiết kiệm bộ nhớ kích hoạt (activation memory) và rút ngắn thời gian huấn luyện. Mức tiêu thụ bộ nhớ và thời gian thực thi thực tế sẽ được đo lường cụ thể trong quá trình huấn luyện mô hình.
+3. **Tính phù hợp với đồ án:** Ngưỡng 128 là điểm cân bằng tối ưu giữa bảo toàn ngữ cảnh và tốc độ huấn luyện, thuận tiện cho việc tái lập trên máy tính cá nhân hoặc môi trường đám mây (Google Colab).

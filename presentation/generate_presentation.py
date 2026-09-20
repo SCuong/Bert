@@ -291,7 +291,7 @@ def create_presentation(is_draft=False):
                   "• Phân vị độ dài token BERT (Train+Val Scope):\n"
                   "  - Median: 30.0 tokens | p90: 94.0 | p95: 121.0 | Max: 425 tokens.\n"
                   "  - Cắt cụt tại 128: 3.93% | Cắt cụt tại 256: 0.09%.\n"
-                  "  - Quyết định: Chọn MAX_LENGTH = 128 tối ưu cho GPU 8GB VRAM.")
+                  "  - Quyết định: Chọn MAX_LENGTH = 128 tối ưu chi phí tính toán O(L^2) và bộ nhớ kích hoạt.")
 
     len_img = os.path.join(FIGURES_DIR, "token_length_distribution.png")
     if not os.path.exists(len_img):
@@ -376,19 +376,19 @@ def create_presentation(is_draft=False):
         f"  - Macro Precision:      {baseline_metrics.get('macro_precision', 0.0):.4f}\n"
         f"  - Macro Recall:         {baseline_metrics.get('macro_recall', 0.0):.4f}\n"
         f"  - Macro F1-Score:       {baseline_metrics.get('macro_f1', 0.0):.4f}\n"
-        f"  - Thời gian huấn luyện: {baseline_metrics.get('training_time_seconds', 0.0):.2f}s\n\n"
+        f"  - Thời gian suy luận:   {baseline_metrics.get('inference_time_seconds', 0.0):.3f}s\n\n"
         "• Nhận định:\n"
-        "  - Thiết lập mốc đo lường chuẩn xác trước khi so sánh với BERT."
+        "  - Thiết lập mốc đối sánh chuẩn xác trước khi so sánh với BERT."
     ) if has_baseline_metrics else (
-        "• Đánh giá trên tập Test Set độc lập:\n\n"
+        "• Đánh giá trên tập kiểm thử (Test Set):\n\n"
         "  - Trạng thái: [PENDING EXPERIMENT]\n"
         "  - Test Accuracy:        [Pending]\n"
         "  - Macro Precision:      [Pending]\n"
         "  - Macro Recall:         [Pending]\n"
-        "  - Macro F1-Score:       [Pending]\n"
-        "  - Thời gian huấn luyện: [Pending]\n\n"
-        "• Mục tiêu thực nghiệm:\n"
-        "  - Sẽ được tạo tự động khi chạy python src/train_baseline.py."
+        "  - Macro F1-Score:       [Pending]\n\n"
+        "• Ghi chú quy trình:\n"
+        "  - Trong quá trình phát triển, baseline được đánh giá trên Validation Set.\n"
+        "  - Kết quả Test Set chính thức được đo lường tại bước đánh giá so sánh cuối cùng (evaluate.py)."
     )
     add_card(s7, Inches(6.8), Inches(1.6), Inches(5.7), Inches(5.2),
              title="Kết Quả Thực Nghiệm Baseline",
@@ -407,8 +407,8 @@ def create_presentation(is_draft=False):
                   "  - Mở khóa toàn bộ trọng số để thích ứng ngữ cảnh bài toán (True Fine-Tuning).\n\n"
                   "• Đồng bộ Tokenizer:\n"
                   "  - Sử dụng AutoTokenizer uncased đi kèm, từ điển 30,522 WordPiece tokens.\n\n"
-                  f"• Độ dài chuỗi tối đa: Candidate {MAX_LENGTH}\n"
-                  "  - Sẽ đối chiếu với phân vị p90, p95, p99 từ EDA token-length để quyết định 128 hay 256.\n\n"
+                  f"• Độ dài chuỗi tối đa: {MAX_LENGTH} tokens\n"
+                  "  - Xác nhận dựa trên phân vị p95 = 121.0 tokens từ EDA trên tập Train+Val (chỉ cắt cụt 3.93%).\n\n"
                   "• Tầng phân loại (Sequence Classification Head):\n"
                   "  - Vector [CLS] (768 chiều) -> Dropout(0.1) -> Linear(768, 2) -> Softmax.")
 
@@ -520,8 +520,13 @@ def create_presentation(is_draft=False):
     s11 = prs.slides.add_slide(blank_layout)
     add_header(s11, "10. Ma Trận Nhầm Lẫn & Đánh Giá Chi Tiết Từng Lớp", "So sánh độ chính xác và mức độ cân bằng nhãn trên tập kiểm thử")
 
-    base_cm_img = os.path.join(FIGURES_DIR, "baseline_confusion_matrix.png")
-    bert_cm_img = os.path.join(FIGURES_DIR, "bert_confusion_matrix.png")
+    base_cm_img = os.path.join(FIGURES_DIR, "baseline_test_confusion_matrix.png")
+    if not os.path.exists(base_cm_img):
+        base_cm_img = os.path.join(FIGURES_DIR, "baseline_confusion_matrix.png")
+
+    bert_cm_img = os.path.join(FIGURES_DIR, "bert_test_confusion_matrix.png")
+    if not os.path.exists(bert_cm_img):
+        bert_cm_img = os.path.join(FIGURES_DIR, "bert_confusion_matrix.png")
 
     if os.path.exists(base_cm_img) and os.path.exists(bert_cm_img):
         s11.shapes.add_picture(base_cm_img, Inches(0.8), Inches(1.6), Inches(5.6), Inches(4.5))
@@ -529,7 +534,7 @@ def create_presentation(is_draft=False):
     else:
         add_card(s11, Inches(0.8), Inches(1.6), Inches(5.6), Inches(4.5),
                  title="Baseline Confusion Matrix",
-                 body="[PENDING EXPERIMENT — SẼ ĐƯỢC XUẤT SAU KHI CHẠY train_baseline.py]")
+                 body="[PENDING EXPERIMENT — SẼ ĐƯỢC XUẤT SAU KHI CHẠY evaluate.py]")
         add_card(s11, Inches(6.8), Inches(1.6), Inches(5.7), Inches(4.5),
                  title="BERT Confusion Matrix",
                  body="[PENDING EXPERIMENT — SẼ ĐƯỢC XUẤT SAU KHI CHẠY evaluate.py]")

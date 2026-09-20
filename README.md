@@ -104,7 +104,7 @@ python -m src.data
 ```bash
 python -m src.train_baseline
 ```
-*Huấn luyện mô hình TF-IDF + Logistic Regression, lưu kết quả vào `artifacts/metrics/baseline_metrics.json` và vẽ `artifacts/figures/baseline_confusion_matrix.png`.*
+*Huấn luyện mô hình TF-IDF + Logistic Regression trên Train Set, đánh giá phát triển trên Validation Set, lưu kết quả vào `artifacts/metrics/baseline_validation_metrics.json`, vẽ `artifacts/figures/baseline_val_confusion_matrix.png`, và lưu mô hình tại `artifacts/model/baseline_tfidf_lr.joblib`. Tập Test Set được niêm phong hoàn toàn trong giai đoạn này.*
 
 ### 4.4. Huấn luyện & Fine-tuning BERT
 ```bash
@@ -112,11 +112,11 @@ python -m src.train_bert
 ```
 *Tự động nhận diện phần cứng (GPU/CPU), fine-tune mô hình `bert-base-uncased`, lưu checkpoint tốt nhất vào `artifacts/model/bert_best_model` và vẽ đường cong học tập (Train Loss + Val Loss) tại `artifacts/figures/training_history.png`.*
 
-### 4.5. Đánh giá trên tập kiểm thử (Test Evaluation)
+### 4.5. Đánh giá trên tập kiểm thử (Comparative Test Evaluation)
 ```bash
 python -m src.evaluate
 ```
-*Nạp mô hình tốt nhất, đánh giá duy nhất 1 lần trên Test Set, lưu `artifacts/metrics/bert_metrics.json` và trích xuất 20 ca lỗi vào `artifacts/metrics/error_cases.json`.*
+*Đánh giá so sánh đối đầu giữa Baseline và Fine-Tuned BERT trên tập kiểm thử độc lập (Test Set) đúng 1 lần sau khi cả hai mô hình đã hoàn tất huấn luyện. Tự động kích hoạt fail-fast guard nếu thiếu bất kỳ artifact mô hình nào. Lưu `artifacts/metrics/baseline_test_metrics.json`, `artifacts/metrics/bert_test_metrics.json`, `artifacts/metrics/comparative_metrics.json` và trích xuất 20 ca lỗi vào `artifacts/metrics/error_cases.json`.*
 
 ### 4.6. Tạo slide PowerPoint thuyết trình
 ```bash
@@ -143,4 +143,5 @@ streamlit run app/app.py
   - CPU: Intel / AMD x86_64, 16GB RAM.
   - OS: Windows 11.
 - **Phương án dự phòng đám mây (Cloud Fallback):**
-  - Cung cấp sẵn notebook [`notebooks/BERT_Training_Colab.ipynb`](notebooks/BERT_Training_Colab.ipynb) độc lập, sẵn sàng chạy mượt mà trên Google Colab GPU T4 miễn phí với tính năng *"Run All"*.
+  - Cung cấp sẵn notebook [`notebooks/BERT_Training_Colab.ipynb`](notebooks/BERT_Training_Colab.ipynb) độc lập, sẵn sàng chạy trên Google Colab GPU (T4) với tính năng *"Run All"*.
+  - Mức tiêu thụ bộ nhớ VRAM và thời gian thực thi thực tế sẽ được đo lường và ghi nhận trực tiếp trong quá trình huấn luyện thay vì dựa trên các con số ước lượng lý thuyết.

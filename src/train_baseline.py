@@ -30,7 +30,8 @@ if REPO_ROOT not in sys.path:
 # Import cấu hình tập trung
 from src.config import (
     BASELINE_MODEL_PATH,
-    BASELINE_METRICS_PATH,
+    BASELINE_VAL_METRICS_PATH,
+    BASELINE_VAL_CM_PATH,
     FIGURES_DIR,
     RANDOM_SEED
 )
@@ -41,9 +42,12 @@ def train_and_evaluate_baseline():
     print("BẮT ĐẦU HUẤN LUYỆN MÔ HÌNH BASELINE: TF-IDF + LOGISTIC REGRESSION")
     print("="*60)
     
-    # 1. Nạp và phân chia dữ liệu
+    # 1. Nạp và phân chia dữ liệu (Tập Test được niêm phong hoàn toàn)
     df = load_and_validate_data()
-    train_df, val_df, test_df = split_data(df, random_state=RANDOM_SEED)
+    train_df, val_df, _ = split_data(df, random_state=RANDOM_SEED)
+    print(f"[*] Phạm vi huấn luyện: Train set ({len(train_df)} mẫu)")
+    print(f"[*] Phạm vi đánh giá phát triển (Development Evaluation): Validation set ({len(val_df)} mẫu)")
+    print("[*] NGUYÊN TẮC BẢO VỆ TEST SET: Tập Test không được nạp, dự đoán hay đánh giá trong giai đoạn này.")
     
     # 2. Xây dựng Pipeline
     pipeline = Pipeline([
@@ -61,54 +65,49 @@ def train_and_evaluate_baseline():
         ))
     ])
     
-    # 3. Huấn luyện mô hình
-    print("\n[*] Đang huấn luyện mô hình...")
+    # 3. Huấn luyện mô hình trên Train Set
+    print("\n[*] Đang huấn luyện mô hình trên Train Set...")
     start_time = time.time()
     pipeline.fit(train_df["text"], train_df["label"])
     training_time = time.time() - start_time
     print(f"[+] Huấn luyện hoàn tất trong {training_time:.2f} giây.")
     
-    # 4. Đánh giá trên Validation set
-    val_preds = pipeline.predict(val_df["text"])
-    val_acc = accuracy_score(val_df["label"], val_preds)
-    val_f1 = f1_score(val_df["label"], val_preds, average='macro')
-    print(f"[*] Validation Accuracy: {val_acc*100:.2f}% | Val Macro F1: {val_f1:.4f}")
-    
-    # 5. Đánh giá duy nhất trên Test set
-    print("\n[*] Đang đánh giá trên tập kiểm thử độc lập (Test Set)...")
+    # 4. Đánh giá phát triển trên Validation Set (KHÔNG chạm vào Test Set)
+    print("\n[*] Đang đánh giá hiệu năng phát triển trên Validation Set...")
     eval_start_time = time.time()
-    test_preds = pipeline.predict(test_df["text"])
-    test_probs = pipeline.predict_proba(test_df["text"])[:, 1]
+    val_preds = pipeline.predict(val_df["text"])
+    val_probs = pipeline.predict_proba(val_df["text"])[:, 1]
     inference_time = time.time() - eval_start_time
     
-    acc = accuracy_score(test_df["label"], test_preds)
-    prec_macro = precision_score(test_df["label"], test_preds, average='macro')
-    rec_macro = recall_score(test_df["label"], test_preds, average='macro')
-    f1_macro = f1_score(test_df["label"], test_preds, average='macro')
-    f1_weighted = f1_score(test_df["label"], test_preds, average='weighted')
+    acc = accuracy_score(val_df["label"], val_preds)
+    prec_macro = precision_score(val_df["label"], val_preds, average='macro')
+    rec_macro = recall_score(val_df["label"], val_preds, average='macro')
+    f1_macro = f1_score(val_df["label"], val_preds, average='macro')
+    f1_weighted = f1_score(val_df["label"], val_preds, average='weighted')
     
-    prec_per_class = precision_score(test_df["label"], test_preds, average=None)
-    rec_per_class = recall_score(test_df["label"], test_preds, average=None)
-    f1_per_class = f1_score(test_df["label"], test_preds, average=None)
+    prec_per_class = precision_score(val_df["label"], val_preds, average=None)
+    rec_per_class = recall_score(val_df["label"], val_preds, average=None)
+    f1_per_class = f1_score(val_df["label"], val_preds, average=None)
     
     print("\n" + "="*50)
-    print("KẾT QUẢ ĐÁNH GIÁ TRÊN TEST SET (TF-IDF + LOGISTIC REGRESSION):")
-    print(f"Accuracy:        {acc*100:.2f}%")
-    print(f"Macro Precision: {prec_macro:.4f}")
-    print(f"Macro Recall:    {rec_macro:.4f}")
-    print(f"Macro F1-score:  {f1_macro:.4f}")
-    print(f"Weighted F1:     {f1_weighted:.4f}")
-    print(f"Inference Time:  {inference_time:.3f}s ({len(test_df)/inference_time:.1f} samples/s)")
-    print("\nChi tiết Classification Report:")
-    print(classification_report(test_df["label"], test_preds, target_names=["Negative (0)", "Positive (1)"], digits=4))
+    print("KẾT QUẢ ĐÁNH GIÁ TRÊN VALIDATION SET (TF-IDF + LOGISTIC REGRESSION):")
+    print(f"Validation Accuracy:        {acc*100:.2f}%")
+    print(f"Validation Macro Precision: {prec_macro:.4f}")
+    print(f"Validation Macro Recall:    {rec_macro:.4f}")
+    print(f"Validation Macro F1-score:  {f1_macro:.4f}")
+    print(f"Validation Weighted F1:     {f1_weighted:.4f}")
+    print(f"Inference Time:             {inference_time:.3f}s ({len(val_df)/inference_time:.1f} samples/s)")
+    print("\nChi tiết Classification Report (Validation):")
+    print(classification_report(val_df["label"], val_preds, target_names=["Negative (0)", "Positive (1)"], digits=4))
     print("="*50)
     
-    # 6. Lưu kết quả metrics
-    os.makedirs(os.path.dirname(BASELINE_METRICS_PATH), exist_ok=True)
-    cm = confusion_matrix(test_df["label"], test_preds)
+    # 5. Lưu kết quả validation metrics
+    os.makedirs(os.path.dirname(BASELINE_VAL_METRICS_PATH), exist_ok=True)
+    cm = confusion_matrix(val_df["label"], val_preds)
     
     metrics_data = {
         "model_name": "TF-IDF + Logistic Regression",
+        "evaluation_split": "validation",
         "accuracy": float(acc),
         "macro_precision": float(prec_macro),
         "macro_recall": float(rec_macro),
@@ -122,34 +121,33 @@ def train_and_evaluate_baseline():
         "class_1_f1": float(f1_per_class[1]),
         "training_time_seconds": float(training_time),
         "inference_time_seconds": float(inference_time),
-        "test_sample_count": len(test_df),
+        "validation_sample_count": len(val_df),
         "confusion_matrix": cm.tolist()
     }
     
-    with open(BASELINE_METRICS_PATH, "w", encoding="utf-8") as f:
+    with open(BASELINE_VAL_METRICS_PATH, "w", encoding="utf-8") as f:
         json.dump(metrics_data, f, indent=4, ensure_ascii=False)
-    print(f"[+] Đã lưu metrics tại: {BASELINE_METRICS_PATH}")
+    print(f"[+] Đã lưu validation metrics tại: {BASELINE_VAL_METRICS_PATH}")
     
-    # 7. Vẽ và lưu Confusion Matrix
+    # 6. Vẽ và lưu Validation Confusion Matrix
     os.makedirs(FIGURES_DIR, exist_ok=True)
     plt.figure(figsize=(6, 5))
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=False,
                 xticklabels=["Negative (0)", "Positive (1)"],
                 yticklabels=["Negative (0)", "Positive (1)"],
                 annot_kws={"size": 14, "weight": "bold"})
-    plt.title("Baseline Confusion Matrix (TF-IDF + LogReg)", fontsize=13, fontweight="bold", pad=12)
+    plt.title("Baseline Validation Confusion Matrix (TF-IDF + LogReg)", fontsize=13, fontweight="bold", pad=12)
     plt.xlabel("Predicted Label", fontsize=11)
     plt.ylabel("True Label", fontsize=11)
     plt.tight_layout()
-    cm_path = os.path.join(FIGURES_DIR, "baseline_confusion_matrix.png")
-    plt.savefig(cm_path, dpi=300)
+    plt.savefig(BASELINE_VAL_CM_PATH, dpi=300)
     plt.close()
-    print(f"[+] Đã lưu biểu đồ confusion matrix tại: {cm_path}")
+    print(f"[+] Đã lưu biểu đồ validation confusion matrix tại: {BASELINE_VAL_CM_PATH}")
     
-    # 8. Lưu mô hình
+    # 7. Lưu mô hình đã huấn luyện
     os.makedirs(os.path.dirname(BASELINE_MODEL_PATH), exist_ok=True)
     joblib.dump(pipeline, BASELINE_MODEL_PATH)
-    print(f"[+] Đã lưu mô hình tại: {BASELINE_MODEL_PATH}")
+    print(f"[+] Đã lưu mô hình baseline tại: {BASELINE_MODEL_PATH}")
     
     return metrics_data
 

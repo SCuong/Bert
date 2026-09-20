@@ -301,17 +301,24 @@ def analyze_and_plot_data(train_val_df: pd.DataFrame, full_df: pd.DataFrame = No
             "scope": "train_val",
             "description": "Calculated on Train + Validation sets (80% of clean data) to prevent data snooping on the held-out Test Set.",
             "total_samples": int(len(token_lengths_arr)),
-            "mean": float(np.mean(token_lengths_arr)),
-            "std": float(np.std(token_lengths_arr)),
+            "mean": round(float(np.mean(token_lengths_arr)), 2),
+            "std": round(float(np.std(token_lengths_arr)), 2),
             "min": int(np.min(token_lengths_arr)),
-            "median": float(np.median(token_lengths_arr)),
-            "p90": float(np.percentile(token_lengths_arr, 90)),
-            "p95": float(np.percentile(token_lengths_arr, 95)),
-            "p99": float(np.percentile(token_lengths_arr, 99)),
+            "median": round(float(np.median(token_lengths_arr)), 1),
+            "p90": round(float(np.percentile(token_lengths_arr, 90)), 1),
+            "p95": round(float(np.percentile(token_lengths_arr, 95)), 1),
+            "p99": round(float(np.percentile(token_lengths_arr, 99)), 1),
             "max": int(np.max(token_lengths_arr)),
-            "pct_truncated_at_128": float((token_lengths_arr > 128).mean() * 100),
-            "pct_truncated_at_256": float((token_lengths_arr > 256).mean() * 100),
-            "candidate_max_length": MAX_LENGTH
+            "pct_truncated_at_128": round(float((token_lengths_arr > 128).mean() * 100), 2),
+            "pct_truncated_at_256": round(float((token_lengths_arr > 256).mean() * 100), 2),
+            "candidate_max_length": MAX_LENGTH,
+            "selected_max_length": MAX_LENGTH,
+            "decision_rationale": (
+                "At MAX_LENGTH=128, 96.07% of samples are fully preserved (p95 is 121.0 tokens). "
+                "Truncation is only 3.93%. Doubling sequence length from 128 to 256 quadruples "
+                "the self-attention score matrix size (O(L^2) quadratic scaling) for only a 3.84% coverage gain, "
+                "while end-to-end memory and runtime will be measured empirically during training."
+            )
         }
 
         print("\n" + "="*55)

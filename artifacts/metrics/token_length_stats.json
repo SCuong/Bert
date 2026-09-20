@@ -14,5 +14,5 @@
     "pct_truncated_at_256": 0.09,
     "candidate_max_length": 128,
     "selected_max_length": 128,
-    "decision_rationale": "At MAX_LENGTH=128, 96.07% of samples are fully preserved (p95 is 121 tokens). Truncation is only 3.93%. Quadratic attention cost O(L^2) and activation memory fit comfortably within 8GB VRAM (RTX 5050 / Colab T4) without OOM risk, whereas 256 would quadruple attention operations for a marginal 3.84% coverage gain."
+    "decision_rationale": "At MAX_LENGTH=128, 96.07% of samples are fully preserved (p95 is 121.0 tokens). Truncation is only 3.93%. Doubling sequence length from 128 to 256 quadruples the self-attention score matrix size (O(L^2) quadratic scaling) for only a 3.84% coverage gain, while end-to-end memory and runtime will be measured empirically during training."
 }
