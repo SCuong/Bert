@@ -1,0 +1,28 @@
+{
+    "model_name": "TF-IDF + Logistic Regression",
+    "evaluation_split": "validation",
+    "accuracy": 0.810126582278481,
+    "macro_precision": 0.8115951441377918,
+    "macro_recall": 0.8099680454828865,
+    "macro_f1": 0.8098450029770088,
+    "weighted_f1": 0.8098783478942885,
+    "class_0_precision": 0.7913125590179415,
+    "class_0_recall": 0.844758064516129,
+    "class_0_f1": 0.8171623598244758,
+    "class_1_precision": 0.8318777292576419,
+    "class_1_recall": 0.775178026449644,
+    "class_1_f1": 0.8025276461295419,
+    "training_time_seconds": 0.676741361618042,
+    "inference_time_seconds": 0.11364960670471191,
+    "validation_sample_count": 1975,
+    "confusion_matrix": [
+        [
+            838,
+            154
+        ],
+        [
+            221,
+            762
+        ]
+    ]
+}

@@ -323,7 +323,7 @@ def run_evaluation():
 
     # 2. Nạp dữ liệu và tách Test Set độc lập
     df = load_and_validate_data()
-    _, _, test_df = split_data(df, random_state=RANDOM_SEED)
+    _, _, test_df = split_data(df, random_state=RANDOM_SEED, verbose_test=True)
     print(f"[*] Tập Test gồm {len(test_df)} mẫu. Phân bố nhãn: {test_df['label'].value_counts().to_dict()}")
 
     # 3. Đánh giá Baseline trên Test Set

@@ -171,9 +171,11 @@ def load_and_validate_data(file_path: str = None, return_audit: bool = False):
         return df, audit_stats
     return df
 
-def split_data(df: pd.DataFrame, train_ratio=TRAIN_RATIO, val_ratio=VAL_RATIO, test_ratio=TEST_RATIO, random_state=RANDOM_SEED):
+def split_data(df: pd.DataFrame, train_ratio=TRAIN_RATIO, val_ratio=VAL_RATIO, test_ratio=TEST_RATIO, random_state=RANDOM_SEED, verbose_test: bool = False):
     """
     Phân chia dữ liệu Stratified (Train/Val/Test) và kiểm tra triệt để không có rò rỉ dữ liệu.
+    - verbose_test: Nếu True (chỉ dùng cho standalone EDA/Audit hoặc evaluate.py), in thông tin tập Test.
+      Mặc định False trong giai đoạn phát triển mô hình để niêm phong hoàn toàn tập Test.
     """
     assert abs((train_ratio + val_ratio + test_ratio) - 1.0) < 1e-5, "Tổng tỷ lệ phân chia phải bằng 1.0"
 
@@ -211,9 +213,23 @@ def split_data(df: pd.DataFrame, train_ratio=TRAIN_RATIO, val_ratio=VAL_RATIO, t
     print(f"[*] Phân chia tập dữ liệu hoàn tất (seed={random_state}):")
     print(f"    - Train set: {len(train_df)} mẫu ({len(train_df)/len(df)*100:.1f}%) | Phân bố: {train_df['label'].value_counts().to_dict()}")
     print(f"    - Val set:   {len(val_df)} mẫu ({len(val_df)/len(df)*100:.1f}%) | Phân bố: {val_df['label'].value_counts().to_dict()}")
-    print(f"    - Test set:  {len(test_df)} mẫu ({len(test_df)/len(df)*100:.1f}%) | Phân bố: {test_df['label'].value_counts().to_dict()}")
+    if verbose_test:
+        print(f"    - Test set:  {len(test_df)} mẫu ({len(test_df)/len(df)*100:.1f}%) | Phân bố: {test_df['label'].value_counts().to_dict()}")
+    else:
+        print("    - Test set:  [SEALED — Held out for final evaluation]")
 
     return train_df, val_df, test_df
+
+def get_train_val_split(df: pd.DataFrame, train_ratio=TRAIN_RATIO, val_ratio=VAL_RATIO, test_ratio=TEST_RATIO, random_state=RANDOM_SEED):
+    """
+    Phân chia dữ liệu dành riêng cho giai đoạn phát triển mô hình (Development / Training).
+    Chỉ trả về (train_df, val_df) và niêm phong hoàn toàn tập Test Set:
+    không in số lượng mẫu, không in phân bố nhãn, không expose đối tượng Test dataframe.
+    """
+    train_df, val_df, _ = split_data(
+        df, train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio, random_state=random_state, verbose_test=False
+    )
+    return train_df, val_df
 
 def save_data_audit_report(audit_stats: dict, train_df: pd.DataFrame, val_df: pd.DataFrame, test_df: pd.DataFrame, output_path: str = DATA_AUDIT_PATH):
     """
@@ -297,6 +313,12 @@ def analyze_and_plot_data(train_val_df: pd.DataFrame, full_df: pd.DataFrame = No
         df_copy["token_length"] = token_lengths
 
         # Tính toán các chỉ số phân vị theo yêu cầu
+        pct_truncated_128 = round(float((token_lengths_arr > 128).mean() * 100), 2)
+        pct_truncated_256 = round(float((token_lengths_arr > 256).mean() * 100), 2)
+        p95_val = round(float(np.percentile(token_lengths_arr, 95)), 1)
+        pct_preserved_128 = round(100.0 - pct_truncated_128, 2)
+        coverage_gain_256 = round(pct_truncated_128 - pct_truncated_256, 2)
+
         stats_dict = {
             "scope": "train_val",
             "description": "Calculated on Train + Validation sets (80% of clean data) to prevent data snooping on the held-out Test Set.",
@@ -306,18 +328,19 @@ def analyze_and_plot_data(train_val_df: pd.DataFrame, full_df: pd.DataFrame = No
             "min": int(np.min(token_lengths_arr)),
             "median": round(float(np.median(token_lengths_arr)), 1),
             "p90": round(float(np.percentile(token_lengths_arr, 90)), 1),
-            "p95": round(float(np.percentile(token_lengths_arr, 95)), 1),
+            "p95": p95_val,
             "p99": round(float(np.percentile(token_lengths_arr, 99)), 1),
             "max": int(np.max(token_lengths_arr)),
-            "pct_truncated_at_128": round(float((token_lengths_arr > 128).mean() * 100), 2),
-            "pct_truncated_at_256": round(float((token_lengths_arr > 256).mean() * 100), 2),
+            "pct_truncated_at_128": pct_truncated_128,
+            "pct_truncated_at_256": pct_truncated_256,
             "candidate_max_length": MAX_LENGTH,
             "selected_max_length": MAX_LENGTH,
             "decision_rationale": (
-                "At MAX_LENGTH=128, 96.07% of samples are fully preserved (p95 is 121.0 tokens). "
-                "Truncation is only 3.93%. Doubling sequence length from 128 to 256 quadruples "
-                "the self-attention score matrix size (O(L^2) quadratic scaling) for only a 3.84% coverage gain, "
-                "while end-to-end memory and runtime will be measured empirically during training."
+                f"At MAX_LENGTH={MAX_LENGTH}, {pct_preserved_128:.2f}% of samples are fully preserved "
+                f"(p95 is {p95_val:.1f} tokens). Truncation is only {pct_truncated_128:.2f}%. "
+                f"Doubling sequence length from 128 to 256 quadruples the self-attention score matrix size "
+                f"(O(L^2) quadratic scaling) for only a {coverage_gain_256:.2f}% coverage gain, "
+                f"while end-to-end memory and runtime will be measured empirically during training."
             )
         }
 
@@ -364,7 +387,7 @@ def analyze_and_plot_data(train_val_df: pd.DataFrame, full_df: pd.DataFrame = No
 
 if __name__ == "__main__":
     df, audit_stats = load_and_validate_data(return_audit=True)
-    train_df, val_df, test_df = split_data(df)
+    train_df, val_df, test_df = split_data(df, verbose_test=True)
     save_data_audit_report(audit_stats, train_df, val_df, test_df)
 
     # Scope for token-length EDA: Train + Validation only (Test set held-out)

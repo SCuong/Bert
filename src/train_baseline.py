@@ -35,7 +35,7 @@ from src.config import (
     FIGURES_DIR,
     RANDOM_SEED
 )
-from src.data import load_and_validate_data, split_data
+from src.data import load_and_validate_data, get_train_val_split
 
 def train_and_evaluate_baseline():
     print("="*60)
@@ -44,7 +44,7 @@ def train_and_evaluate_baseline():
     
     # 1. Nạp và phân chia dữ liệu (Tập Test được niêm phong hoàn toàn)
     df = load_and_validate_data()
-    train_df, val_df, _ = split_data(df, random_state=RANDOM_SEED)
+    train_df, val_df = get_train_val_split(df, random_state=RANDOM_SEED)
     print(f"[*] Phạm vi huấn luyện: Train set ({len(train_df)} mẫu)")
     print(f"[*] Phạm vi đánh giá phát triển (Development Evaluation): Validation set ({len(val_df)} mẫu)")
     print("[*] NGUYÊN TẮC BẢO VỆ TEST SET: Tập Test không được nạp, dự đoán hay đánh giá trong giai đoạn này.")

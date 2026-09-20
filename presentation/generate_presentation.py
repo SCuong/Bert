@@ -37,6 +37,7 @@ from src.config import (
     TEST_RATIO,
     PROJECT_ROOT,
     FIGURES_DIR,
+    BASELINE_VAL_METRICS_PATH,
     BASELINE_METRICS_PATH,
     BERT_METRICS_PATH
 )
@@ -45,6 +46,7 @@ def create_presentation(is_draft=False):
     # Guard kiểm tra tính trung thực của thực nghiệm
     has_baseline_metrics = os.path.exists(BASELINE_METRICS_PATH)
     has_bert_metrics = os.path.exists(BERT_METRICS_PATH)
+    has_val_metrics = os.path.exists(BASELINE_VAL_METRICS_PATH)
 
     if not (has_baseline_metrics and has_bert_metrics) and not is_draft:
         raise RuntimeError(
@@ -71,6 +73,10 @@ def create_presentation(is_draft=False):
 
     baseline_metrics = {}
     bert_metrics = {}
+    val_metrics = {}
+    if has_val_metrics:
+        with open(BASELINE_VAL_METRICS_PATH, "r", encoding="utf-8") as f:
+            val_metrics = json.load(f)
     if has_baseline_metrics:
         with open(BASELINE_METRICS_PATH, "r", encoding="utf-8") as f:
             baseline_metrics = json.load(f)
@@ -370,26 +376,45 @@ def create_presentation(is_draft=False):
                   "• Nhược điểm cố hữu của Túi từ (Bag-of-Words):\n"
                   "  - Không hiểu trật tự từ và các cấu trúc đảo ngữ phức tạp.")
 
-    baseline_body = (
-        f"• Đánh giá trên tập Test Set độc lập:\n\n"
-        f"  - Test Accuracy:        {baseline_metrics.get('accuracy', 0.0)*100:.2f}%\n"
-        f"  - Macro Precision:      {baseline_metrics.get('macro_precision', 0.0):.4f}\n"
-        f"  - Macro Recall:         {baseline_metrics.get('macro_recall', 0.0):.4f}\n"
-        f"  - Macro F1-Score:       {baseline_metrics.get('macro_f1', 0.0):.4f}\n"
-        f"  - Thời gian suy luận:   {baseline_metrics.get('inference_time_seconds', 0.0):.3f}s\n\n"
-        "• Nhận định:\n"
-        "  - Thiết lập mốc đối sánh chuẩn xác trước khi so sánh với BERT."
-    ) if has_baseline_metrics else (
-        "• Đánh giá trên tập kiểm thử (Test Set):\n\n"
-        "  - Trạng thái: [PENDING EXPERIMENT]\n"
-        "  - Test Accuracy:        [Pending]\n"
-        "  - Macro Precision:      [Pending]\n"
-        "  - Macro Recall:         [Pending]\n"
-        "  - Macro F1-Score:       [Pending]\n\n"
-        "• Ghi chú quy trình:\n"
-        "  - Trong quá trình phát triển, baseline được đánh giá trên Validation Set.\n"
-        "  - Kết quả Test Set chính thức được đo lường tại bước đánh giá so sánh cuối cùng (evaluate.py)."
-    )
+    if has_val_metrics:
+        val_samples = val_metrics.get("validation_sample_count", 1975)
+        inf_time = val_metrics.get("inference_time_seconds", 0.114)
+        throughput = val_samples / inf_time if inf_time > 0 else 0
+        baseline_body = (
+            f"• Đánh giá phát triển trên Validation Set ({val_samples:,} mẫu):\n\n"
+            f"  - Validation Accuracy:  {val_metrics.get('accuracy', 0.0)*100:.2f}%\n"
+            f"  - Macro Precision:      {val_metrics.get('macro_precision', 0.0):.4f}\n"
+            f"  - Macro Recall:         {val_metrics.get('macro_recall', 0.0):.4f}\n"
+            f"  - Macro F1-Score:       {val_metrics.get('macro_f1', 0.0):.4f}\n"
+            f"  - Thời gian huấn luyện: {val_metrics.get('training_time_seconds', 0.0):.2f}s\n"
+            f"  - Tốc độ suy luận:       {throughput:,.0f} mẫu/s\n\n"
+            "• Ghi chú niêm phong Test Set:\n"
+            "  - Đây là chỉ số phát triển đo trên tập Validation.\n"
+            "  - Tập Test Set được niêm phong cho đánh giá so sánh cuối cùng (evaluate.py)."
+        )
+    elif has_baseline_metrics:
+        baseline_body = (
+            f"• Đánh giá trên tập Test Set độc lập:\n\n"
+            f"  - Test Accuracy:        {baseline_metrics.get('accuracy', 0.0)*100:.2f}%\n"
+            f"  - Macro Precision:      {baseline_metrics.get('macro_precision', 0.0):.4f}\n"
+            f"  - Macro Recall:         {baseline_metrics.get('macro_recall', 0.0):.4f}\n"
+            f"  - Macro F1-Score:       {baseline_metrics.get('macro_f1', 0.0):.4f}\n"
+            f"  - Thời gian suy luận:   {baseline_metrics.get('inference_time_seconds', 0.0):.3f}s\n\n"
+            "• Nhận định:\n"
+            "  - Thiết lập mốc đối sánh chuẩn xác trước khi so sánh với BERT."
+        )
+    else:
+        baseline_body = (
+            "• Đánh giá trên tập kiểm thử (Test Set):\n\n"
+            "  - Trạng thái: [PENDING EXPERIMENT]\n"
+            "  - Test Accuracy:        [Pending]\n"
+            "  - Macro Precision:      [Pending]\n"
+            "  - Macro Recall:         [Pending]\n"
+            "  - Macro F1-Score:       [Pending]\n\n"
+            "• Ghi chú quy trình:\n"
+            "  - Trong quá trình phát triển, baseline được đánh giá trên Validation Set.\n"
+            "  - Kết quả Test Set chính thức được đo lường tại bước đánh giá so sánh cuối cùng (evaluate.py)."
+        )
     add_card(s7, Inches(6.8), Inches(1.6), Inches(5.7), Inches(5.2),
              title="Kết Quả Thực Nghiệm Baseline",
              body=baseline_body)

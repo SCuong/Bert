@@ -50,7 +50,7 @@ from src.config import (
     FIGURES_DIR,
     BERT_TRAINING_HISTORY_PATH
 )
-from src.data import load_and_validate_data, split_data
+from src.data import load_and_validate_data, get_train_val_split
 
 class HotelReviewDataset(Dataset):
     """Dataset PyTorch thuần túy cho bài toán phân loại đánh giá khách sạn"""
@@ -126,7 +126,7 @@ def train_bert(epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, lr=LEARNING_RATE, max_l
 
     # 1. Nạp dữ liệu (Giai đoạn huấn luyện chỉ sử dụng Train và Validation; Test set chỉ nạp ở evaluate.py)
     df = load_and_validate_data()
-    train_df, val_df, _ = split_data(df, random_state=seed)
+    train_df, val_df = get_train_val_split(df, random_state=seed)
 
     # 2. Tokenizer
     print(f"\n[*] Đang khởi tạo Tokenizer: {MODEL_NAME}")

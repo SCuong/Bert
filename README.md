@@ -104,7 +104,18 @@ python -m src.data
 ```bash
 python -m src.train_baseline
 ```
-*Huấn luyện mô hình TF-IDF + Logistic Regression trên Train Set, đánh giá phát triển trên Validation Set, lưu kết quả vào `artifacts/metrics/baseline_validation_metrics.json`, vẽ `artifacts/figures/baseline_val_confusion_matrix.png`, và lưu mô hình tại `artifacts/model/baseline_tfidf_lr.joblib`. Tập Test Set được niêm phong hoàn toàn trong giai đoạn này.*
+*Huấn luyện mô hình TF-IDF + Logistic Regression trên Train Set (13,821 mẫu), đánh giá phát triển trên Validation Set (1,975 mẫu), lưu kết quả vào `artifacts/metrics/baseline_validation_metrics.json`, vẽ `artifacts/figures/baseline_val_confusion_matrix.png`, và lưu mô hình tại `artifacts/model/baseline_tfidf_lr.joblib`. Tập Test Set được niêm phong hoàn toàn trong giai đoạn này.*
+
+*Kết quả đo lường thực tế trên Validation Set (Development Baseline):*
+- **Validation Accuracy:** 81.01%
+- **Validation Macro Precision:** 0.8116
+- **Validation Macro Recall:** 0.8100
+- **Validation Macro F1:** 0.8098
+- **Validation Weighted F1:** 0.8099
+- **Thời gian huấn luyện:** 0.68 giây
+- **Thời gian suy luận Validation:** 0.114 giây (~17,378 mẫu/giây)
+- **Ma trận nhầm lẫn (Validation):** 838 TN, 154 FP, 221 FN, 762 TP (Tổng: 1,975 mẫu)  
+*(Lưu ý: Đây là chỉ số phát triển trên tập Validation, không phải kết quả trên tập Test Set).*
 
 ### 4.4. Huấn luyện & Fine-tuning BERT
 ```bash

@@ -52,7 +52,8 @@
 
 ### Slide 7: Mô hình cơ sở (Baseline): TF-IDF + Logistic Regression (04:45 - 05:30)
 > *"Theo đúng lời dạy trong slide bài giảng: 'We should start from simple to more complex models', chúng em không vội vàng áp dụng ngay Deep Learning mà xây dựng mô hình cơ sở: **TF-IDF kết hợp Logistic Regression**.  
-> Trong quá trình phát triển, mô hình baseline được đánh giá trên Validation Set để thiết lập mốc đo lường chuẩn. Kết quả trên Test Set được bảo vệ cho bước đánh giá so sánh cuối cùng để trả lời câu hỏi nghiên cứu số 1: 'Liệu sự phức tạp của BERT có thực sự đem lại giá trị vượt trội so với giải pháp tuyến tính compact?'"*
+> Trong quá trình phát triển, mô hình baseline được huấn luyện trên Train Set và đánh giá trên Validation Set (1,975 mẫu), đạt Accuracy 81.01%, Macro F1 0.8098 với thời gian huấn luyện chỉ 0.68 giây và tốc độ suy luận hơn 17,300 mẫu/giây.  
+> Tập Test Set được niêm phong hoàn toàn để phục vụ đánh giá so sánh cuối cùng nhằm trả lời câu hỏi nghiên cứu số 1: 'Liệu sự phức tạp của BERT có thực sự đem lại giá trị vượt trội so với giải pháp tuyến tính compact?'"*
 
 ---
 

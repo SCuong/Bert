@@ -45,8 +45,8 @@
 ### Slide 7: Mô Hình Cơ Sở (Baseline): TF-IDF + Logistic Regression
 - **Triết lý AI Project Cycle:** *"Start from simple to more complex models"*.
 - **Kiến trúc Baseline:** N-gram (1, 2), 10,000 features, Sublinear TF scaling kết hợp Logistic Regression (L-BFGS).
-- **Quy trình đánh giá:** Đánh giá hiệu năng phát triển trên Validation Set (`baseline_validation_metrics.json`); kết quả trên Test Set được bảo vệ cho bước đánh giá so sánh cuối cùng.
-- **Kết quả đạt được:** Thiết lập mốc đối sánh vững chắc trước khi áp dụng Deep Learning.
+- **Kết quả thực nghiệm trên Validation Set (1,975 mẫu):** Accuracy 81.01%, Macro F1 0.8098, thời gian huấn luyện 0.68s, tốc độ suy luận ~17,300 mẫu/giây (`baseline_validation_metrics.json`).
+- **Nguyên tắc bảo vệ Test Set:** Kết quả trên Test Set được niêm phong hoàn toàn cho bước đánh giá so sánh cuối cùng.
 
 ### Slide 8: Thiết Kế Thực Nghiệm & Chiến Lược Fine-Tuning
 - **Lựa chọn mô hình:** `google-bert/bert-base-uncased` (12 tầng, 768 chiều ẩn, 12 attention heads, ~110M tham số).

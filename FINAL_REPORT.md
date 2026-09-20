@@ -73,6 +73,16 @@ Dự án được triển khai **mới hoàn toàn từ đầu; không tái sử
 ### 4.1. Baseline Model: TF-IDF + Logistic Regression
 - **Kiến trúc:** `TfidfVectorizer(ngram_range=(1, 2), max_features=10000, sublinear_tf=True)` kết hợp `LogisticRegression(C=1.0, max_iter=1000, solver='lbfgs')`.
 - **Vai trò:** Thiết lập chuẩn đối sánh tối thiểu theo Slide 9 `AI Project Cycle.pptx`.
+- **Kết quả thực nghiệm trên Validation Set (1,975 mẫu - `artifacts/metrics/baseline_validation_metrics.json`):**
+  - **Validation Accuracy:** 81.01%
+  - **Validation Macro Precision:** 0.8116
+  - **Validation Macro Recall:** 0.8100
+  - **Validation Macro F1-score:** 0.8098
+  - **Validation Weighted F1:** 0.8099
+  - **Thời gian huấn luyện:** 0.68 giây
+  - **Thời gian suy luận Validation:** 0.114 giây (~17,378 mẫu/giây)
+  - **Ma trận nhầm lẫn Validation:** 838 True Negatives, 154 False Positives, 221 False Negatives, 762 True Positives.
+  - *(Lưu ý: Tập Test Set được niêm phong hoàn toàn và chỉ được đánh giá tại bước so sánh cuối cùng).*
 
 ### 4.2. Main Model: Fine-Tuned BERT (`bert-base-uncased`)
 - **Kiến trúc:** 12 tầng Transformer Encoder, 768 chiều ẩn, 12 attention heads (~110M tham số).
