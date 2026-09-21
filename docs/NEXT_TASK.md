@@ -1,199 +1,138 @@
 # NEXT TASK
 
-task_id: overnight-005
-reviewed_commit_sha: 2a8a407627a56541b86053a98ec2973fe8127cbe
+task_id: overnight-007
+reviewed_commit_sha: 9b442fafd1ff81828317365b855ba7621ed13a19
 status: READY
 
 ## Goal
 
-Harden the BERT-model completion guard, then run the first and only planned validation-only BERT fine-tuning run with the already-fixed configuration. Persist real validation artifacts and training telemetry. Keep the held-out Test Set sealed; do not run final comparative evaluation in this phase.
+Perform evidence-based qualitative analysis of the 20 already-frozen BERT Test misclassifications in artifacts/metrics/error_cases.json. Do not rerun Test evaluation, retrain, retune, or modify model artifacts. This phase is analysis-only and prepares the evidence for the final report/presentation packaging phase.
 
-## Reviewer decision on overnight-004
+## Reviewer decision on final Test evaluation
 
-The validation-only baseline is accepted as the fixed development reference.
+The held-out Test evaluation is accepted and frozen.
 
-Accepted measured Baseline Validation result:
-- split: Validation only
-- sample count: 1,975
-- Accuracy: 0.810126582278481
-- Macro Precision: 0.8115951441377918
-- Macro Recall: 0.8099680454828865
-- Macro F1: 0.8098450029770088
-- Weighted F1: 0.8098783478942885
-- confusion matrix: [[838, 154], [221, 762]]
+Final Test results:
+- Test samples: 3,949
+- Baseline Accuracy: 0.8194479615092428
+- Baseline Macro F1: 0.8192008301395627
+- BERT Accuracy: 0.8483160293745252
+- BERT Macro F1: 0.8482655894059412
+- Accuracy delta BERT - Baseline: +0.0289
+- Macro F1 delta BERT - Baseline: +0.0291
+- Baseline confusion matrix: [[1691, 293], [420, 1545]]
+- BERT confusion matrix: [[1711, 273], [326, 1639]]
+- Total BERT Test errors: 599
+- Selected qualitative sample: 10 high-confidence FP + 10 high-confidence FN
 
-The split-sealing and data-derived EDA rationale changes are also accepted.
-
-One safety issue must be fixed before the BERT run is treated as complete: `train_bert.py` currently creates `BERT_BEST_MODEL_DIR` before training, while `evaluate.py` considers the BERT model available if that directory merely exists. A failed/interrupted training run could therefore leave an empty/incomplete directory that incorrectly opens the final Test-evaluation gate. The final evaluator must require a genuinely complete trained-model artifact, not just a directory.
+These numbers are FINAL. Do not recompute predictions or alter the experiment.
 
 ## Required work
 
-### A. Harden BERT artifact completion before training
+1. Read artifacts/metrics/error_cases.json and manually inspect all 20 selected cases.
 
-1. In `src/train_bert.py`, do not pre-create `BERT_BEST_MODEL_DIR` merely to prepare for training. Let the successful model-save step create/populate it.
-2. Add a robust model-completeness check shared with `src/evaluate.py`. At minimum, a BERT artifact must contain:
-   - `config.json`;
-   - model weights (`model.safetensors` or `pytorch_model.bin`);
-   - tokenizer files sufficient for `AutoTokenizer.from_pretrained(BERT_BEST_MODEL_DIR)`.
-3. Prefer an explicit local completion marker/manifest written only after all of the following succeed:
-   - training finishes;
-   - the best checkpoint is loaded;
-   - the best model and tokenizer are saved;
-   - validation metrics/history are persisted.
-   `evaluate.py` must not unlock the Test Set unless the trained BERT artifact passes the completeness check (and completion marker if implemented).
-4. Keep the baseline model guard unchanged except for any shared helper refactor needed.
-5. Do not load, split, print, or inspect Test labels/predictions while implementing or smoke-checking this guard.
+2. For each case, record:
+   - case index;
+   - true label;
+   - predicted label;
+   - confidence;
+   - a short identifying excerpt, not a rewritten example;
+   - observed linguistic/data pattern;
+   - concise evidence-based explanation of why the case may be difficult;
+   - analysis confidence: high / medium / low.
 
-### B. Add explicit BERT Validation artifact paths
+3. Do not force cases into preconceived categories. Use categories only when supported by the actual text. Possible categories may include:
+   - mixed sentiment / competing clauses;
+   - negation or concessive structure;
+   - possible label ambiguity or label noise;
+   - template/source marker effects such as "No Positive" or "No Negative";
+   - long review / possible truncation;
+   - noisy grammar, spelling, or malformed text;
+   - domain/platform complaint versus hotel sentiment;
+   - other observed patterns.
+   Do not claim sarcasm unless the text genuinely supports it.
 
-Add development/validation paths in `src/config.py`, separate from final-Test paths:
-- `artifacts/metrics/bert_validation_metrics.json`
-- `artifacts/figures/bert_val_confusion_matrix.png`
+4. Distinguish clearly between:
+   - a plausible model reasoning failure;
+   - an ambiguous mixed-sentiment case;
+   - a possible dataset-label/data-construction issue.
+   Never state that a label is definitely wrong unless the dataset provides evidence for that conclusion.
 
-Do not reuse `bert_test_metrics.json`, `BERT_METRICS_PATH`, or any final-Test filename for validation results.
+5. For each of the 20 cases, compute BERT token length using the frozen tokenizer and MAX_LENGTH=128, and mark whether the text would be truncated. This is descriptive analysis only. Do not run model inference again.
 
-### C. Preflight the fixed training configuration
+6. Produce:
+   - docs/04_error_analysis.md
+   - artifacts/metrics/error_analysis_summary.json
 
-Before the real run, verify without touching the Test Set:
-- `torch.cuda.is_available()` and the actual device selected;
-- GPU name and total VRAM if CUDA is available;
-- installed PyTorch and Transformers versions;
-- `TrainingArguments` accepts the arguments used by the project;
-- `Trainer` construction remains compatible with `processing_class` in the installed version;
-- Train/Validation split remains 13,821 / 1,975 with seed 42 while Test reporting stays sealed.
+7. docs/04_error_analysis.md must contain:
+   - scope and methodology;
+   - explicit note that these are the 20 highest-confidence selected errors, not a random or statistically representative sample of all 599 errors;
+   - per-case analysis table;
+   - aggregate category counts derived from the actual 20 assignments;
+   - FP vs FN pattern observations;
+   - truncation observations based on measured token lengths;
+   - data-quality/label-ambiguity observations;
+   - limitations of the qualitative analysis;
+   - a short evidence-based answer to RQ3.
 
-The official configuration remains fixed from the already-reviewed design:
-- model: `google-bert/bert-base-uncased`
-- MAX_LENGTH: 128
-- epochs: 3
-- learning rate: 2e-5
-- weight decay: 0.01
-- warmup ratio: 0.1
-- train batch size: 16
-- seed: 42
-- checkpoint selection metric: Validation Macro F1
+8. error_analysis_summary.json must be machine-readable and derived from the same 20 cases. Include:
+   - total_selected_cases = 20;
+   - selected_fp = 10;
+   - selected_fn = 10;
+   - category_counts;
+   - truncation_count;
+   - per_case records with labels/prediction/confidence/token_length/truncated/categories/analysis_confidence.
 
-Do not tune these values in response to the Baseline Validation score or intermediate BERT Validation scores.
+9. Cross-check that no final Test metric JSON, model weight, hyperparameter, split logic, or prediction output is modified.
 
-If the official run fails because of CUDA OOM or an environment/runtime incompatibility, do not silently change the experiment configuration and do not fabricate a replacement result. Record the exact failure in `docs/REVIEW_REQUEST.md`, mark the request as blocked, and stop so the next review can make a grounded resource/configuration decision.
-
-### D. Run the real BERT fine-tuning phase
-
-After A-C pass, run exactly:
-
-`python -m src.train_bert`
-
-Requirements:
-1. Train on Train only.
-2. Use Validation only for per-epoch evaluation and best-checkpoint selection.
-3. Never instantiate/use Test examples for predictions or metrics during this command.
-4. Keep `load_best_model_at_end=True` and save the actually selected best model/tokenizer to the local ignored BERT model directory.
-5. Persist the real `trainer.state.log_history` / training history already implemented.
-6. Record actual training duration.
-7. If CUDA is used, also record actual GPU name and peak allocated/reserved CUDA memory if reasonably available from PyTorch. These are measurements, not estimates.
-
-### E. Evaluate the selected BERT checkpoint on Validation only
-
-After training has completed and the best checkpoint is loaded, evaluate/predict once on the Validation dataset and persist `bert_validation_metrics.json` with at minimum:
-- `model_name`;
-- `evaluation_split: validation`;
-- Validation sample count;
-- Accuracy;
-- Macro Precision;
-- Macro Recall;
-- Macro F1;
-- Weighted F1;
-- per-class Precision / Recall / F1;
-- Validation inference time;
-- confusion matrix;
-- best Validation metric / selected best checkpoint information;
-- training configuration actually used;
-- training time;
-- device/GPU information actually observed.
-
-Save `bert_val_confusion_matrix.png` from the same predictions.
-
-The confusion-matrix total must equal 1,975.
-
-### F. Validate training-history provenance
-
-`artifacts/metrics/bert_training_history.json` must reflect real Trainer logs, not hand-entered values. Verify:
-- train-loss points exist;
-- validation-loss points exist for the evaluation epochs;
-- Validation Accuracy and Macro F1 correspond to Trainer evaluation logs;
-- best-model/checkpoint information is internally consistent with the configured `metric_for_best_model`;
-- `artifacts/figures/training_history.png` is generated from those real logs.
-
-If a claimed curve/metric is not present in Trainer logs, change the report/slide claim instead of synthesizing it.
-
-### G. Preserve Test-set sealing and artifact integrity
-
-Before completion, explicitly confirm that this phase did NOT create or modify final-Test outputs:
-- `artifacts/metrics/baseline_test_metrics.json`
-- `artifacts/metrics/bert_test_metrics.json`
-- `artifacts/metrics/comparative_metrics.json`
-- `artifacts/metrics/error_cases.json`
-- `artifacts/figures/baseline_test_confusion_matrix.png`
-- `artifacts/figures/bert_test_confusion_matrix.png`
-
-Do NOT run `python -m src.evaluate`.
-
-Do NOT generate the final PowerPoint.
-
-### H. Update documentation as Validation-only development evidence
-
-Update only the relevant project/report/presentation source files to reflect the real BERT Validation run. Keep the distinction explicit:
-- Baseline Validation = development result;
-- BERT Validation = development result;
-- final comparative Test result = still pending.
-
-It is acceptable to report a same-Validation-split delta between BERT and Baseline as a development observation, but do not convert it into the final research conclusion and do not alter BERT hyperparameters based on it.
-
-Do not claim Test performance, final superiority, or final error patterns yet.
+10. Do NOT in this phase:
+   - run src.evaluate;
+   - run src.train_baseline;
+   - run src.train_bert;
+   - generate the final PowerPoint;
+   - rewrite FINAL_REPORT;
+   - change README research conclusions;
+   - modify model artifacts;
+   - claim the 20 selected cases represent all 599 errors.
 
 ## Verification criteria
 
-Before completion, verify all of the following:
+Before completion verify:
+- all 20 entries in error_cases.json are represented exactly once in the analysis;
+- FP count = 10 and FN count = 10;
+- token lengths are measured with the frozen BERT tokenizer;
+- every truncation claim is supported by token_length > 128;
+- category counts exactly match per-case assignments;
+- uncertain cases are explicitly marked as uncertain rather than overstated;
+- no training or Test prediction command was executed;
+- final Test metrics and model artifacts remain unchanged.
 
-- the final evaluator cannot unlock merely because an empty `bert_best_model/` directory exists;
-- the BERT artifact completeness guard checks real saved model/tokenizer content;
-- root-level BERT imports and TrainingArguments/Trainer API preflight pass;
-- Train/Validation remain 13,821 / 1,975 with Test reporting sealed;
-- `python -m src.train_bert` completes successfully with the fixed reviewed configuration;
-- best checkpoint selection is based only on Validation Macro F1;
-- `bert_validation_metrics.json` contains real measured Validation values and its confusion matrix sums to 1,975;
-- `bert_training_history.json` contains real train/eval logs;
-- `training_history.png` and `bert_val_confusion_matrix.png` are derived from those real run artifacts;
-- the saved BERT model/tokenizer exists locally and remains Git-ignored;
-- no final Test metric, error-analysis, or final-Test confusion-matrix artifact is generated or changed;
-- docs and presentation source label all new BERT numbers as Validation/development results.
+## Required commit message
+
+Commit the tracked analysis artifacts with exactly:
+
+analysis: classify final BERT test errors
+
+Push to main.
 
 ## Completion protocol
 
-When done successfully:
-1. Review the generated BERT Validation JSON, training-history JSON, and figures for internal consistency.
-2. Commit tracked source/docs/real Validation artifacts with exactly:
-   `experiment: fine-tune BERT with validation-only evaluation`
-3. Push to `main`.
-4. Obtain the exact implementation SHA with `git rev-parse HEAD` after that implementation commit is created and pushed.
-5. Create/update `docs/REVIEW_REQUEST.md` containing:
-   - `request_commit_sha: <exact implementation SHA>`
-   - `status: READY_FOR_REVIEW`
-   - summary of the BERT artifact-guard hardening
-   - exact runtime/device preflight results
-   - exact BERT Validation metrics copied from the generated JSON
-   - training time and Validation inference time
-   - best checkpoint / best Validation Macro F1
-   - training-history consistency check
-   - confusion-matrix consistency check
-   - measured GPU peak memory if CUDA was used and the value was captured
-   - confirmation that the local BERT model/tokenizer exists and is Git-ignored
-   - confirmation that final Test artifacts remain absent/unchanged
+After pushing the implementation/analysis commit:
+1. Obtain the exact commit SHA with git rev-parse HEAD.
+2. Update docs/REVIEW_REQUEST.md with:
+   - request_commit_sha: <exact analysis commit SHA>
+   - status: READY_FOR_REVIEW
+   - summary of the qualitative method
+   - category counts
+   - truncation count
+   - key FP observations
+   - key FN observations
+   - possible label/data-quality observations with uncertainty language
+   - confirmation that all 20 cases were covered
+   - confirmation that no model/Test predictions were rerun
+   - files changed
    - verification commands actually run
-   - files/artifacts changed
    - known issues/blockers
-   - proposed next phase
-6. Commit/push the review request if needed.
-7. Stop and wait for the next NEXT_TASK.
-
-If the real BERT run is blocked by OOM or an environment/runtime error, do not invent results or change experimental hyperparameters silently. Record the exact blocker and evidence in `docs/REVIEW_REQUEST.md`, push that request, and stop.
+   - proposed next phase: final report + final PPT + demo smoke test + study/defense materials
+3. Commit/push the review request if needed.
+4. Stop and wait for the next NEXT_TASK.
