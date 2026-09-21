@@ -1,0 +1,341 @@
+{
+    "total_selected_cases": 20,
+    "selected_fp": 10,
+    "selected_fn": 10,
+    "truncation_count": 0,
+    "category_counts": {
+        "mixed sentiment / competing clauses": 15,
+        "possible label ambiguity or label noise": 8,
+        "negation or concessive structure": 8,
+        "template/source marker effects": 6,
+        "noisy grammar, spelling, or malformed text": 4,
+        "domain/platform complaint versus hotel sentiment": 2,
+        "plausible model reasoning failure": 1
+    },
+    "cases": [
+        {
+            "case_index": 1,
+            "true_label": 0,
+            "predicted_label": 1,
+            "confidence": 0.9980095028877258,
+            "token_length": 33,
+            "truncated": false,
+            "excerpt": "Paying for parking The rooms are nice and clean and the beds are really comfortable",
+            "linguistic_pattern": "Mixed sentiment with predominant positive phrasing over single complaint",
+            "explanation": "Reviewer opens with a single complaint about parking fees, followed by overwhelming positive praise for rooms, beds, pool, sauna, and an explicit 'Overall nice stay'. The model attends heavily to the dominant positive tokens, while ground-truth is 0.",
+            "categories": [
+                "mixed sentiment / competing clauses",
+                "possible label ambiguity or label noise"
+            ],
+            "analysis_confidence": "high"
+        },
+        {
+            "case_index": 2,
+            "true_label": 0,
+            "predicted_label": 1,
+            "confidence": 0.9979987740516663,
+            "token_length": 21,
+            "truncated": false,
+            "excerpt": "Nice room with good facilities Clean and tidy Good location the staff were very attentive excellent breakfast",
+            "linguistic_pattern": "Exclusively positive text with negative ground-truth label",
+            "explanation": "Text contains solely positive evaluative adjectives ('Nice', 'good', 'Clean', 'tidy', 'attentive', 'excellent') with zero negative sentiment. The model prediction of class 1 is linguistically unambiguous; ground-truth label 0 strongly indicates source annotation error.",
+            "categories": [
+                "possible label ambiguity or label noise"
+            ],
+            "analysis_confidence": "high"
+        },
+        {
+            "case_index": 3,
+            "true_label": 0,
+            "predicted_label": 1,
+            "confidence": 0.997961163520813,
+            "token_length": 6,
+            "truncated": false,
+            "excerpt": "nothing everything was excellent",
+            "linguistic_pattern": "Form-field concatenation artifact ('What did you dislike: nothing' + 'What did you like: everything was excellent')",
+            "explanation": "Concatenation of form fields without delimiters yields 'nothing everything was excellent'. The communicative intent is unequivocally positive. Ground-truth label 0 is a clear source labeling artifact.",
+            "categories": [
+                "template/source marker effects",
+                "possible label ambiguity or label noise"
+            ],
+            "analysis_confidence": "high"
+        },
+        {
+            "case_index": 4,
+            "true_label": 0,
+            "predicted_label": 1,
+            "confidence": 0.9979230761528015,
+            "token_length": 12,
+            "truncated": false,
+            "excerpt": "All staff in the slow everything Wifi very good",
+            "linguistic_pattern": "Noisy syntax and mixed sentiment across short clauses",
+            "explanation": "Contains ungrammatical complaint ('All staff in the slow everything') paired with positive statement ('Wifi very good'). Model weighs 'very good' heavily and fails to capture the malformed negative clause.",
+            "categories": [
+                "mixed sentiment / competing clauses",
+                "noisy grammar, spelling, or malformed text"
+            ],
+            "analysis_confidence": "medium"
+        },
+        {
+            "case_index": 5,
+            "true_label": 0,
+            "predicted_label": 1,
+            "confidence": 0.9978874325752258,
+            "token_length": 23,
+            "truncated": false,
+            "excerpt": "It s not Kensington it s Shepherd s Bush a bit miss leading On the location front Staff and cleanliness",
+            "linguistic_pattern": "Location complaint with negation and misspelling alongside positive aspects",
+            "explanation": "Reviewer notes misleading location ('not Kensington... a bit miss leading') but mentions 'Staff and cleanliness'. The model fails on the misspelled 'miss leading' and focuses on positive associations of staff and cleanliness.",
+            "categories": [
+                "negation or concessive structure",
+                "mixed sentiment / competing clauses",
+                "noisy grammar, spelling, or malformed text"
+            ],
+            "analysis_confidence": "high"
+        },
+        {
+            "case_index": 6,
+            "true_label": 0,
+            "predicted_label": 1,
+            "confidence": 0.9978448152542114,
+            "token_length": 14,
+            "truncated": false,
+            "excerpt": "Decor could do with freshening up Staff very welcoming very pleasant",
+            "linguistic_pattern": "Hedged mild critique contrasted with strong interpersonal praise",
+            "explanation": "A polite hedged suggestion ('Decor could do with freshening up') is followed by strong positive tokens ('very welcoming very pleasant'). The model predicts class 1 due to praise dominance over the mild complaint.",
+            "categories": [
+                "mixed sentiment / competing clauses"
+            ],
+            "analysis_confidence": "high"
+        },
+        {
+            "case_index": 7,
+            "true_label": 0,
+            "predicted_label": 1,
+            "confidence": 0.9978066086769104,
+            "token_length": 21,
+            "truncated": false,
+            "excerpt": "Smell mould the price of Valet arking Staff excellent Chino lation s amazing as always",
+            "linguistic_pattern": "Severe physical complaints mixed with superlative praise and noisy spelling",
+            "explanation": "Reviewer notes serious hygiene/cost issues ('Smell mould', 'price of Valet arking') alongside high praise ('Staff excellent', 'amazing as always'). Typos ('arking', 'Chino lation s') dilute the negative tokens while 'excellent' and 'amazing' drive prediction to 1.",
+            "categories": [
+                "mixed sentiment / competing clauses",
+                "noisy grammar, spelling, or malformed text"
+            ],
+            "analysis_confidence": "high"
+        },
+        {
+            "case_index": 8,
+            "true_label": 0,
+            "predicted_label": 1,
+            "confidence": 0.9976789355278015,
+            "token_length": 11,
+            "truncated": false,
+            "excerpt": "No bar fridge in room Excellent value for money",
+            "linguistic_pattern": "Specific amenity negation contrasted with strong global value praise",
+            "explanation": "Negative amenity note ('No bar fridge in room') is countered by strong positive verdict ('Excellent value for money'). The model prioritizes the overall value praise over the missing fridge.",
+            "categories": [
+                "mixed sentiment / competing clauses",
+                "negation or concessive structure",
+                "template/source marker effects"
+            ],
+            "analysis_confidence": "high"
+        },
+        {
+            "case_index": 9,
+            "true_label": 0,
+            "predicted_label": 1,
+            "confidence": 0.9975062012672424,
+            "token_length": 39,
+            "truncated": false,
+            "excerpt": "The Hotel doesn t have fitness facilities like a gym steam or sauna These would make our stay very enjoyable",
+            "linguistic_pattern": "Negative facility absence framed hypothetically, followed by strong positive service praise",
+            "explanation": "Notes absence of gym/sauna ('doesn t have... would make stay very enjoyable') but explicitly praises rooms ('well maintained') and staff ('very friendly and always willing to help'). Positive lexical density outweighs the amenity absence.",
+            "categories": [
+                "mixed sentiment / competing clauses",
+                "negation or concessive structure"
+            ],
+            "analysis_confidence": "high"
+        },
+        {
+            "case_index": 10,
+            "true_label": 0,
+            "predicted_label": 1,
+            "confidence": 0.9974844455718994,
+            "token_length": 45,
+            "truncated": false,
+            "excerpt": "Wish it was closer it was about 15 min bus ride to downtown Otherwise it wasn t a bad hotel I liked the rooms",
+            "linguistic_pattern": "Minor distance complaint followed by litotes ('wasn t a bad hotel') and positive remarks",
+            "explanation": "Reviewer expresses minor wish regarding location, then uses litotes ('wasn t a bad hotel') and positive comments ('liked the rooms', 'spacious enough', 'parking right next door'). The model classifies litotes + positive statements as Positive.",
+            "categories": [
+                "mixed sentiment / competing clauses",
+                "negation or concessive structure"
+            ],
+            "analysis_confidence": "high"
+        },
+        {
+            "case_index": 11,
+            "true_label": 1,
+            "predicted_label": 0,
+            "confidence": 0.9957208037376404,
+            "token_length": 40,
+            "truncated": false,
+            "excerpt": "Unpleasant smell all around the hotel specially from the toilet and bathroom It seems that they only clean with water",
+            "linguistic_pattern": "Severe hygiene complaint paired with positive location and positive ground-truth label",
+            "explanation": "Detailed complaint about foul odors and inadequate cleaning ('only clean with water no more detergents') with a single closing positive line ('location was great'). The model predicts Negative based on intense negative sentiment; ground-truth 1 is highly ambiguous.",
+            "categories": [
+                "mixed sentiment / competing clauses",
+                "possible label ambiguity or label noise"
+            ],
+            "analysis_confidence": "high"
+        },
+        {
+            "case_index": 12,
+            "true_label": 1,
+            "predicted_label": 0,
+            "confidence": 0.9955767393112183,
+            "token_length": 39,
+            "truncated": false,
+            "excerpt": "I did not like the standerd room i booked it was very poor old cold and isolated at the back of the hotel",
+            "linguistic_pattern": "Exclusively negative review ending with 'No Positive' marker and positive ground-truth label",
+            "explanation": "Text contains exclusively negative evaluations ('did not like', 'very poor old cold and isolated', 'had to chang to a bitter room and pay more') ending with 'No Positive'. Model prediction 0 is linguistically accurate; ground-truth label 1 is an undeniable data error.",
+            "categories": [
+                "possible label ambiguity or label noise",
+                "template/source marker effects",
+                "noisy grammar, spelling, or malformed text"
+            ],
+            "analysis_confidence": "high"
+        },
+        {
+            "case_index": 13,
+            "true_label": 1,
+            "predicted_label": 0,
+            "confidence": 0.995320737361908,
+            "token_length": 42,
+            "truncated": false,
+            "excerpt": "I paid 409 for a basic twin room The hotel was nice but the price is bloody extortionate Not worth the money at all",
+            "linguistic_pattern": "Extremely negative price complaint ending with 'No Positive' marker and positive ground-truth label",
+            "explanation": "Despite mentioning 'hotel was nice', the core message is furious overpricing ('bloody extortionate', 'Not worth the money at all', 'No Positive'). Model predicts Negative with high confidence; ground-truth label 1 is a clear annotation error.",
+            "categories": [
+                "possible label ambiguity or label noise",
+                "template/source marker effects",
+                "mixed sentiment / competing clauses"
+            ],
+            "analysis_confidence": "high"
+        },
+        {
+            "case_index": 14,
+            "true_label": 1,
+            "predicted_label": 0,
+            "confidence": 0.9950059056282043,
+            "token_length": 126,
+            "truncated": false,
+            "excerpt": "This hotel is like finding an oasis in a neighborhood that has seen better days. The property is clean",
+            "linguistic_pattern": "Long complex review with strong initial praise shifting to severe noise disturbance and negative conclusion",
+            "explanation": "Reviewer begins with high praise ('oasis', 'clean', 'freshly refurnished', 'comfortable', 'good value'), but describes severe external disturbances ('sleep was interrupted... loud cars and people yelling') and concludes 'would look for other options next time and not stay in this neighborhood again'. Model is swayed by the concluding negative verdict.",
+            "categories": [
+                "mixed sentiment / competing clauses",
+                "domain/platform complaint versus hotel sentiment"
+            ],
+            "analysis_confidence": "high"
+        },
+        {
+            "case_index": 15,
+            "true_label": 1,
+            "predicted_label": 0,
+            "confidence": 0.9945788383483887,
+            "token_length": 51,
+            "truncated": false,
+            "excerpt": "The small rooms We booked a window room but were told that none were available on check in VERY small rooms",
+            "linguistic_pattern": "Room size complaint followed by pragmatic rationalization and positive verdict",
+            "explanation": "Complains about tiny windowless room ('VERY small rooms you dont want to spend much time in room'), then pragmatically rationalizes ('in the middle of SOHO why would you Good place to rest your head'). Model focuses on the repeated size complaints.",
+            "categories": [
+                "mixed sentiment / competing clauses",
+                "negation or concessive structure"
+            ],
+            "analysis_confidence": "high"
+        },
+        {
+            "case_index": 16,
+            "true_label": 1,
+            "predicted_label": 0,
+            "confidence": 0.9943591952323914,
+            "token_length": 117,
+            "truncated": false,
+            "excerpt": "If you've stayed at a Kimpton Hotel before, well, you know what you're in for. It is an old building converted to a cool",
+            "linguistic_pattern": "Attribution of negative views to companions followed by explicit personal refutation ('I disagree. The service was great')",
+            "explanation": "Reviewer quotes negative opinions of companions ('some people in my group didn't see it that way. They saw it as an old hotel, with new sheets') and explicitly refutes them ('I disagree. The service was great, located in a good area'). Model fails to disentangle quoted criticism from personal praise.",
+            "categories": [
+                "plausible model reasoning failure",
+                "negation or concessive structure",
+                "mixed sentiment / competing clauses"
+            ],
+            "analysis_confidence": "high"
+        },
+        {
+            "case_index": 17,
+            "true_label": 1,
+            "predicted_label": 0,
+            "confidence": 0.9942574501037598,
+            "token_length": 74,
+            "truncated": false,
+            "excerpt": "Booking com didn t book 2 rooms that we had payed for only one we had to pay for another room which restricted us",
+            "linguistic_pattern": "Booking platform billing grievance with 'No Positive' marker and positive ground-truth label",
+            "explanation": "Entire text is an angry complaint against Booking.com billing error ('totally disgusted with booking com will not use them again... I want a explanationNo Positive'). Zero positive sentiment towards the hotel. Ground-truth label 1 is a glaring data error.",
+            "categories": [
+                "domain/platform complaint versus hotel sentiment",
+                "possible label ambiguity or label noise",
+                "template/source marker effects"
+            ],
+            "analysis_confidence": "high"
+        },
+        {
+            "case_index": 18,
+            "true_label": 1,
+            "predicted_label": 0,
+            "confidence": 0.994032084941864,
+            "token_length": 23,
+            "truncated": false,
+            "excerpt": "Rooms not soundproof at all you hear people in the hallway Small bed rooftop and pool was nice Good location",
+            "linguistic_pattern": "Soundproofing and bed complaints balanced against pool and location praise",
+            "explanation": "Negative room attributes ('not soundproof at all', 'Small bed') juxtaposed with positive hotel attributes ('rooftop and pool was nice Good location'). Model gives higher weight to the negative acoustic and bed complaints.",
+            "categories": [
+                "mixed sentiment / competing clauses",
+                "negation or concessive structure"
+            ],
+            "analysis_confidence": "high"
+        },
+        {
+            "case_index": 19,
+            "true_label": 1,
+            "predicted_label": 0,
+            "confidence": 0.9939271807670593,
+            "token_length": 59,
+            "truncated": false,
+            "excerpt": "television would not work over 5 days despite 4 reports hotel denied responsibility said I must have failed to access it",
+            "linguistic_pattern": "Unresolved customer service grievance with 'No Positive' marker and positive ground-truth label",
+            "explanation": "Severe 5-day television and customer service failure ('hotel denied responsibility... this is ridiculous... never will againNo Positive'). Zero positive sentiment. Model correctly predicts Negative; ground-truth label 1 is a clear annotation error.",
+            "categories": [
+                "possible label ambiguity or label noise",
+                "template/source marker effects"
+            ],
+            "analysis_confidence": "high"
+        },
+        {
+            "case_index": 20,
+            "true_label": 1,
+            "predicted_label": 0,
+            "confidence": 0.9937849044799805,
+            "token_length": 31,
+            "truncated": false,
+            "excerpt": "Rooms are very dark no extra outlets in the bathroom no proper fan in the bathroom ventilation system was odd",
+            "linguistic_pattern": "Multiple specific room defects contrasted with friendly staff and good location",
+            "explanation": "Listing of multiple room defects ('very dark', 'no extra outlets', 'no proper fan', 'odd ventilation') followed by 'Location is fairly good staff was friendly and helpful'. Model gives greater cumulative weight to the multiple negative room features.",
+            "categories": [
+                "mixed sentiment / competing clauses",
+                "negation or concessive structure"
+            ],
+            "analysis_confidence": "high"
+        }
+    ]
+}
