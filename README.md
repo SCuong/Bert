@@ -3,7 +3,7 @@
 
 [![Python 3.11](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.x-red.svg)](https://pytorch.org/)
-[![Hugging Face](https://img.shields.io/badge/Transformers-4.x-yellow.svg)](https://huggingface.co/)
+[![Hugging Face](https://img.shields.io/badge/Transformers-5.17.0-yellow.svg)](https://huggingface.co/)
 [![Streamlit](https://img.shields.io/badge/Demo-Streamlit-FF4B4B.svg)](https://streamlit.io/)
 
 Đồ án môn học **Trí Tuệ Nhân Tạo (Artificial Intelligence)**  
@@ -21,7 +21,7 @@ Bài toán đặt ra: **Tự động phân loại cảm xúc (Sentiment Analysis
 
 - **Mô hình cốt lõi:** `google-bert/bert-base-uncased` (110M tham số), fine-tuning toàn diện (Full Fine-Tuning) bằng PyTorch và Hugging Face Transformers.
 - **Mô hình cơ sở (Baseline):** TF-IDF (10,000 unigram + bigram) kết hợp Logistic Regression.
-- **Tập dữ liệu:** Teacher-provided hotel-review sentiment dataset (`data/dts_20k_raw.csv`), quy mô ban đầu 20,000 mẫu. Sau kiểm toán dữ liệu và loại bỏ 255 mẫu (rỗng, xung đột nhãn, trùng lặp), tập sạch còn **19,745 mẫu duy nhất** (9,921 Negative, 9,824 Positive), phân chia Stratified Split (Seed 42) thành Train (13,821), Validation (1,975), và Test (3,949).
+- **Tập dữ liệu:** Teacher-provided hotel-review sentiment dataset (`data/dts_20k_raw.csv`), quy mô ban đầu 20,000 mẫu thô. Trong dữ liệu quan sát thấy các marker định dạng như `'No Negative'`, `'No Positive'` (đây là quan sát hình thức dữ liệu, không phải chứng minh nguồn gốc độc lập). Sau kiểm toán dữ liệu và loại bỏ 255 mẫu (rỗng, xung đột nhãn, trùng lặp), tập sạch còn **19,745 mẫu duy nhất** (9,921 Negative, 9,824 Positive), phân chia Stratified Split (Seed 42) thành Train (13,821), Validation (1,975), và Test (3,949).
 
 ---
 
@@ -29,19 +29,20 @@ Bài toán đặt ra: **Tự động phân loại cảm xúc (Sentiment Analysis
 
 > [!NOTE]
 > Kết quả đánh giá đối đầu được thực hiện đồng thời trên cùng tập kiểm thử độc lập (**Held-Out Test Set: 3,949 mẫu**), được niêm phong hoàn toàn trong suốt quá trình phát triển mô hình.  
-> Các kết quả tham khảo từ notebook cũ môn học (`DL_Model.ipynb`) chỉ báo cáo Accuracy (NNLM: 79.00%, BiLSTM: 75.00%, Old BERT: 65.20%); các chỉ số Precision, Recall, Macro F1 không được tài liệu cũ công bố (`Not reported`).
 
 | Mô Hình / Phương Pháp | Vai Trò / Nền Tảng | Accuracy | Macro Precision | Macro Recall | Macro F1 | Weighted F1 | Thời Gian Suy Luận | Tốc Độ Suy Luận |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **TF-IDF + Logistic Regression** | *Mô hình cơ sở mới (Nhóm)* | 81.94% | 0.8208 | 0.8193 | 0.8192 | 0.8192 | **0.137 s** | **28,784 mẫu/s** |
 | **Fine-Tuned BERT (`bert-base-uncased`)** | *Mô hình chính mới (Nhóm)* | **84.83%** | **0.8486** | **0.8482** | **0.8483** | **0.8483** | 307.30 s | 12.85 mẫu/s |
-| **Mức độ cải thiện ($\Delta$ = BERT - Baseline)** | *Độ chênh lệch thực tế* | **+2.89%** | **+0.0278** | **+0.0289** | **+0.0291** | **+0.0291** | *+307.16 s* | *-28,771 mẫu/s* |
+| **Mức độ cải thiện ($\Delta$ = BERT - Baseline)** | *Độ chênh lệch thực tế* | **+2.89 điểm phần trăm** | **+0.0278** | **+0.0289** | **+0.0291** | **+0.0291** | *+307.16 s* | *-28,771 mẫu/s* |
 
-*So sánh với kết quả lịch sử trong tài liệu môn học (`DL_Model.ipynb`):*  
-- NNLM (Neural Network Language Model): 79.00% Accuracy  
-- BiLSTM: 75.00% Accuracy  
-- Old BERT (Triển khai lỗi kỹ thuật): **65.20% Accuracy**  
-$\rightarrow$ **Pipeline Fine-Tuning mới của nhóm đạt 84.83% Accuracy**, cải thiện **+19.63 điểm phần trăm** so với code BERT cũ của môn học (xem phân tích tại [`docs/03_old_bert_analysis.md`](docs/03_old_bert_analysis.md)).
+> [!NOTE]
+> **CHÚ THÍCH THAM KHẢO LỊCH SỬ (HISTORICAL REFERENCE ONLY):**  
+> Kết quả mô hình cũ trong tài liệu môn học (`DL_Model.ipynb`):  
+> - NNLM (Neural Network Language Model): 79.00% Accuracy  
+> - BiLSTM: 75.00% Accuracy  
+> - Old BERT (Triển khai lỗi kỹ thuật): **65.20% Accuracy**  
+> Các kết quả này thuộc về các cấu hình, tập dữ liệu thử nghiệm và quy trình khác nhau, **không phải là phép so sánh đối chứng có kiểm soát (controlled comparison)**. Pipeline Fine-Tuning mới của nhóm đạt 84.83% Accuracy, khắc phục các hạn chế kỹ thuật chính của triển khai cũ (xem chi tiết tại [`docs/03_old_bert_analysis.md`](docs/03_old_bert_analysis.md)). Mức cải thiện đối chứng có kiểm soát chính thức là so với mô hình Baseline chuẩn mực (+2.89 điểm phần trăm Accuracy, +0.0291 Macro F1).
 
 ---
 
@@ -81,8 +82,8 @@ $\rightarrow$ **Pipeline Fine-Tuning mới của nhóm đạt 84.83% Accuracy**,
 │   ├── figures/                  # Biểu đồ trực quan hóa (EDA, Confusion Matrix, History)
 │   └── model/                    # Trọng số mô hình đã huấn luyện (loại trừ qua .gitignore)
 └── presentation/
-    ├── generate_presentation.py  # Script Python tự động sinh slide PowerPoint chuẩn DUT
-    ├── presentation_outline.md   # Dàn ý chi tiết 15 slide
+    ├── generate_presentation.py  # Script sinh slide theo DUT-style template supplied for this project
+    ├── presentation_outline.md   # Dàn ý chi tiết 13 slide
     ├── speaker_notes.md          # Kịch bản thuyết trình mẫu 8-10 phút
     └── BERT_Project_Final.pptx   # File trình chiếu PowerPoint hoàn chỉnh
 ```
@@ -103,7 +104,10 @@ pip install -r requirements.txt
 ```bash
 python -m src.data
 ```
-*Lệnh này thực hiện Data Audit, loại bỏ 255 mẫu không hợp lệ/trùng lặp/xung đột nhãn (còn 19,745 mẫu hợp lệ), phân chia Stratified Split (70/10/20, Zero Data Leakage), đo lường phân vị độ dài token BERT thực tế trên tập Train+Val (Mean: 42.33, Median: 30.0, p95: 121.0, Max: 425, cắt cụt tại 128: 3.93%), xác nhận lựa chọn MAX_LENGTH = 128 và xuất các artifacts `artifacts/metrics/data_audit.json`, `artifacts/metrics/token_length_stats.json`, `artifacts/figures/class_distribution.png`, `artifacts/figures/token_length_distribution.png`.*
+*Lệnh này thực hiện Data Audit, loại bỏ 255 mẫu không hợp lệ/trùng lặp/xung đột nhãn (còn 19,745 mẫu hợp lệ), phân chia Stratified Split 70/10/20 và xác nhận không có văn bản trùng khớp chính xác giữa các tập. Phân tích độ dài token trên tập Train+Validation (15,796 mẫu) ghi nhận Mean 42.33, Median 30.0, p95 121.0, Max 425 và tỷ lệ vượt 128 tokens là 3.93%; kết quả được lưu trong `artifacts/metrics/data_audit.json`, `artifacts/metrics/token_length_stats.json` và các biểu đồ liên quan.*
+
+> [!WARNING]
+> Kiểm toán hậu nghiệm chỉ đọc với chuẩn hóa Unicode NFC, loại khoảng trắng đầu/cuối và `casefold()` phát hiện một số giao thoa khác biệt chủ yếu ở chữ hoa/thường: Train–Validation 3, Train–Test 10 cặp dòng (9 văn bản chuẩn hóa duy nhất), Validation–Test 2. Trong đó có 14 cặp cùng nhãn và 1 cặp trái nhãn. Kết quả thực nghiệm đóng băng không được tính lại và được báo cáo nguyên trạng. Báo cáo có cấu trúc được lưu tại `artifacts/metrics/case_normalized_overlap_audit.json`.
 
 ### 4.3. Huấn luyện mô hình cơ sở (Baseline)
 ```bash
@@ -127,7 +131,7 @@ python -m src.evaluate
 ```bash
 python -m presentation.generate_presentation
 ```
-*Tạo tệp trình chiếu PowerPoint chính thức `presentation/BERT_Project_Final.pptx` (15 slide) dựa trên hệ thống thiết kế Đại học Bách Khoa - ĐHĐN (DUT) với các số liệu và biểu đồ thực nghiệm chính thức.*
+*Tạo tệp trình chiếu `presentation/BERT_Project_Final.pptx` (13 slide) theo DUT-style template supplied for this project, sử dụng các số liệu và biểu đồ thực nghiệm đã đóng băng.*
 
 ### 4.7. Khởi chạy ứng dụng Web Demo (Streamlit)
 ```bash
@@ -144,3 +148,10 @@ streamlit run app/app.py
   - **Môi trường thực thi chính thức:** Môi trường Python nội bộ sử dụng gói PyTorch phiên bản CPU (`2.14.0+cpu`). Toàn bộ quá trình huấn luyện BERT 3 epochs chính thức được thực hiện trên CPU với tổng thời gian là **15,617.19 giây (~4.34 giờ / 260.29 phút)**.
 - **Phương án dự phòng đám mây (Cloud Option):**
   - Cung cấp sẵn notebook [`notebooks/BERT_Training_Colab.ipynb`](notebooks/BERT_Training_Colab.ipynb) độc lập, cấu hình sẵn sàng chạy trên Google Colab GPU (T4/A100) với tính năng *"Run All"*, cho phép hoàn tất huấn luyện trong ~15-20 phút khi có GPU.
+
+## 6. Nguồn triển khai và bằng chứng chuẩn
+
+- `src/` là triển khai được duy trì và dùng làm pipeline chuẩn của dự án.
+- `artifacts/metrics/` chứa bằng chứng thực nghiệm đã đóng băng; số liệu báo cáo chính thức phải được đối chiếu từ các artifact này.
+- `notebooks/` lưu nội dung khám phá/lịch sử và không thay thế pipeline chuẩn trong `src/`.
+- Dữ liệu thô do giảng viên cung cấp và trọng số mô hình có thể được giữ cục bộ, không đưa vào Git.

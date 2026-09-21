@@ -1,0 +1,56 @@
+{
+  "audit_type": "post_hoc_case_normalized_cross_split_overlap",
+  "audit_date": "2026-09-21",
+  "mode": "read_only",
+  "canonical_split_seed": 42,
+  "normalization": [
+    "Unicode NFC normalization",
+    "trim surrounding whitespace",
+    "Unicode casefold"
+  ],
+  "aggressive_semantic_normalization": false,
+  "split_sizes": {
+    "train": 13821,
+    "validation": 1975,
+    "test": 3949
+  },
+  "pairwise_results": {
+    "train_validation": {
+      "overlapping_row_pairs": 3,
+      "unique_normalized_reviews": 3,
+      "same_label_overlaps": 3,
+      "contradictory_label_overlaps": 0
+    },
+    "train_test": {
+      "overlapping_row_pairs": 10,
+      "unique_normalized_reviews": 9,
+      "same_label_overlaps": 9,
+      "contradictory_label_overlaps": 1
+    },
+    "validation_test": {
+      "overlapping_row_pairs": 2,
+      "unique_normalized_reviews": 2,
+      "same_label_overlaps": 2,
+      "contradictory_label_overlaps": 0
+    }
+  },
+  "representative_examples": [
+    {
+      "pair": "train_validation",
+      "left_text": "breakfast location",
+      "left_label": 1,
+      "right_text": "Breakfast Location",
+      "right_label": 1
+    },
+    {
+      "pair": "train_test",
+      "left_text": "No Negative good breakfast",
+      "left_label": 1,
+      "right_text": "No Negative Good breakfast",
+      "right_label": 0
+    }
+  ],
+  "experimental_results_recomputed": false,
+  "dataset_or_split_files_modified": false,
+  "note": "This post-hoc audit documents a small number of cross-split overlaps differing primarily by letter case. Frozen experimental results remain unchanged."
+}

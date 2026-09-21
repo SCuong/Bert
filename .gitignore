@@ -1,5 +1,5 @@
 # =============================================================================
-# Reference & Teacher Materials (KHÔNG COMMIT NGUYÊN TẮC CLEAN-ROOM)
+# Reference & Teacher Materials (LOCAL ONLY — independent implementation)
 # =============================================================================
 Bài giảng/
 Báo cáo bài tập lớn/
@@ -29,6 +29,13 @@ ENV/
 .ipynb_checkpoints/
 .vscode/
 .idea/
+*.code-workspace
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
 
 # =============================================================================
 # Model Weights & Checkpoints (Tránh commit file dung lượng lớn)
@@ -54,6 +61,20 @@ runs/
 hf_cache/
 
 # =============================================================================
-# Agent Runtime State (DO NOT COMMIT)
+# Local development-agent workflow (DO NOT COMMIT)
 # =============================================================================
-.agents/runtime/
+.agents/
+docs/NEXT_TASK.md
+docs/REVIEW_REQUEST.md
+docs/PRE_EXPERIMENT_REVIEW.md
+
+# =============================================================================
+# Local secrets, OS metadata & temporary Office files
+# =============================================================================
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+desktop.ini
+~$*.pptx

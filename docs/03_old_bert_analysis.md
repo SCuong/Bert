@@ -110,4 +110,4 @@ Trong khi đó, ở các cell trước trong cùng notebook:
 
 Khi bảo vệ trước hội đồng giảng viên, sinh viên cần trình bày rõ ràng:
 1. Con số 65.2% trong tài liệu cũ **không phản ánh năng lực thực sự của BERT**, mà là kết quả của một chuỗi sai sót kỹ thuật (mâu thuẫn bảng từ vựng, đóng băng encoder, learning rate quá cao và overfitting 100 epoch).
-2. Khi khắc phục triệt để các sai sót trên bằng một pipeline fine-tuning chuẩn mực (Hugging Face + PyTorch, đồng bộ uncased, lr=2e-5, AdamW, 2-3 epochs), hiệu năng của BERT sẽ vượt trội hoàn toàn so với cả NNLM (79%) và BiLSTM (75%), đạt mức xấp xỉ **89% - 91%** trên cùng tập dữ liệu.
+2. Trong thực nghiệm đã hoàn tất, pipeline fine-tuning được duy trì (Hugging Face + PyTorch, đồng bộ uncased, lr=2e-5, AdamW, 3 epochs) đạt **84.83% Test Accuracy** và **0.8483 Macro F1**. Đây là kết quả đóng băng của cấu hình hiện tại và thay thế các mức dự báo trước thực nghiệm.

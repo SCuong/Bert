@@ -141,7 +141,7 @@ BERT được các kỹ sư Google huấn luyện trên một kho dữ liệu kh
 ### 19. Vì sao không huấn luyện BERT từ đầu (Train from Scratch) trong đồ án này?
 1. **Chi phí tính toán khổng lồ:** Huấn luyện BERT-base từ đầu cần 64 chip TPU chạy liên tục trong 4 ngày, tiêu tốn hàng chục ngàn USD.
 2. **Kích thước dữ liệu:** Dataset đồ án chỉ có 20,000 mẫu, hoàn toàn không đủ để học từ đầu 110 triệu tham số (sẽ bị overfitting ngay lập tức).
-3. **Hiệu quả thực tế:** Nhờ Pre-training, mô hình đã hiểu sẵn tiếng Anh. Fine-tuning chỉ cần 2-3 epochs (mất khoảng vài phút trên GPU cá nhân, khoảng 15-20 phút trên Google Colab T4 GPU, hoặc ~4.34 giờ trên CPU đa lõi trong thực nghiệm chính thức của nhóm) là đạt độ chính xác cao.
+3. **Hiệu quả thực tế:** Nhờ Pre-training, mô hình đã hiểu sẵn tiếng Anh. Fine-tuning chỉ cần 2-3 epochs (~4.34 giờ trên CPU đa lõi trong thực nghiệm chính thức của nhóm; hoặc thực thi trên môi trường Google Colab với notebook đi kèm) là đạt độ chính xác cao.
 
 ---
 

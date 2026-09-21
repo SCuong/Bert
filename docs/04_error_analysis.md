@@ -69,7 +69,7 @@ Dựa trên việc phân loại các hiện tượng ngôn ngữ và dữ liệu
 
 - **Đo lường thực tế:** Trong mẫu 20 ca lỗi có độ tin cậy cao nhất được khảo sát, **0 / 20 ca bị cắt cụt** (`truncation_count = 0`).
 - **Phân bố độ dài token:** Độ dài token của 20 ca này dao động từ 6 đến 126 tokens (đo lường bằng `AutoTokenizer.from_pretrained(BERT_BEST_MODEL_DIR)` với `max_length = 128`).
-- **Kết luận trong phạm vi mẫu:** Đối với 20 ca lỗi cực đoan được khảo sát, ngưỡng `MAX_LENGTH = 128` bảo toàn trọn vẹn văn bản. Do đó, hiện tượng cắt cụt không phải là nguyên nhân gây ra lỗi trong nhóm 20 ca này. Tuy nhiên, quan sát này không loại trừ khả năng cắt cụt có thể ảnh hưởng đến các ca lỗi dài khác trong toàn bộ 599 ca lỗi trên tập kiểm thử (nơi p99 đạt 168 tokens).
+- **Kết luận trong phạm vi mẫu:** Trong 20 ca lỗi được khảo sát, không ca nào vượt `MAX_LENGTH = 128`. Quan sát này không được suy rộng thành kết luận nhân quả cho toàn bộ 599 ca lỗi; cắt cụt vẫn có thể ảnh hưởng đến các văn bản dài khác trên tập kiểm thử.
 
 ---
 
@@ -100,4 +100,4 @@ Dựa trên việc phân loại các hiện tượng ngôn ngữ và dữ liệu
 2. **Hạn chế mô hình hóa ngôn ngữ sâu xuất hiện ở mức độ tinh tế:**
    - Mô hình xử lý tốt các cấu trúc phủ định thông thường và litotes (như *"wasn t a bad hotel"*).
    - Thách thức thực sự đối với kiến trúc phân loại chuỗi nằm ở các cấu trúc ngữ dụng học phức tạp (như phân biệt quan điểm trích dẫn của người khác với lập trường cá nhân của tác giả ở Case 16) và sự vắng mặt của cơ chế phân tích theo từng khía cạnh (Aspect-Based Sentiment Analysis).
-   - Trong phạm vi 20 ca lỗi cực đoan được khảo sát, cắt cụt độ dài văn bản không phải là nguyên nhân gây lỗi (0/20 ca bị cắt cụt).
+   - Trong phạm vi 20 ca lỗi được khảo sát, 0/20 ca vượt `MAX_LENGTH = 128`; không suy rộng quan sát này cho toàn bộ lỗi.

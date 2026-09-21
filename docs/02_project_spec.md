@@ -41,7 +41,7 @@ Dựa theo Slide 4 của `AI Project Cycle.pptx`:
 ---
 
 ## 5. Project Objective (Mục tiêu dự án)
-1. Xây dựng một quy trình chuẩn từ dữ liệu thô, làm sạch phù hợp với Transformer, phân chia dữ liệu không rò rỉ (Zero Data Leakage).
+1. Xây dựng một quy trình chuẩn từ dữ liệu thô, làm sạch phù hợp với Transformer và kiểm soát giao thoa dữ liệu giữa các split.
 2. Thiết lập mô hình cơ sở vững chắc (**TF-IDF + Logistic Regression**) làm mốc so sánh tối thiểu theo tinh thần AI Project Cycle.
 3. Triển khai fine-tuning chuẩn mực mô hình `google-bert/bert-base-uncased` với thư viện Hugging Face `transformers` và `PyTorch`.
 4. Đánh giá toàn diện mô hình trên tập kiểm thử độc lập (Test Set) qua các chỉ số: Accuracy, Precision, Recall, Macro/Weighted F1 và Confusion Matrix.
@@ -60,7 +60,7 @@ Dựa theo Slide 4 của `AI Project Cycle.pptx`:
 ## 7. Success Criteria (Tiêu chí thành công)
 Bám sát tinh thần AI Project Cycle, dự án không đặt các chỉ số võ đoán trước thực nghiệm mà xác định các tiêu chí cốt lõi:
 1. **Pipeline chuẩn mực và toàn vẹn:** Tiền xử lý tối thiểu bảo tồn ngữ cảnh, không lỗi tương thích API thư viện (`processing_class`).
-2. **Bảo vệ tập kiểm thử & Không rò rỉ dữ liệu (Sealed Test Set & Zero Data Leakage):** Tập Test (20%) hoàn toàn độc lập; không có bất kỳ nhãn, dự đoán hay chỉ số nào của Test Set được kiểm tra hoặc sử dụng cho việc ra quyết định mô hình/siêu tham số trước lượt đánh giá so sánh cuối cùng. Kiểm toán xác nhận 0 mẫu trùng lặp giữa các tập.
+2. **Bảo vệ tập kiểm thử & Kiểm soát giao thoa (Sealed Test Set & Overlap Control):** Không dùng nhãn, dự đoán hay chỉ số Test để ra quyết định mô hình/siêu tham số trước lượt đánh giá cuối. Pipeline xác nhận 0 văn bản trùng khớp chính xác giữa các tập; kiểm toán hậu nghiệm có `casefold()` phát hiện một số ít giao thoa khác biệt chủ yếu ở chữ hoa/thường và được ghi nhận như một giới hạn.
 3. **So sánh đối đầu công bằng (Fair Comparison):** Baseline (TF-IDF + LR) và Fine-Tuned BERT được đánh giá trên cùng tập Test với cùng tiêu chuẩn đo lường trong cùng một lượt chạy của `src/evaluate.py`.
 4. **Trung thực trong báo cáo (Honest Reporting):** Toàn bộ kết quả thực nghiệm được ghi nhận trực tiếp từ log thực thi, không tự ý suy diễn các chỉ số chưa được chạy.
 5. **Tính tái lập có kiểm soát (Controlled Reproducibility):** Cố định random seed `42` và tài liệu hóa chi tiết môi trường thực thi (`controlled for reproducibility with fixed seeds and documented environment`).
@@ -101,4 +101,4 @@ flowchart LR
 3. **Artifacts thực nghiệm:** Toàn bộ metrics dạng JSON và biểu đồ trực quan hóa độ phân giải cao trong `artifacts/`.
 4. **Notebook Google Colab (`notebooks/`):** Hỗ trợ tính năng "Run All" trơn tru cho sinh viên.
 5. **Ứng dụng Demo (`app/app.py`):** Giao diện Streamlit trực quan, hiển thị xác suất và tokenization.
-6. **Báo cáo & Bài thuyết trình (`presentation/` & `FINAL_REPORT.md`):** Hoàn tất toàn bộ báo cáo tổng kết 17 mục chuẩn học thuật và bài thuyết trình PowerPoint chính thức (`presentation/BERT_Project_Final.pptx`) theo hệ thống thiết kế DUT.
+6. **Báo cáo & Bài thuyết trình (`presentation/` & `FINAL_REPORT.md`):** Hoàn tất báo cáo tổng kết và bài thuyết trình PowerPoint (`presentation/BERT_Project_Final.pptx`) theo DUT-style template supplied for this project.

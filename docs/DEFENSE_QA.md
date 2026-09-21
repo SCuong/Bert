@@ -30,9 +30,9 @@
 
 ---
 
-### Câu 5: Tại sao nhóm không huấn luyện mô hình BERT từ đầu (Train from Scratch)?
+### Câu 5: Vì sao nhóm không huấn luyện mô hình BERT từ đầu (Train from Scratch)?
 - **[Trả lời ngắn]:** Vì huấn luyện từ đầu đòi hỏi hàng tỷ từ ngữ, cụm siêu máy tính hàng chục ngàn USD, và tập dữ liệu 20,000 mẫu của đồ án quá nhỏ sẽ dẫn đến overfitting ngay lập tức.
-- **[Trả lời mở rộng]:** BERT-base có 110 triệu tham số. Để các tham số này hội tụ mà không overfit, Google đã phải tiền huấn luyện trên 3.3 tỷ từ từ Wikipedia và BookCorpus trong nhiều ngày trên 64 chip TPU. Fine-tuning cho phép chúng em kế thừa toàn bộ tri thức ngôn ngữ đồ sộ đó. Trong thực nghiệm chính thức của nhóm trên môi trường CPU đa lõi (PyTorch `2.14.0+cpu`), 3 epochs huấn luyện diễn ra trong **15,617.19 giây (~4.34 giờ)**; hoặc có thể hoàn tất trong khoảng 15-20 phút nếu huấn luyện trên GPU như Google Colab T4.
+- **[Trả lời mở rộng]:** BERT-base có 110 triệu tham số. Để các tham số này hội tụ mà không overfit, Google đã phải tiền huấn luyện trên 3.3 tỷ từ từ Wikipedia và BookCorpus trong nhiều ngày trên 64 chip TPU. Fine-tuning cho phép chúng em kế thừa toàn bộ tri thức ngôn ngữ đồ sộ đó. Trong thực nghiệm chính thức của nhóm trên môi trường CPU đa lõi (PyTorch `2.14.0+cpu`), 3 epochs huấn luyện diễn ra trong **15,617.19 giây (~4.34 giờ)**. Nhóm cũng cung cấp notebook độc lập cho môi trường Google Colab để người đọc có thể tái lập nhanh.
 
 ---
 
@@ -95,12 +95,13 @@
 ---
 
 ### Câu 15: Vì sao ở Epoch 3, Validation Loss tăng nhưng Validation Macro F1 lại đạt giá trị cao nhất? Nhóm xử lý chọn Checkpoint ra sao?
-- **[Trả lời ngắn]:** Do hàm mất mát Cross-Entropy phạt nặng mức độ tự tin ở một số ít mẫu khó hoặc có nhãn nhiễu, trong khi phần lớn mẫu còn lại được phân loại chính xác hơn. Nhóm dùng tiêu chí **Validation Macro F1** để chọn checkpoint tốt nhất.
-- **[Trả lời mở rộng]:** Trong tiến trình huấn luyện BERT:
-  - Epoch 1: Val Loss 0.3541, Val Macro F1 0.8359
-  - Epoch 2: Val Loss 0.3702, Val Macro F1 0.8384
-  - Epoch 3: Val Loss 0.4503, Val Macro F1 **0.8389** (Đạt đỉnh)
-  Cross-Entropy đo lường xác suất ($-\log p$). Khi mô hình học sâu, nó phân loại đúng nhiều mẫu hơn (đẩy F1 tăng), nhưng ở một số mẫu biên mơ hồ hoặc có nhãn bất thường, xác suất bị lệch nhẹ khiến tổng Loss tăng. Vì mục tiêu cuối cùng của bài toán là độ chính xác phân loại cảm xúc, việc lựa chọn checkpoint theo Validation Macro F1 (`checkpoint-2592`) là hoàn toàn chuẩn xác về mặt khoa học.
+- **[Trả lời ngắn]:** Do hàm mất mát Cross-Entropy phạt nặng mức độ tự tin ở một số ít mẫu khó hoặc có nhãn bất thường, trong khi phần lớn mẫu còn lại được phân loại chính xác hơn về nhãn cứng. Nhóm dùng tiêu chí **Validation Macro F1** để chọn checkpoint tốt nhất.
+- **[Trả lời mở rộng]:** Trong tiến trình huấn luyện BERT (ghi nhận từ `artifacts/metrics/bert_training_history.json`):
+  - Epoch 1: Val Loss 0.3959, Val Accuracy 83.14%, Val Macro F1 0.8310 (Train Loss step avg = 0.4385)
+  - Epoch 2: Val Loss 0.3836, Val Accuracy 83.90%, Val Macro F1 0.8387 (Train Loss step avg = 0.2877)
+  - Epoch 3: Val Loss 0.5461, Val Accuracy 83.90%, Val Macro F1 **0.8389** (Đạt đỉnh, Train Loss step avg = 0.2022)
+  - Trainer-reported aggregate training loss cho toàn bộ quá trình huấn luyện: 0.3071 (đây là giá trị trung bình tích lũy toàn đợt chạy của Hugging Face Trainer, không phải loss của bước cuối cùng). Train loss từng epoch là trung bình các step log trong epoch đó (average of logged step-loss values within each epoch).
+  Cross-Entropy đo lường sai số xác suất ($-\log p$). Khi mô hình học sâu, nó phân loại đúng nhiều mẫu hơn (đẩy F1 tăng), nhưng ở một số ít mẫu biên mơ hồ hoặc có nhãn bất thường bị dự đoán sai với độ tự tin cao, giá trị loss bị đội lên. Vì mục tiêu chính của bài toán phân loại là gán đúng nhãn cảm xúc, việc lựa chọn checkpoint theo Validation Macro F1 (`checkpoint-2592`) là hoàn toàn chuẩn xác và tối ưu về mặt khoa học.
 
 ---
 
@@ -158,10 +159,10 @@
 
 ### Câu 24: Dự án tuân thủ quy trình `AI Project Cycle` của môn học như thế nào?
 - **[Trả lời ngắn]:** Đồ án thực hiện đầy đủ 6 bước chuẩn: Scope & Plan $\rightarrow$ Data $\rightarrow$ Models $\rightarrow$ Deployment $\rightarrow$ Maintenance $\rightarrow$ Feedback.
-- **[Trả lời mở rộng]:** Nhóm tuân thủ chặt chẽ Slide 9 `AI Project Cycle.pptx`: Bắt đầu từ mô hình đơn giản nhất (TF-IDF + Logistic Regression) để làm mốc so chuẩn trước khi phát triển mô hình phức tạp hơn (BERT). Đồng thời, nhóm thực hiện kiểm toán dữ liệu nghiêm ngặt, loại bỏ mẫu trùng lặp/xung đột, và niêm phong tập kiểm thử độc lập (Zero Leakage).
+- **[Trả lời mở rộng]:** Nhóm tuân thủ chặt chẽ Slide 9 `AI Project Cycle.pptx`: Bắt đầu từ mô hình đơn giản nhất (TF-IDF + Logistic Regression) để làm mốc so chuẩn trước khi phát triển mô hình phức tạp hơn (BERT). Đồng thời, nhóm loại bỏ mẫu trùng lặp/xung đột trước khi chia dữ liệu và niêm phong tập kiểm thử. Pipeline xác nhận 0 giao thoa chuỗi chính xác; kiểm toán hậu nghiệm có `casefold()` phát hiện một số ít giao thoa khác biệt chủ yếu ở chữ hoa/thường, được báo cáo như giới hạn và không dùng để tính lại kết quả.
 
 ---
 
 ### Câu 25: Điểm khác biệt lớn nhất giữa đồ án của nhóm và các bài tham khảo trước đây là gì?
-- **[Trả lời ngắn]:** Triển khai mới hoàn toàn từ đầu (clean-room implementation), kiểm toán và phục hồi tiềm năng của BERT so với code cũ môn học (tăng từ 65.20% lên 84.83%), phân tích định tính ca lỗi học thuật và minh chứng bằng số liệu artifact thực tế.
+- **[Trả lời ngắn]:** Triển khai độc lập hoàn toàn từ đầu (independent implementation from scratch; không tái sử dụng mã nguồn tham khảo), kiểm toán và phục hồi tiềm năng của BERT so với code cũ môn học, phân tích định tính ca lỗi học thuật và minh chứng bằng số liệu artifact thực tế.
 - **[Trả lời mở rộng]:** Nhóm không sao chép mã nguồn tham khảo mà xây dựng độc lập từng module. Nhóm đã tìm ra 5 sai lầm kỹ thuật trong `DL_Model.ipynb` (lệch tokenizer, freeze encoder, lr quá lớn, overfitting 100 epochs), từ đó xây dựng pipeline chuẩn mực đạt 84.83% Test Accuracy. Mọi số liệu trong báo cáo và slide thuyết trình đều có artifact tương ứng kiểm chứng.

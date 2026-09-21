@@ -17,7 +17,7 @@
 ## 1. Thông Tin Chung & Tuyên Bố Dự Án (Project Overview & Executive Summary)
 
 ### 1.1. Bối cảnh & Mục tiêu
-Trong khuôn khổ môn học Trí tuệ Nhân tạo, bài toán phân loại cảm xúc văn bản (Sentiment Analysis) đóng vai trò nền tảng nhằm đánh giá năng lực xử lý ngôn ngữ tự nhiên. Dự án này nghiên cứu và giải quyết bài toán phân loại cảm xúc nhị phân (Tích cực - 1 vs. Tiêu cực - 0) trên tập dữ liệu gồm 20,000 đánh giá khách sạn từ nền tảng Booking.com do giảng viên cung cấp.
+Trong khuôn khổ môn học Trí tuệ Nhân tạo, bài toán phân loại cảm xúc văn bản (Sentiment Analysis) đóng vai trò nền tảng nhằm đánh giá năng lực xử lý ngôn ngữ tự nhiên. Dự án này nghiên cứu và giải quyết bài toán phân loại cảm xúc nhị phân (Tích cực - 1 vs. Tiêu cực - 0) trên tập dữ liệu đánh giá cảm xúc khách sạn do giảng viên cung cấp (teacher-provided hotel-review sentiment dataset) gồm 20,000 mẫu thô.
 
 Mục tiêu cốt lõi của dự án bao gồm:
 1. **Khảo sát và tái đánh giá:** Phân tích toàn diện tài liệu và mã nguồn tham khảo của môn học, xác định các hạn chế kỹ thuật trong triển khai BERT cũ (`DL_Model.ipynb` chỉ đạt 65.20% Accuracy).
@@ -27,12 +27,12 @@ Mục tiêu cốt lõi của dự án bao gồm:
 
 ### 1.2. Tóm tắt kết quả chính (Executive Summary)
 - **Dữ liệu sạch:** Sau khi loại bỏ 5 mẫu rỗng, 127 mẫu có nhãn mâu thuẫn (conflicting labels), và 123 mẫu trùng lặp văn bản hoàn toàn (exact duplicates), tập dữ liệu sạch gồm **19,745 mẫu** duy nhất (50.25% Negative, 49.75% Positive).
-- **Phân chia Stratified (Seed 42):** Tập Huấn luyện (Train) gồm 13,821 mẫu (70%), Tập Phát triển (Validation) gồm 1,975 mẫu (10%), và Tập Kiểm thử (Test) gồm 3,949 mẫu (20%). Xác nhận 0% rò rỉ dữ liệu giữa các tập.
+- **Phân chia Stratified (Seed 42):** Tập Huấn luyện (Train) gồm 13,821 mẫu (70%), Tập Phát triển (Validation) gồm 1,975 mẫu (10%), và Tập Kiểm thử (Test) gồm 3,949 mẫu (20%). Kiểm tra duy trì trong pipeline xác nhận không có văn bản trùng khớp chính xác giữa các tập; kiểm toán hậu nghiệm có phân biệt hoa/thường được trình bày tại Mục 4.2.
 - **Kết quả đối đầu trên Held-Out Test Set (3,949 mẫu):**
   - **Mô hình cơ sở (TF-IDF + Logistic Regression):** Đạt Accuracy **81.94%**, Macro Precision **0.8208**, Macro Recall **0.8193**, Macro F1 **0.8192**, thời gian suy luận **0.137 giây** (~28,784 mẫu/giây).
   - **Mô hình chính (Fine-Tuned BERT):** Đạt Accuracy **84.83%**, Macro Precision **0.8486**, Macro Recall **0.8482**, Macro F1 **0.8483**, thời gian suy luận **307.30 giây** (~12.85 mẫu/giây trên CPU).
   - **Hiệu quả vượt trội:** Fine-Tuned BERT vượt qua Baseline **+2.89 điểm phần trăm Accuracy** và **+0.0291 Macro F1**, giảm 114 ca dự đoán sai trên tập kiểm thử (599 lỗi so với 713 lỗi của Baseline).
-  - **Khắc phục lỗi mô hình cũ:** Khôi phục hoàn toàn tiềm năng của BERT so với kết quả 65.20% trong notebook cũ (tăng **+19.63 điểm phần trăm Accuracy**).
+  - **Khắc phục lỗi mô hình cũ:** Khôi phục hoàn toàn tiềm năng của BERT so với kết quả 65.20% trong notebook cũ (khắc phục 5 lỗi kỹ thuật lớn; lưu ý điều kiện thử nghiệm khác nhau).
 
 ---
 
@@ -46,7 +46,7 @@ Quá trình khảo sát toàn bộ tài liệu giảng viên và sinh viên khó
    - Chỉ ra nhược điểm cố hữu của RNN/LSTM: tính tuần tự cản trở song song hóa, suy giảm thông tin ngữ cảnh xa (vanishing gradient / information bottleneck).
    - Trình bày kiến trúc Transformer: cơ chế Scaled Dot-Product Attention, Multi-Head Attention, và Positional Encoding giúp mô hình hóa ngữ cảnh hai chiều đồng thời.
 3. **Thực trạng dữ liệu & mã nguồn cũ (`NLP_Demo/`):**
-   - `dts_20k_raw.csv`: Chứa 20,000 dòng đánh giá từ Booking.com. Tuy nhiên, dữ liệu thô tồn tại trùng lặp, nhiễu nhãn và các văn bản chứa trường dữ liệu gộp không chuẩn hóa (`"No Negative"`, `"No Positive"`).
+   - `dts_20k_raw.csv`: Chứa 20,000 dòng đánh giá khách sạn do giảng viên cung cấp. Trong dữ liệu quan sát thấy các marker định dạng như `"No Negative"`, `"No Positive"` (đây là quan sát hình thức dữ liệu, không phải chứng minh nguồn gốc độc lập). Dữ liệu thô tồn tại trùng lặp, nhiễu nhãn và các văn bản chứa trường dữ liệu gộp không chuẩn hóa cần được kiểm toán nghiêm ngặt.
    - `Preprocessing_and_Visualizing.ipynb`: Áp dụng kỹ thuật xóa stopwords NLTK một cách máy móc. Kỹ thuật này đã vô tình xóa mất từ `"No"` trong cụm `"No Negative"`, để lại chữ `"Negative"` ở đầu các bình luận tích cực, đồng thời triệt tiêu các từ phủ định cốt tử (`"not"`, `"never"`, `"no"`), phá vỡ nghiêm trọng cấu trúc ngữ pháp tự nhiên.
    - `DL_Model.ipynb`: Chứa các kết quả thực nghiệm lịch sử: NNLM đạt 79.0% Accuracy, BiLSTM đạt 75.0% Accuracy, và mô hình mang tên "BERT" chỉ đạt **65.20% Accuracy**.
    - **Phát hiện 5 lỗi kỹ thuật nghiêm trọng trong "Old BERT":**
@@ -60,7 +60,7 @@ Quá trình khảo sát toàn bộ tài liệu giảng viên và sinh viên khó
 
 ## 3. Những Gì Nhóm Đã Xây Dựng Độc Lập (What I Built)
 
-Dự án được triển khai **hoàn toàn mới từ đầu (clean-room implementation)**, không tái sử dụng mã nguồn tham khảo, cấu trúc dạng module tại repository root:
+Dự án được **triển khai độc lập từ đầu (independent implementation from scratch; không tái sử dụng mã nguồn tham khảo)**, cấu trúc dạng module tại repository root:
 
 ```text
 /
@@ -95,7 +95,7 @@ Dự án được triển khai **hoàn toàn mới từ đầu (clean-room imple
 ├── app/
 │   └── app.py
 ├── artifacts/
-│   ├── models/
+│   ├── model/
 │   ├── metrics/
 │   └── figures/
 └── presentation/
@@ -131,7 +131,9 @@ Dữ liệu đầu vào `data/dts_20k_raw.csv` do giảng viên cung cấp chứ
 - **Tập Huấn luyện (Train Set):** 13,821 mẫu (70.0%) | 6,945 Negative (50.25%), 6,876 Positive (49.75%).
 - **Tập Phát triển (Validation Set):** 1,975 mẫu (10.0%) | 992 Negative (50.23%), 983 Positive (49.77%).
 - **Tập Kiểm thử độc lập (Test Set):** 3,949 mẫu (20.0%) | 1,984 Negative (50.24%), 1,965 Positive (49.76%).
-- **Kiểm tra rò rỉ dữ liệu (Zero Leakage Check):** Thuật toán băm đối chiếu giao thoa văn bản xác nhận 0 mẫu trùng lặp giữa Train, Validation và Test (`artifacts/metrics/data_audit.json`). Tập Test được niêm phong hoàn toàn trong suốt quá trình huấn luyện và điều chỉnh siêu tham số.
+- **Kiểm tra giao thoa chính xác:** Pipeline dùng phép giao tập hợp trên chuỗi văn bản đã làm sạch tối thiểu và xác nhận 0 văn bản trùng khớp chính xác giữa Train, Validation và Test (`artifacts/metrics/data_audit.json`); implementation không thực hiện kiểm tra SHA-256.
+- **Giới hạn hậu nghiệm về chữ hoa/thường:** Kiểm toán chỉ đọc sau thực nghiệm, dùng Unicode NFC + `strip()` + `casefold()`, phát hiện Train–Validation 3 cặp (3 văn bản chuẩn hóa duy nhất, cùng nhãn), Train–Test 10 cặp (9 văn bản chuẩn hóa duy nhất; 9 cùng nhãn, 1 trái nhãn), và Validation–Test 2 cặp (2 văn bản chuẩn hóa duy nhất, cùng nhãn). Báo cáo có cấu trúc được lưu tại `artifacts/metrics/case_normalized_overlap_audit.json`. Các kết quả thực nghiệm đã đóng băng không được tính lại và được báo cáo nguyên trạng.
+- **Niêm phong tập Test:** Tập Test không được dùng để lựa chọn mô hình hoặc siêu tham số trước lượt đánh giá cuối.
 
 ### 4.3. Phân tích phân vị độ dài Token (Token-Length Distribution)
 Để xác định chiều dài chuỗi đầu vào tối ưu cho mô hình Transformer, nhóm tiến hành đo lường độ dài token hóa bằng `bert-base-uncased` Tokenizer trên phạm vi tập Train và Validation (15,796 mẫu), ghi nhận tại `artifacts/metrics/token_length_stats.json`:
@@ -141,7 +143,7 @@ Dữ liệu đầu vào `data/dts_20k_raw.csv` do giảng viên cung cấp chứ
 - Phân vị 99% (p99): 168.0 tokens.
 - Độ dài tối đa (Max): 425 tokens.
 - **Quyết định cấu hình `MAX_LENGTH = 128`:**
-  - Ngưỡng 128 tokens bao phủ hơn 96.07% tổng số văn bản trong tập dữ liệu (tỷ lệ cắt cụt chỉ 3.93%).
+  - Trong phạm vi Train + Validation (15,796 mẫu), ngưỡng 128 tokens bao phủ trọn vẹn 96.07% số văn bản (tỷ lệ vượt ngưỡng là 3.93%).
   - Cơ chế Self-Attention có độ phức tạp tính toán và bộ nhớ tỷ lệ bậc hai với chiều dài chuỗi $\mathcal{O}(L^2)$. So với ngưỡng 256 tokens, việc chọn 128 tokens giúp giảm $4\times$ kích thước ma trận chú ý và bộ nhớ kích hoạt, trong khi chỉ hy sinh 3.84% độ bao phủ văn bản dài. Đây là sự đánh đổi kỹ thuật tối ưu giữa tài nguyên tính toán và độ chính xác mô hình.
 
 ---
@@ -190,11 +192,12 @@ Theo phương pháp luận `AI Project Cycle.pptx`, mô hình cơ sở phải đ
 - **Tiêu chí lựa chọn Checkpoint:** Tự động theo dõi và lưu lại checkpoint có **Validation Macro F1 cao nhất** (`metric_for_best_model="eval_macro_f1"`, `load_best_model_at_end=True`).
 
 ### 6.3. Tiến trình huấn luyện qua 3 Epochs
-Dữ liệu trích xuất từ `artifacts/metrics/bert_training_history.json`:
-- **Epoch 1:** Train Loss = 0.4077 | Validation Loss = 0.3541 | Validation Accuracy = 83.59% | Validation Macro F1 = 0.8359
-- **Epoch 2:** Train Loss = 0.2885 | Validation Loss = 0.3702 | Validation Accuracy = 83.85% | Validation Macro F1 = 0.8384
-- **Epoch 3:** Train Loss = 0.1983 | Validation Loss = 0.4503 | Validation Accuracy = **83.90%** | Validation Macro F1 = **0.8389**
+Dữ liệu trích xuất từ nhật ký chính thức `artifacts/metrics/bert_training_history.json`:
+- **Epoch 1:** Train Loss (step average) = 0.4385 | Validation Loss = 0.3959 | Validation Accuracy = 83.14% | Validation Macro F1 = 0.8310
+- **Epoch 2:** Train Loss (step average) = 0.2877 | Validation Loss = 0.3836 | Validation Accuracy = 83.90% | Validation Macro F1 = 0.8387
+- **Epoch 3:** Train Loss (step average) = 0.2022 | Validation Loss = 0.5461 | Validation Accuracy = **83.90%** | Validation Macro F1 = **0.8389**
 - **Checkpoint tối ưu được chọn:** `checkpoint-2592` (tại cuối Epoch 3, đạt đỉnh Validation Macro F1 = 0.8389).
+- *Lưu ý về phương pháp tính toán:* Train loss theo từng epoch được ghi nhận là giá trị trung bình các step-loss được log trong epoch đó (average of logged step-loss values within each epoch: Epoch 1: 0.4385, Epoch 2: 0.2877, Epoch 3: 0.2022). Giá trị trainer-reported aggregate training loss cho toàn bộ quá trình huấn luyện được ghi nhận là 0.3071 (đây là giá trị trung bình tích lũy toàn đợt chạy của Hugging Face Trainer, không phải loss của bước cuối cùng).
 
 ---
 
@@ -210,10 +213,13 @@ Sau khi hoàn tất toàn bộ quá trình huấn luyện và đóng băng tham 
 | **Fine-Tuned BERT (`bert-base-uncased`)** | *Mô hình chính mới (Nhóm)* | **84.83%** | **0.8486** | **0.8482** | **0.8483** | **0.8483** | 307.30 s | 12.85 mẫu/s |
 | **Độ chênh lệch ($\Delta$ = BERT - Baseline)** | *Mức độ cải thiện thực tế* | **+2.89%** | **+0.0278** | **+0.0289** | **+0.0291** | **+0.0291** | *+307.16 s* | *-28,771 mẫu/s* |
 
-*Tham khảo kết quả mô hình cũ trong tài liệu môn học (`DL_Model.ipynb`):*
-- NNLM (Neural Network Language Model): Accuracy 79.00% (chỉ báo cáo Accuracy)
-- BiLSTM: Accuracy 75.00% (chỉ báo cáo Accuracy)
-- Old BERT (Triển khai lỗi): Accuracy **65.20%** (chỉ báo cáo Accuracy)
+> [!NOTE]
+> **CHÚ THÍCH THAM KHẢO LỊCH SỬ (HISTORICAL REFERENCE ONLY — KHÔNG PHẢI PHÉP SO SÁNH ĐỐI CHỨNG CÓ KIỂM SOÁT):**
+> Các kết quả mô hình cũ trong tài liệu môn học (`DL_Model.ipynb`):
+> - NNLM (Neural Network Language Model): Accuracy 79.00%
+> - BiLSTM: Accuracy 75.00%
+> - Old BERT (Triển khai lỗi): Accuracy **65.20%**
+> Các kết quả này thuộc về các cấu hình, tập dữ liệu thử nghiệm và quy trình khác nhau, **không phải là phép so sánh đối chứng có kiểm soát (controlled comparison)** trong cùng điều kiện với nghiên cứu này. Mức chênh lệch so với Old BERT là minh chứng phân tích hạn chế kỹ thuật của code cũ, không được dùng làm delta thực nghiệm khoa học chính thức.
 
 ### 7.2. Phân tích chi tiết ma trận nhầm lẫn (Confusion Matrix Analysis)
 
@@ -256,12 +262,14 @@ $$\begin{pmatrix} \text{TN} = 1,711 & \text{FP} = 273 \\ \text{FN} = 326 & \text
 
 ### 8.2. Phân tích động lực học tập của BERT (Epoch 3 Loss vs F1)
 Trong tiến trình huấn luyện của BERT:
-- Train Loss giảm liên tục qua từng epoch: $0.4077 \rightarrow 0.2885 \rightarrow 0.1983$.
-- Validation Loss đạt giá trị nhỏ nhất ở Epoch 1 ($0.3541$), sau đó tăng nhẹ lên $0.3702$ ở Epoch 2 và $0.4503$ ở Epoch 3.
-- Ngược lại, Validation Accuracy và Validation Macro F1 tiếp tục tăng từ Epoch 1 đến Epoch 3: Macro F1 tăng từ $0.8359 \rightarrow 0.8384 \rightarrow 0.8389$.
+- Train Loss (step average) giảm liên tục qua từng epoch: $0.4385 \rightarrow 0.2877 \rightarrow 0.2022$.
+- Validation Loss đạt giá trị nhỏ nhất ở Epoch 2 ($0.3836$), sau đó tăng lên $0.5461$ ở Epoch 3.
+- Ngược lại, Validation Accuracy và Validation Macro F1 duy trì ổn định và đạt đỉnh ở Epoch 3: Macro F1 đạt $0.8310 \rightarrow 0.8387 \rightarrow 0.8389$.
 
 **Giải thích hiện tượng học sâu:**
-Hiện tượng Validation Loss tăng trong khi Validation Accuracy / F1 vẫn tăng là một đặc tính kinh điển của hàm mất mát Cross-Entropy khi fine-tuning mạng nơ-ron lớn. Cross-Entropy đo lường mức độ tự tin của phân bố xác suất dự đoán ($-\sum y \log p$). Khi mô hình học sâu hơn qua các epoch, nó dự đoán tự tin hơn vào các ca đúng (đẩy F1 tăng), nhưng đồng thời bị phạt nặng hơn về mặt độ lệch xác suất ở một số ít các ca biên mơ hồ hoặc có nhãn nhiễu. Do đó, việc chọn checkpoint dựa trên **Validation Macro F1** là chiến lược tối ưu giúp đạt độ chính xác phân loại cao nhất trên tập dữ liệu thực tế.
+Hàm mất mát Cross-Entropy và chỉ số phân loại nhãn cứng Macro F1 đo lường hai khía cạnh khác nhau của mô hình:
+- Cross-entropy loss ($-\sum y \log p$) đo lường độ lệch xác suất; một số ít mẫu bị dự đoán sai với độ tự tin cao (high-confidence mistakes) có thể làm tăng loss đáng kể, trong khi đại đa số các mẫu khác vẫn được phân loại đúng nhãn (hard-label classification) giúp Macro F1 duy trì ổn định hoặc tăng nhẹ. Nguyên nhân chính xác chưa được cô lập thực nghiệm.
+- Do đó, việc lựa chọn checkpoint dựa trên **Validation Macro F1** (chỉ số mục tiêu của bài toán phân loại) là chiến lược tối ưu giúp đạt độ chính xác phân loại cao nhất trên tập dữ liệu thực tế.
 
 ---
 
@@ -278,14 +286,14 @@ Nhằm hiểu rõ bản chất 599 ca lỗi của BERT trên tập kiểm thử 
 | **Cấu trúc phủ định hoặc nhượng bộ (Negation / Concessive)** | **8 / 20** | **40.0%** | Cấu trúc *"not"*, *"didn't"*, *"could do with"*, hoặc litotes (*"wasn't a bad hotel"*). |
 | **Tác động của biểu mẫu nguồn (Template / Source Marker)** | **6 / 20** | **30.0%** | Tồn tại các thẻ trích xuất từ biểu mẫu web như `"No Positive"`, ghép trường không dấu cách. |
 | **Văn bản phi chuẩn: lỗi ngữ pháp, chính tả (Noisy Grammar / Spelling)** | **4 / 20** | **20.0%** | Lỗi gõ phím (*"arking"*, *"miss leading"*), ngữ pháp vỡ (*"All staff in the slow everything"*). |
-| **Khiếu nại nền tảng trung gian (Domain / Platform Complaint)** | **2 / 20** | **10.0%** | Khách hàng phàn nàn về Booking.com hoặc tiếng ồn đường phố bên ngoài khách sạn. |
+| **Khiếu nại nền tảng trung gian (Domain / Platform Complaint)** | **2 / 20** | **10.0%** | Khách hàng phàn nàn về nền tảng trung gian hoặc tiếng ồn đường phố bên ngoài khách sạn. |
 | **Thách thức suy luận ngữ cảnh sâu của mô hình (Model Reasoning)** | **1 / 20** | **5.0%** | Không tách biệt được quan điểm trích dẫn của bạn bè với lập trường cá nhân tác giả. |
 
 *(Lưu ý: Một ca lỗi có thể mang nhiều đặc trưng đồng thời. Các tỷ lệ phần trăm trên chỉ áp dụng cụ thể cho mẫu 20 ca lỗi cực đoan được khảo sát, không suy rộng cho toàn bộ 599 ca lỗi).*
 
 ### 9.2. Quan sát hiện tượng cắt cụt văn bản (Truncation Analysis)
 - **Kết quả đo lường:** Trong mẫu 20 ca lỗi có độ tin cậy cao nhất, **0 / 20 ca bị cắt cụt** (`truncation_count = 0`). Độ dài token dao động từ 6 đến 126 tokens (đều nằm trong ngưỡng `MAX_LENGTH = 128`).
-- **Kết luận:** Cắt cụt độ dài văn bản không phải là nguyên nhân gây ra các ca lỗi cực đoan nhất được khảo sát. Tuy nhiên, trên quy mô toàn bộ 599 ca lỗi của tập test, hiện tượng cắt cụt vẫn có thể ảnh hưởng đến một tỷ lệ nhỏ các văn bản dài hơn 128 tokens (phân vị p99 đạt 168 tokens).
+- **Phạm vi kết luận:** Trong 20 ca lỗi được kiểm toán, không ca nào vượt `MAX_LENGTH = 128`. Quan sát này không được suy rộng thành kết luận nhân quả cho toàn bộ 599 ca lỗi; hiện tượng cắt cụt vẫn có thể ảnh hưởng đến các văn bản dài khác.
 
 ---
 
@@ -294,7 +302,7 @@ Nhằm hiểu rõ bản chất 599 ca lỗi của BERT trên tập kiểm thử 
 ### RQ1: BERT có thực sự vượt trội hơn mô hình tuyến tính cổ điển (TF-IDF + Logistic Regression) trên bài toán phân loại cảm xúc đánh giá khách sạn không?
 **Trả lời dựa trên bằng chứng thực nghiệm:**
 - **Về độ chính xác phân loại:** Có. Trên tập kiểm thử độc lập 3,949 mẫu, Fine-Tuned BERT vượt qua Baseline trên toàn bộ các chỉ số đánh giá: Accuracy đạt 84.83% so với 81.94% (+2.89 điểm phần trăm), Macro F1 đạt 0.8483 so với 0.8192 (+0.0291). BERT giảm tổng cộng 114 ca dự đoán sai, đặc biệt giảm tới 22.38% số ca False Negative (từ 420 xuống 326 ca).
-- **Về sự đánh đổi tài nguyên tính toán (Trade-off):** Mức cải thiện +2.89% Accuracy đi kèm với sự gia tăng rất lớn về chi phí tính toán: thời gian suy luận của BERT chậm hơn Baseline xấp xỉ 2,243 lần (307.30 giây so với 0.137 giây trên CPU), và thời gian huấn luyện là ~4.34 giờ so với 0.68 giây. Do đó, trong các ứng dụng công nghiệp yêu cầu độ trễ cực thấp hoặc tài nguyên hạn chế, Baseline vẫn là một giải pháp rất cạnh tranh; trong khi BERT là lựa chọn tối ưu khi ưu tiên tối đa độ chính xác.
+- **Về sự đánh đổi tài nguyên tính toán (Trade-off):** Mức cải thiện +2.89 điểm phần trăm Accuracy đi kèm với sự gia tăng rất lớn về chi phí tính toán: thời gian suy luận của BERT chậm hơn Baseline xấp xỉ 2,243 lần (307.30 giây so với 0.137 giây trên CPU), và thời gian huấn luyện là ~4.34 giờ so với 0.68 giây. Do đó, trong các ứng dụng công nghiệp yêu cầu độ trễ cực thấp hoặc tài nguyên hạn chế, Baseline vẫn là một giải pháp rất cạnh tranh; trong khi BERT là lựa chọn tối ưu khi ưu tiên tối đa độ chính xác.
 
 ### RQ2: Những sai lầm kỹ thuật nào trong triển khai BERT cũ (`DL_Model.ipynb`) khiến mô hình chỉ đạt 65.20%, và quy trình fine-tuning chuẩn giải quyết các vấn đề đó như thế nào?
 **Trả lời dựa trên bằng chứng kỹ thuật:**
@@ -309,7 +317,7 @@ Nhằm hiểu rõ bản chất 599 ca lỗi của BERT trên tập kiểm thử 
   3. Sử dụng AdamW với Learning Rate nhỏ $2 \times 10^{-5}$ và Linear Warmup Scheduler.
   4. Thiết kế Classification Head tối giản (1 tầng Linear + Dropout 0.1).
   5. Huấn luyện 3 epochs và tự động phục hồi Checkpoint tối ưu dựa trên Validation Macro F1.
-  $\rightarrow$ Kết quả: Đạt Accuracy **84.83%**, tăng **+19.63 điểm phần trăm** so với triển khai cũ.
+  $\rightarrow$ Kết quả: Đạt Accuracy **84.83%**, khắc phục hoàn toàn hạn chế kỹ thuật khiến triển khai cũ dừng lại ở mức 65.20% (lưu ý hai mô hình thử nghiệm ở các điều kiện khác nhau).
 
 ### RQ3: Bản chất của các trường hợp mà mô hình BERT dự đoán sai là gì? Lỗi bắt nguồn từ hạn chế kiến trúc mô hình hay do chất lượng và tính mơ hồ của dữ liệu?
 **Trả lời dựa trên bằng chứng phân tích định tính:**
@@ -334,7 +342,7 @@ Nhằm hiểu rõ bản chất 599 ca lỗi của BERT trên tập kiểm thử 
 | **Kiến trúc Head** | 5 tầng Dense sâu liên tiếp, không Dropout | 1 tầng Linear duy nhất + Dropout ($p=0.1$) | Giảm số lượng tham số ngẫu nhiên mới, chống hiện tượng ghi nhớ vẹt dữ liệu huấn luyện. |
 | **Kiểm soát Epoch** | 100 epochs cố định $\rightarrow$ Overfitting nghiêm trọng | 3 epochs với giám sát Validation Loss và F1 | Tránh lãng phí tài nguyên tính toán và ngăn chặn suy giảm khả năng tổng quát hóa. |
 | **Chiến lược Checkpoint** | Lấy trọng số tại epoch cuối cùng (epoch 100) | Tự động chọn Checkpoint có Validation Macro F1 cao nhất | Bảo đảm mô hình đưa vào kiểm thử có năng lực tổng quát hóa tối ưu nhất. |
-| **Accuracy đạt được** | **65.20%** | **84.83%** (Tăng **+19.63%**) | Khẳng định tính đúng đắn của phương pháp luận kỹ thuật chuẩn mực. |
+| **Accuracy đạt được** | **65.20%** | **84.83%** (Khắc phục lỗi mô hình cũ; lưu ý điều kiện thử nghiệm khác nhau) | Khẳng định tính đúng đắn của phương pháp luận kỹ thuật chuẩn mực. |
 
 ---
 
@@ -429,8 +437,8 @@ Bảng xác nhận trạng thái hoàn tất toàn bộ các hạng mục công 
 | :--- | :---: | :--- |
 | **Kiểm toán dữ liệu & Chống rò rỉ** | **ĐÃ HOÀN TẤT** | `artifacts/metrics/data_audit.json` (0 mẫu rò rỉ, 19,745 mẫu sạch) |
 | **Phân tích phân vị độ dài token** | **ĐÃ HOÀN TẤT** | `artifacts/metrics/token_length_stats.json` (p95 = 121, chọn max_len = 128) |
-| **Huấn luyện mô hình cơ sở** | **ĐÃ HOÀN TẤT** | `artifacts/models/baseline_model.joblib`, `baseline_validation_metrics.json` |
-| **Fine-tuning mô hình BERT** | **ĐÃ HOÀN TẤT** | `artifacts/models/bert_best_model/`, `bert_validation_metrics.json` |
+| **Huấn luyện mô hình cơ sở** | **ĐÃ HOÀN TẤT** | `artifacts/model/baseline_tfidf_lr.joblib`, `baseline_validation_metrics.json` |
+| **Fine-tuning mô hình BERT** | **ĐÃ HOÀN TẤT** | `artifacts/model/bert_best_model/`, `bert_validation_metrics.json` |
 | **Đánh giá đối đầu trên Test Set** | **ĐÃ HOÀN TẤT** | `artifacts/metrics/comparative_metrics.json`, `bert_test_metrics.json` |
 | **Ma trận nhầm lẫn trực quan** | **ĐÃ HOÀN TẤT** | `artifacts/figures/baseline_test_confusion_matrix.png`, `bert_test_confusion_matrix.png` |
 | **Phân tích định tính ca lỗi** | **ĐÃ HOÀN TẤT** | `docs/04_error_analysis.md`, `artifacts/metrics/error_analysis_summary.json` |

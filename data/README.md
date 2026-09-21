@@ -61,11 +61,12 @@ Nhằm đảm bảo tính khoa học và ngăn chặn hoàn toàn hiện tượn
   - **Train set:** 13,821 mẫu (70.0%) | 6,945 Negative, 6,876 Positive.
   - **Validation set:** 1,975 mẫu (10.0%) | 992 Negative, 983 Positive.
   - **Test set:** 3,949 mẫu (20.0%) | 1,984 Negative, 1,965 Positive.
-* **Kiểm tra rò rỉ (Zero Overlap):**
+* **Kiểm tra giao thoa chính xác (Exact-string overlap):**
   - Giao thoa Train - Test: 0 mẫu.
   - Giao thoa Val - Test: 0 mẫu.
   - Giao thoa Train - Val: 0 mẫu.
-  - Trạng thái: **Xác nhận 100% không rò rỉ dữ liệu (Zero Data Leakage).**
+  - **Trạng thái:** Không có văn bản trùng khớp chính xác giữa các tập sau bước làm sạch tối thiểu.
+  - **Kiểm toán hậu nghiệm phân biệt hoa/thường:** Chuẩn hóa Unicode NFC + `strip()` + `casefold()` phát hiện 3 cặp Train–Validation (đều cùng nhãn), 10 cặp Train–Test (9 cùng nhãn, 1 trái nhãn; 9 văn bản chuẩn hóa duy nhất), và 2 cặp Validation–Test (đều cùng nhãn). Báo cáo: `artifacts/metrics/case_normalized_overlap_audit.json`. Đây là kiểm toán chỉ đọc; dữ liệu, split và kết quả thực nghiệm không được thay đổi.
 
 ### 5.2. Thống kê độ dài token BERT thực tế (`artifacts/metrics/token_length_stats.json`)
 *Phạm vi đo lường (Scope): Tập Train + Validation (15,796 mẫu) — Giữ tập Test độc lập, không dùng Test Set để quyết định siêu tham số.*
@@ -78,11 +79,11 @@ Nhằm đảm bảo tính khoa học và ngăn chặn hoàn toàn hiện tượn
 * **Phân vị 95 (p95):** 121.0 tokens
 * **Phân vị 99 (p99):** 168.0 tokens
 * **Giá trị lớn nhất (Max):** 425 tokens
-* **Tỷ lệ cắt cụt tại 128 tokens:** **3.93%** (bảo toàn trọn vẹn 96.07% văn bản).
-* **Tỷ lệ cắt cụt tại 256 tokens:** **0.09%** (bảo toàn trọn vẹn 99.91% văn bản).
+* **Tỷ lệ vượt 128 tokens trong Train + Validation:** **3.93%** (96.07% không vượt ngưỡng).
+* **Tỷ lệ vượt 256 tokens trong Train + Validation:** **0.09%** (99.91% không vượt ngưỡng).
 
 ### 5.3. Quyết định lựa chọn `MAX_LENGTH = 128`
 Dựa trên số liệu đo lường thực tế từ EDA:
-1. **Đánh đổi cắt cụt (Truncation Tradeoff):** Với `p95 = 121.0` tokens, ngưỡng 128 đã bao phủ hơn 96% toàn bộ văn bản đánh giá. Việc nâng lên 256 chỉ giúp giữ thêm 3.84% văn bản nhưng làm tăng gấp 4 lần kích thước ma trận tính toán Attention $\mathcal{O}(L^2)$.
+1. **Đánh đổi cắt cụt (Truncation Tradeoff):** Trong Train + Validation, với `p95 = 121.0` tokens, hơn 96% văn bản không vượt ngưỡng 128. Nâng lên 256 chỉ tăng thêm 3.84 điểm phần trăm tỷ lệ văn bản không vượt ngưỡng nhưng làm tăng gấp 4 lần kích thước ma trận tính toán Attention $\mathcal{O}(L^2)$.
 2. **Hiệu năng & Tài nguyên:** Ngưỡng 128 giúp tiết kiệm bộ nhớ kích hoạt (activation memory) và rút ngắn thời gian huấn luyện. Mức tiêu thụ bộ nhớ và thời gian thực thi thực tế sẽ được đo lường cụ thể trong quá trình huấn luyện mô hình.
 3. **Tính phù hợp với đồ án:** Ngưỡng 128 là điểm cân bằng tối ưu giữa bảo toàn ngữ cảnh và tốc độ huấn luyện, thuận tiện cho việc tái lập trên máy tính cá nhân hoặc môi trường đám mây (Google Colab).

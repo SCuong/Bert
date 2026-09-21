@@ -10,7 +10,7 @@
 ## 1. Cây tài liệu liên quan trong Workspace
 
 ```text
-a:\Bert\
+<repository-root>/
 ├── Bài giảng/
 │   ├── AI Project Cycle.pptx              # [CỐT LÕI] Quy trình chuẩn của một dự án AI
 │   ├── Bai 1_ Gioithieu.pptx              # Giới thiệu môn học AI
