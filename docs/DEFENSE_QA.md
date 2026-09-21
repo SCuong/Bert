@@ -26,13 +26,13 @@
 
 ### Câu 4: Fine-tuning là gì? Nó khác gì so với Feature Extraction?
 - **[Trả lời ngắn]:** Feature Extraction là đóng băng mô hình gốc và chỉ huấn luyện một bộ phân loại mới phía trên. Còn Fine-tuning là cập nhật **cả bộ phân loại mới và toàn bộ (hoặc phần lớn) trọng số của mô hình BERT gốc** với tốc độ học nhỏ.
-- **[Trả lời mở rộng]:** Trong notebook cũ của môn học (`DL_Model.ipynb`), tác giả đặt `trainable=False`, đó chỉ là Feature Extraction. Trong đồ án này, chúng em thực hiện Fine-tuning thực sự: các ma trận Query, Key, Value và Feed-Forward của tất cả 12 tầng Transformer đều được lan truyền ngược và tinh chỉnh nhẹ để thích ứng tối đa với văn phong đánh giá khách sạn.
+- **[Trả lời mở rộng]:** Trong notebook cũ của môn học (`DL_Model.ipynb`), tác giả đặt `trainable=False`, đó chỉ là Feature Extraction. Trong đồ án này, chúng em thực hiện Full Fine-Tuning: các ma trận Query, Key, Value và Feed-Forward của tất cả 12 tầng Transformer đều được lan truyền ngược và tinh chỉnh nhẹ để thích ứng tối đa với miền từ vựng đánh giá khách sạn.
 
 ---
 
 ### Câu 5: Tại sao nhóm không huấn luyện mô hình BERT từ đầu (Train from Scratch)?
 - **[Trả lời ngắn]:** Vì huấn luyện từ đầu đòi hỏi hàng tỷ từ ngữ, cụm siêu máy tính hàng chục ngàn USD, và tập dữ liệu 20,000 mẫu của đồ án quá nhỏ sẽ dẫn đến overfitting ngay lập tức.
-- **[Trả lời mở rộng]:** BERT-base có 110 triệu tham số. Để các tham số này hội tụ mà không overfit, Google đã phải tiền huấn luyện trên 3.3 tỷ từ từ Wikipedia và BookCorpus trong nhiều ngày trên 64 chip TPU. Fine-tuning cho phép chúng em kế thừa toàn bộ tri thức ngôn ngữ đồ sộ đó và chỉ cần tinh chỉnh trên tập 20,000 mẫu trong vài phút trên GPU cá nhân.
+- **[Trả lời mở rộng]:** BERT-base có 110 triệu tham số. Để các tham số này hội tụ mà không overfit, Google đã phải tiền huấn luyện trên 3.3 tỷ từ từ Wikipedia và BookCorpus trong nhiều ngày trên 64 chip TPU. Fine-tuning cho phép chúng em kế thừa toàn bộ tri thức ngôn ngữ đồ sộ đó. Trong thực nghiệm chính thức của nhóm trên môi trường CPU đa lõi (PyTorch `2.14.0+cpu`), 3 epochs huấn luyện diễn ra trong **15,617.19 giây (~4.34 giờ)**; hoặc có thể hoàn tất trong khoảng 15-20 phút nếu huấn luyện trên GPU như Google Colab T4.
 
 ---
 
@@ -56,7 +56,7 @@
 
 ### Câu 9: Tại sao BERT chỉ cần huấn luyện trong 2 đến 4 epochs?
 - **[Trả lời ngắn]:** Vì BERT đã học sẵn phần lớn tri thức biểu diễn ngôn ngữ trong giai đoạn tiền huấn luyện. Huấn luyện quá 4 epochs trên tập dữ liệu nhỏ sẽ khiến mô hình bị ghi nhớ máy móc (Overfitting).
-- **[Trả lời mở rộng]:** Đồ thị huấn luyện thực tế của chúng em cho thấy Validation Loss đạt điểm tối ưu ngay ở epoch 2 hoặc 3. Việc kéo dài lên 100 epochs như notebook cũ không làm tăng thêm thông tin mới mà chỉ khiến mô hình overfit nặng nề (Train Accuracy đạt 97% nhưng Test Accuracy tụt xuống 65%).
+- **[Trả lời mở rộng]:** Đồ thị huấn luyện thực tế của chúng em cho thấy Validation Loss đạt điểm tối ưu ngay ở epoch 1-2, và Validation Macro F1 đạt đỉnh ở epoch 3 (0.8389). Việc kéo dài lên 100 epochs như notebook cũ không làm tăng thêm thông tin mới mà chỉ khiến mô hình overfit nặng nề (Train Accuracy đạt 97% nhưng Test Accuracy tụt xuống 65.20%).
 
 ---
 
@@ -72,39 +72,47 @@
 
 ---
 
-### Câu 12: F1-Score là gì và tại sao trong bài toán này F1 lại quan trọng hơn hoặc tương đương Accuracy?
-- **[Trả lời ngắn]:** F1-score là trung bình điều hòa giữa Precision và Recall. Nó phản ánh độ tin cậy thực sự của mô hình mà không bị đánh lừa bởi sự phân bố nhãn lệch.
-- **[Trả lời mở rộng]:** Công thức $F_1 = 2 \cdot \frac{P \cdot R}{P + R}$. Mặc dù tập dữ liệu của chúng em cân bằng 50/50, việc báo cáo cả Macro F1 và Per-class F1 đảm bảo rằng mô hình không chỉ đoán thiên vị về một lớp mà đạt được độ chuẩn xác và độ bao phủ cao trên cả hai nhóm khách hàng hài lòng và không hài lòng.
+### Câu 12: F1-Score là gì và tại sao nhóm dùng Validation Macro F1 để chọn Checkpoint tốt nhất?
+- **[Trả lời ngắn]:** F1-score là trung bình điều hòa giữa Precision và Recall. Nhóm chọn **Validation Macro F1** (`metric_for_best_model="eval_macro_f1"`) làm tiêu chí chọn checkpoint tốt nhất vì nó đánh giá đồng đều năng lực phân loại trên cả hai lớp Positive và Negative.
+- **[Trả lời mở rộng]:** Macro F1 tính F1 riêng biệt cho từng lớp rồi lấy trung bình cộng không trọng số: $\text{Macro F1} = \frac{F_{1,\text{neg}} + F_{1,\text{pos}}}{2}$. Điều này đảm bảo mô hình không bị thiên vị sang một lớp nào. Trong thực nghiệm, tại Epoch 3, Validation Macro F1 đạt đỉnh **0.8389** (ứng với checkpoint tốt nhất `checkpoint-2592`), mang lại hiệu năng tối ưu trên tập kiểm thử (Test Macro F1 đạt 0.8483).
 
 ---
 
-### Câu 13: Nếu mô hình BERT cho kết quả thấp hơn Logistic Regression thì nguyên nhân do đâu?
-- **[Trả lời ngắn]:** Đó chắc chắn là do lỗi triển khai kỹ thuật (như mâu thuẫn tokenizer, đóng băng trọng số, learning rate quá lớn hoặc overfit) chứ không phải do năng lực mô hình.
-- **[Trả lời mở rộng]:** Đây chính là trường hợp đã xảy ra trong notebook cũ của môn học (`DL_Model.ipynb`), khi BERT chỉ đạt 65.2% trong khi BiLSTM đạt 75% và NNLM đạt 79%. Nguyên nhân là do tokenizer cased bị ghép nhầm với model uncased, encoder bị freeze, lr quá lớn ($0.001$) và train 100 epoch. Khi được sửa đúng chuẩn, BERT đạt hiệu năng vượt trội hơn mọi mô hình cơ sở.
+### Câu 13: Trong những tình huống nào mô hình BERT có thể cho kết quả kém hơn Logistic Regression?
+- **[Trả lời ngắn]:** BERT có thể kém hơn Logistic Regression khi: tập dữ liệu quá nhỏ dẫn đến overfit, dữ liệu chủ yếu là từ khóa ngắn/nhiễu, xảy ra quên thảm khốc (catastrophic forgetting), hoặc do các lỗi triển khai kỹ thuật.
+- **[Trả lời mở rộng]:** 
+  1. *Kích thước dữ liệu quá nhỏ:* Nếu chỉ có vài trăm mẫu, mô hình 110M tham số rất dễ overfit, trong khi mô hình tuyến tính ít tham số lại khái quát hóa tốt hơn.
+  2. *Đặc trưng dạng từ khóa rời rạc:* Nếu văn bản là các chuỗi từ khóa ngắt quãng không có cấu trúc ngữ pháp, ưu thế chú ý ngữ cảnh hai chiều của BERT không phát huy tác dụng bằng tần suất từ khóa trong TF-IDF.
+  3. *Lỗi kỹ thuật triển khai:* Như trong `DL_Model.ipynb` của tài liệu môn học, việc dùng learning rate quá lớn ($10^{-3}$), đóng băng encoder, hoặc lệch bảng từ vựng đã khiến BERT chỉ đạt 65.20% (thua xa các mô hình cơ sở).
+  4. *Mất cân bằng dữ liệu cực đoan:* Nếu không gán trọng số lớp (class weights), BERT có thể dự đoán thiên lệch về lớp đa số.
 
 ---
 
-### Câu 14: Tập dữ liệu `dts_20k_raw.csv` có đặc điểm và vấn đề tiềm ẩn nào?
-- **[Trả lời ngắn]:** Dữ liệu bắt nguồn từ Booking.com, chứa cụm từ mặc định `"No Negative"` ở nhiều review tích cực, và có 5 mẫu văn bản rỗng trong file thô.
-- **[Trả lời mở rộng]:** Trên Booking.com, người dùng phải điền hai ô riêng biệt là Tiêu cực và Tích cực. Khi không có gì phàn nàn, hệ thống điền chuỗi `"No Negative"`. Nếu áp dụng tiền xử lý cũ xóa từ `"No"`, câu tích cực lại bắt đầu bằng từ `"negative"`. Nhóm em đã phát hiện và xử lý vấn đề này bằng cách giữ nguyên từ ngữ tự nhiên cho BERT.
+### Câu 14: Tập dữ liệu `dts_20k_raw.csv` có nguồn gốc từ đâu và có đặc điểm gì cần lưu ý?
+- **[Trả lời ngắn]:** Đây là tập dữ liệu đánh giá cảm xúc khách sạn do giảng viên cung cấp (teacher-provided dataset), bắt nguồn từ các đánh giá trên Booking.com, gồm 20,000 mẫu thô.
+- **[Trả lời mở rộng]:** Trên Booking.com, biểu mẫu chia thành hai ô riêng: mặt tiêu cực và mặt tích cực. Khi khách hài lòng và không có phàn nàn, hệ thống tự điền `"No Negative"`. Sau quá trình kiểm toán tự động, nhóm loại bỏ 5 mẫu rỗng, 127 mẫu có nhãn mâu thuẫn (conflicting labels), và 123 mẫu trùng lặp hoàn toàn, thu được tập dữ liệu sạch gồm 19,745 mẫu chuẩn mực.
 
 ---
 
-### Câu 15: Làm thế nào nhận biết mô hình đang bị Overfitting và nhóm đã xử lý ra sao?
-- **[Trả lời ngắn]:** Nhận biết khi Train Loss giảm liên tục nhưng Validation Loss bắt đầu tăng ngược lại. Nhóm xử lý bằng cách: dùng Dropout (0.1), Weight Decay trong AdamW (0.01), giới hạn 2-3 epochs và lưu checkpoint có Validation Loss thấp nhất.
-- **[Trả lời mở rộng]:** Trong `train_bert.py`, chúng em theo dõi cả Train Loss và Validation Loss sau mỗi epoch. Nhờ cơ chế `load_best_model_at_end=True`, mô hình cuối cùng được chọn là mô hình tại thời điểm tổng quát hóa tốt nhất, tránh hoàn toàn sai lầm của notebook cũ khi đánh giá mô hình ở epoch 100 bị overfit.
+### Câu 15: Vì sao ở Epoch 3, Validation Loss tăng nhưng Validation Macro F1 lại đạt giá trị cao nhất? Nhóm xử lý chọn Checkpoint ra sao?
+- **[Trả lời ngắn]:** Do hàm mất mát Cross-Entropy phạt nặng mức độ tự tin ở một số ít mẫu khó hoặc có nhãn nhiễu, trong khi phần lớn mẫu còn lại được phân loại chính xác hơn. Nhóm dùng tiêu chí **Validation Macro F1** để chọn checkpoint tốt nhất.
+- **[Trả lời mở rộng]:** Trong tiến trình huấn luyện BERT:
+  - Epoch 1: Val Loss 0.3541, Val Macro F1 0.8359
+  - Epoch 2: Val Loss 0.3702, Val Macro F1 0.8384
+  - Epoch 3: Val Loss 0.4503, Val Macro F1 **0.8389** (Đạt đỉnh)
+  Cross-Entropy đo lường xác suất ($-\log p$). Khi mô hình học sâu, nó phân loại đúng nhiều mẫu hơn (đẩy F1 tăng), nhưng ở một số mẫu biên mơ hồ hoặc có nhãn bất thường, xác suất bị lệch nhẹ khiến tổng Loss tăng. Vì mục tiêu cuối cùng của bài toán là độ chính xác phân loại cảm xúc, việc lựa chọn checkpoint theo Validation Macro F1 (`checkpoint-2592`) là hoàn toàn chuẩn xác về mặt khoa học.
 
 ---
 
-### Câu 16: Nếu một bài đánh giá có độ dài vượt quá `max_length = 128` (hoặc 256) thì điều gì xảy ra?
-- **[Trả lời ngắn]:** Văn bản sẽ bị cắt cụt (Truncation), các token vượt quá giới hạn sẽ bị bỏ qua và không tham gia vào quá trình tính toán Attention.
-- **[Trả lời mở rộng]:** Phân tích thống kê EDA của nhóm cho thấy hơn 90% số bài review khách sạn có độ dài dưới 128 từ và hơn 97% dưới 256 từ. Việc chọn `max_length` hợp lý giúp tiết kiệm bộ nhớ GPU bậc hai ($O(N^2)$ của ma trận Attention) mà vẫn giữ được thông tin trọng tâm của phần lớn nhận xét.
+### Câu 16: Nếu một bài đánh giá có độ dài vượt quá `max_length = 128` thì điều gì xảy ra?
+- **[Trả lời ngắn]:** Văn bản sẽ bị cắt cụt (Truncation), các token vượt quá 128 sẽ bị loại bỏ và không tham gia tính toán Self-Attention.
+- **[Trả lời mở rộng]:** Phân tích phân vị độ dài token trên tập Train+Val (15,796 mẫu) cho thấy phân vị 95% (p95) là 121 tokens và phân vị 90% (p90) là 94 tokens. Ngưỡng `MAX_LENGTH = 128` bảo toàn trọn vẹn 96.07% số văn bản trong tập dữ liệu. Việc chọn 128 thay vì 256 giúp giảm $4\times$ kích thước ma trận Attention ($\mathcal{O}(L^2)$) và tiết kiệm bộ nhớ kích hoạt đáng kể, chỉ chấp nhận cắt cụt 3.93% văn bản dài.
 
 ---
 
 ### Câu 17: Cơ chế Self-Attention tính toán độ tương đồng giữa các từ như thế nào?
 - **[Trả lời ngắn]:** Dựa trên tích vô hướng (Dot-product) giữa vector Query của từ này và vector Key của từ khác, chia cho $\sqrt{d_k}$ và chuẩn hóa qua hàm Softmax.
-- **[Trả lời mở rộng]:** Công thức $\text{Softmax}\left(\frac{Q K^T}{\sqrt{d_k}}\right)$. Nếu hai từ có liên quan chặt chẽ về mặt ngữ nghĩa hoặc cú pháp, tích vô hướng của chúng sẽ có giá trị dương lớn, dẫn đến trọng số Softmax cao, khiến vector Value của từ đó đóng góp nhiều vào biểu diễn tổng hợp của từ hiện tại.
+- **[Trả lời mở rộng]:** Công thức $\text{Attention}(Q, K, V) = \text{Softmax}\left(\frac{Q K^T}{\sqrt{d_k}}\right) V$. Nếu hai từ có liên quan chặt chẽ về mặt ngữ nghĩa hoặc cú pháp, tích vô hướng của chúng sẽ có giá trị dương lớn, dẫn đến trọng số Softmax cao, khiến vector Value của từ đó đóng góp nhiều vào biểu diễn tổng hợp của từ hiện tại.
 
 ---
 
@@ -126,30 +134,34 @@
 
 ---
 
-### Câu 21: Nhóm đã thực hiện phân tích lỗi (Error Analysis) như thế nào?
-- **[Trả lời ngắn]:** Nhóm trích xuất các ca dự đoán sai trên Test set, phân loại chúng theo các nhóm nguyên nhân ngôn ngữ cụ thể như: câu vừa khen vừa chê, câu phủ định tinh vi, câu mỉa mai và nhãn bị nhiễu.
-- **[Trả lời mở rộng]:** Trong tài liệu `04_error_analysis.md`, chúng em khảo sát chi tiết 20 ca lỗi tiêu biểu. Kết quả cho thấy nguyên nhân phổ biến nhất chiếm hơn 45% ca lỗi là dạng câu "Mixed Sentiment" (khách khen vị trí nhưng chê vệ sinh), nơi mà nhãn gán tổng thể phụ thuộc vào cảm tính chủ quan của người đánh giá.
+### Câu 21: Nhóm đã thực hiện phân tích lỗi (Error Analysis) như thế nào và rút ra kết luận gì?
+- **[Trả lời ngắn]:** Nhóm khảo sát định tính chi tiết **mẫu 20 ca lỗi có độ tin cậy cao nhất (10 FP, 10 FN)** trên tập Test, phân tích theo các mẫu hình ngôn ngữ cụ thể. Kết quả cho thấy lỗi chủ yếu xuất phát từ tính đa khía cạnh của cảm xúc và dấu hiệu mơ hồ nhãn.
+- **[Trả lời mở rộng]:** Trong mẫu 20 ca lỗi cực đoan được khảo sát (`docs/04_error_analysis.md`):
+  - 15/20 ca (75%) mang đặc trưng cảm xúc pha trộn (Mixed Sentiment), vừa khen vừa chê.
+  - 8/20 ca (40%) cho thấy dấu hiệu possible label ambiguity / label noise (ngữ nghĩa mâu thuẫn với nhãn ground-truth).
+  - 0/20 ca bị cắt cụt độ dài (tất cả đều $\le 126$ tokens).
+  *Lưu ý:* Phân tích này tập trung vào mẫu 20 ca lỗi cực đoan nhằm phát hiện các trường hợp biên, không suy rộng đại diện cho toàn bộ 599 ca lỗi trên tập kiểm thử.
 
 ---
 
 ### Câu 22: Ứng dụng Demo Streamlit hoạt động như thế nào?
-- **[Trả lời ngắn]:** Demo nạp mô hình BERT đã fine-tune từ thư mục artifacts, nhận văn bản từ người dùng, chạy qua pipeline tokenization, tính toán xác suất và hiển thị trực quan kết quả kèm mức độ tin cậy.
-- **[Trả lời mở rộng]:** Ứng dụng cung cấp các câu test mẫu thể hiện các trường hợp phức tạp (như đảo ngữ, phủ định kép). Ngoài nhãn Positive/Negative, giao diện còn hiển thị bảng bẻ từ WordPiece để người xem thấy rõ cách BERT phân tích các token và các subword `##`.
+- **[Trả lời ngắn]:** Demo nạp mô hình Baseline và BERT từ thư mục artifacts, nhận văn bản từ người dùng, chạy qua pipeline suy luận, hiển thị so sánh đối đầu song song xác suất và giải thích bẻ từ WordPiece.
+- **[Trả lời mở rộng]:** Ứng dụng cung cấp 4 câu đánh giá mẫu thể hiện các trường hợp phức tạp (như câu phủ định kép, khen chê pha trộn). Giao diện hiển thị trực quan xác suất dự đoán của cả hai mô hình, làm nổi bật sự vượt trội của BERT trong việc xử lý ngữ cảnh đảo nghĩa so với mô hình túi từ TF-IDF.
 
 ---
 
 ### Câu 23: Làm thế nào để đảm bảo tính tái lập (Reproducibility) của toàn bộ project?
-- **[Trả lời ngắn]:** Bằng cách cố định random seed = 42 ở mọi cấp độ (Python random, NumPy, PyTorch, Scikit-learn) và ghi lại toàn bộ siêu tham số vào file JSON.
-- **[Trả lời mở rộng]:** Chúng em thiết lập `torch.manual_seed(42)`, `np.random.seed(42)`, cố định seed trong `StratifiedShuffleSplit` và lưu toàn bộ thông số phiên bản thư viện vào `requirements.txt`. Bất kỳ ai clone project và chạy lại lệnh đều sẽ thu được đúng các con số thực nghiệm như trong báo cáo.
+- **[Trả lời ngắn]:** Bằng cách cố định random seed = 42 ở mọi cấp độ (Python, NumPy, PyTorch, Scikit-learn), lưu cấu hình tập trung tại `src/config.py`, và đóng gói môi trường qua `requirements.txt`.
+- **[Trả lời mở rộng]:** Dự án được kiểm soát tính tái lập nghiêm ngặt (`controlled for reproducibility with fixed seeds and documented environment`). Tuy nhiên, do các phép toán số học dấu phẩy động trên phần cứng CPU/GPU và các luồng tính toán song song, các chỉ số thực nghiệm có thể có sai lệch rất nhỏ ở chữ số thập phân thứ 4 hoặc thứ 5 giữa các hệ thống khác nhau, điều này là hoàn toàn bình thường trong kỹ thuật học sâu.
 
 ---
 
 ### Câu 24: Dự án tuân thủ quy trình `AI Project Cycle` của môn học như thế nào?
-- **[Trả lời ngắn]:** Đồ án thực hiện đầy đủ 6 bước chuẩn: Xác định bài toán (Scope) $\rightarrow$ Xử lý dữ liệu (Data & EDA) $\rightarrow$ Xây dựng Baseline & BERT (Models) $\rightarrow$ Đóng gói Demo (Deployment) $\rightarrow$ Đánh giá & Giám sát (Monitoring) $\rightarrow$ Phân tích lỗi & Đề xuất (Feedback).
-- **[Trả lời mở rộng]:** Chúng em bám sát nguyên tắc *"Start from simple to more complex"* của Slide 9: Bắt đầu từ TF-IDF + Logistic Regression trước khi chuyển sang BERT; đồng thời tuân thủ Slide 5 và 7 về kiểm tra dữ liệu, làm sạch đúng cách và không để rò rỉ dữ liệu.
+- **[Trả lời ngắn]:** Đồ án thực hiện đầy đủ 6 bước chuẩn: Scope & Plan $\rightarrow$ Data $\rightarrow$ Models $\rightarrow$ Deployment $\rightarrow$ Maintenance $\rightarrow$ Feedback.
+- **[Trả lời mở rộng]:** Nhóm tuân thủ chặt chẽ Slide 9 `AI Project Cycle.pptx`: Bắt đầu từ mô hình đơn giản nhất (TF-IDF + Logistic Regression) để làm mốc so chuẩn trước khi phát triển mô hình phức tạp hơn (BERT). Đồng thời, nhóm thực hiện kiểm toán dữ liệu nghiêm ngặt, loại bỏ mẫu trùng lặp/xung đột, và niêm phong tập kiểm thử độc lập (Zero Leakage).
 
 ---
 
-### Câu 25: Điểm khác biệt lớn nhất giữa đồ án của nhóm và các bài demo sao chép trên mạng là gì?
-- **[Trả lời ngắn]:** Tính trung thực học thuật, việc audit và chỉ ra nguyên nhân thất bại của code cũ trong tài liệu môn học, phân tích lỗi định tính chuyên sâu và quy trình kiểm chứng thực nghiệm độc lập 100%.
-- **[Trả lời mở rộng]:** Nhóm không chỉ chạy theo một tutorial có sẵn mà đã nghiên cứu kỹ tài liệu bài giảng, phát hiện ra lỗi mâu thuẫn bảng từ vựng và freeze model trong `DL_Model.ipynb`. Mọi con số trong bài thuyết trình đều được xuất tự động từ quá trình chạy mã nguồn thực tế và được lưu vết trong thư mục artifacts.
+### Câu 25: Điểm khác biệt lớn nhất giữa đồ án của nhóm và các bài tham khảo trước đây là gì?
+- **[Trả lời ngắn]:** Triển khai mới hoàn toàn từ đầu (clean-room implementation), kiểm toán và phục hồi tiềm năng của BERT so với code cũ môn học (tăng từ 65.20% lên 84.83%), phân tích định tính ca lỗi học thuật và minh chứng bằng số liệu artifact thực tế.
+- **[Trả lời mở rộng]:** Nhóm không sao chép mã nguồn tham khảo mà xây dựng độc lập từng module. Nhóm đã tìm ra 5 sai lầm kỹ thuật trong `DL_Model.ipynb` (lệch tokenizer, freeze encoder, lr quá lớn, overfitting 100 epochs), từ đó xây dựng pipeline chuẩn mực đạt 84.83% Test Accuracy. Mọi số liệu trong báo cáo và slide thuyết trình đều có artifact tương ứng kiểm chứng.

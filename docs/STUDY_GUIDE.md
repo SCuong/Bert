@@ -11,11 +11,11 @@ NLP là một nhánh liên ngành của Trí tuệ nhân tạo (AI) và Ngôn ng
 ---
 
 ### 2. Transformer giải quyết vấn đề cốt tử nào của RNN và LSTM?
-Trước năm 2017, các mô hình tuần tự như Recurrent Neural Networks (RNN) và Long Short-Term Memory (LSTM) là tiêu chuẩn cho NLP. Tuy nhiên, chúng có 2 nhược điểm chết người:
-1. **Xử lý tuần tự (Sequential Bottleneck):** Để tính toán từ thứ $t$, mô hình bắt buộc phải đợi trạng thái ẩn của từ thứ $t-1$. Điều này khiến RNN/LSTM **không thể tính toán song song** trên GPU, thời gian huấn luyện cực kỳ chậm.
-2. **Hiện tượng suy biến / bùng nổ Gradient (Vanishing / Exploding Gradient):** Mặc dù LSTM đã thêm cơ chế cổng (Gates) để lưu trữ bộ nhớ dài hạn, nhưng khi chuỗi văn bản dài hơn 100 từ, thông tin ở đầu câu vẫn bị suy giảm hoặc méo mó nghiêm trọng.
+Trước năm 2017, các mô hình tuần tự như Recurrent Neural Networks (RNN) và Long Short-Term Memory (LSTM) là tiêu chuẩn cho NLP. Tuy nhiên, chúng có 2 nhược điểm lớn:
+1. **Xử lý tuần tự (Sequential Recurrence Bottleneck):** Để tính toán trạng thái ẩn của từ thứ $t$, mô hình bắt buộc phải đợi trạng thái ẩn của từ thứ $t-1$. Điều này khiến RNN/LSTM không thể song song hóa quá trình tính toán theo chiều dài chuỗi, dẫn đến tốc độ huấn luyện chậm trên các tập dữ liệu lớn.
+2. **Suy giảm thông tin ngữ cảnh xa (Vanishing Gradient / Information Bottleneck):** Mặc dù LSTM đã cải tiến với cơ chế cổng (Gates) để lưu trữ thông tin dài hạn, nhưng qua các bước lan truyền tuần tự dài, việc nắm bắt và duy trì sự phụ thuộc giữa các từ cách xa nhau vẫn gặp khó khăn thực tế đáng kể.
 
-**Giải pháp của Transformer (Vaswani et al., 2017):** Loại bỏ hoàn toàn kiến trúc tuần tự, thay thế bằng cơ chế **Self-Attention**. Nhờ đó, mô hình có thể xử lý đồng thời tất cả các từ trong câu cùng lúc (song song hóa 100%) và kết nối trực tiếp bất kỳ cặp từ nào trong câu bất kể khoảng cách.
+**Giải pháp của Transformer (Vaswani et al., 2017):** Loại bỏ hoàn toàn bước đệ quy tuần tự, thay thế bằng cơ chế **Self-Attention**. Nhờ đó, trong một tầng tính toán, mô hình xử lý song song đồng thời mọi token trên toàn bộ chiều dài chuỗi và kết nối trực tiếp bất kỳ cặp từ nào trong câu với độ dài đường dẫn thông tin không đổi $\mathcal{O}(1)$.
 
 ---
 
@@ -98,8 +98,8 @@ Thay vì chỉ tính một ma trận Attention duy nhất, Multi-Head Attention 
 ---
 
 ### 13. Positional Information (Thông tin vị trí) và Positional Embeddings
-Vì Self-Attention xử lý tất cả các từ song song đồng thời, nó là một phép toán bất biến với hoán vị (Permutation Invariant). Nghĩa là câu `"Hotel is good, not bad"` và câu `"Hotel is bad, not good"` sẽ có tập vector đầu vào giống hệt nhau nếu không có thông tin vị trí!
-- **Giải pháp:** BERT cộng thêm một vector **Positional Embedding** vào mỗi vector từ đầu vào. Nhờ đó, mô hình biết chính xác từ nào đứng ở vị trí số 0, số 1, số 2... và hiểu được trật tự ngữ pháp của câu.
+Vì Self-Attention xử lý tất cả các token trong một tầng đồng thời mà không dùng bước tuần tự, bản thân phép tính tích vô hướng là bất biến với hoán vị (Permutation Invariant). Nghĩa là câu `"Hotel is good, not bad"` và câu `"Hotel is bad, not good"` sẽ có tập vector đầu vào giống hệt nhau nếu không có thông tin vị trí.
+- **Giải pháp:** BERT cộng thêm một vector **Positional Embedding** vào mỗi vector từ đầu vào. Nhờ đó, mô hình biết chính xác từ nào đứng ở vị trí số 0, số 1, số 2... và hiểu được trật tự cú pháp của câu.
 
 ---
 
@@ -111,7 +111,7 @@ Vì Self-Attention xử lý tất cả các từ song song đồng thời, nó l
 ---
 
 ### 15. Giai đoạn Tiền huấn luyện (Pre-training) của BERT diễn ra như thế nào?
-BERT được các kỹ sư Google huấn luyện trên một kho dữ liệu khổng lồ (Toronto BookCorpus 800 triệu từ + Wikipedia tiếng Anh 2,500 triệu từ) theo phương pháp **Tự giám sát (Self-Supervised Learning)** mà không cần con người gán nhãn thủ công. Mô hình học cấu trúc ngữ pháp và tri thức nhân loại thông qua 2 nhiệm vụ: MLM và NSP.
+BERT được các kỹ sư Google huấn luyện trên một kho dữ liệu khổng lồ (Toronto BookCorpus 800 triệu từ + Wikipedia tiếng Anh 2,500 triệu từ) theo phương pháp **Tự giám sát (Self-Supervised Learning)** mà không cần con người gán nhãn thủ công. Mô hình học cấu trúc ngữ pháp và tri thức thông qua 2 nhiệm vụ: MLM và NSP.
 
 ---
 
@@ -141,14 +141,14 @@ BERT được các kỹ sư Google huấn luyện trên một kho dữ liệu kh
 ### 19. Vì sao không huấn luyện BERT từ đầu (Train from Scratch) trong đồ án này?
 1. **Chi phí tính toán khổng lồ:** Huấn luyện BERT-base từ đầu cần 64 chip TPU chạy liên tục trong 4 ngày, tiêu tốn hàng chục ngàn USD.
 2. **Kích thước dữ liệu:** Dataset đồ án chỉ có 20,000 mẫu, hoàn toàn không đủ để học từ đầu 110 triệu tham số (sẽ bị overfitting ngay lập tức).
-3. **Hiệu quả thực tế:** Nhờ Pre-training, mô hình đã hiểu sẵn tiếng Anh. Fine-tuning chỉ cần 2-3 epochs (mất khoảng vài phút trên một GPU cá nhân) là đạt độ chính xác vượt trội.
+3. **Hiệu quả thực tế:** Nhờ Pre-training, mô hình đã hiểu sẵn tiếng Anh. Fine-tuning chỉ cần 2-3 epochs (mất khoảng vài phút trên GPU cá nhân, khoảng 15-20 phút trên Google Colab T4 GPU, hoặc ~4.34 giờ trên CPU đa lõi trong thực nghiệm chính thức của nhóm) là đạt độ chính xác cao.
 
 ---
 
 ### 20. Kiến trúc phân loại chuỗi (Sequence Classification Head) hoạt động ra sao?
 - Đầu vào: Chuỗi văn bản qua BERT cho ra ma trận ẩn cuối cùng $H \in \mathbb{R}^{T \times 768}$.
 - Vector tại vị trí `[CLS]` là $h_{\text{[CLS]}} \in \mathbb{R}^{768}$.
-- Ta áp dụng một lớp Dropout ($p = 0.1$) để chống overfitting:
+- Áp dụng một lớp Dropout ($p = 0.1$) để chống overfitting:
   $$\tilde{h} = \text{Dropout}(h_{\text{[CLS]}})$$
 - Đưa qua lớp Linear chuyển từ 768 chiều về 2 chiều (tương ứng với 2 nhãn 0 và 1):
   $$z = W \tilde{h} + b \quad (W \in \mathbb{R}^{2 \times 768}, b \in \mathbb{R}^2)$$
@@ -158,12 +158,12 @@ BERT được các kỹ sư Google huấn luyện trên một kho dữ liệu kh
 ---
 
 ### 21. Hiện tượng Overfitting là gì và cách nhận biết / khắc phục trong BERT?
-- **Hiện tượng:** Mô hình "học vẹt" và ghi nhớ máy móc các đặc trưng riêng của tập Train thay vì học quy luật tổng quát. Khi đó, loss trên tập Train liên tục giảm, accuracy trên Train đạt gần 100%, nhưng loss trên tập Validation bắt đầu tăng ngược trở lại và accuracy trên Test giảm mạnh (như trường hợp notebook cũ: train acc 97% nhưng test acc 65%).
+- **Hiện tượng:** Mô hình "học vẹt" và ghi nhớ máy móc các đặc trưng riêng của tập Train thay vì học quy luật tổng quát. Khi đó, loss trên tập Train liên tục giảm, accuracy trên Train đạt gần 100%, nhưng loss trên tập Validation bắt đầu tăng ngược trở lại và accuracy trên Test giảm mạnh (như trường hợp notebook cũ: train acc 97% nhưng test acc 65.20%).
 - **Cách khắc phục:**
-  1. Chỉ train 2-3 epochs với early stopping.
+  1. Chỉ train 2-3 epochs với kiểm soát checkpoint.
   2. Dùng Weight Decay (AdamW) và Dropout.
-  3. Dùng Learning Rate nhỏ ($2 \times 10^{-5}$).
-  4. Lưu lại checkpoint có Validation F1/Loss tốt nhất để đánh giá trên Test set.
+  3. Dùng Learning Rate nhỏ ($2 \times 10^{-5}$) kết hợp Warmup Scheduler.
+  4. Lưu lại checkpoint có Validation Macro F1 tốt nhất để đánh giá trên Test set.
 
 ---
 
@@ -174,11 +174,15 @@ BERT được các kỹ sư Google huấn luyện trên một kho dữ liệu kh
 
 ---
 
-### 23. Accuracy, Precision, Recall và F1-Score khác nhau thế nào?
+### 23. Accuracy, Precision, Recall và các biến thể F1-Score khác nhau thế nào?
 - **Accuracy:** Tỷ lệ số mẫu dự đoán đúng trên tổng số mẫu: $\frac{TP + TN}{TP + TN + FP + FN}$. Dễ gây đánh lừa nếu dữ liệu mất cân bằng.
-- **Precision (Độ chuẩn xác):** Trong số những mẫu mô hình đoán là Tích cực, có bao nhiêu mẫu thực sự Tích cực: $\frac{TP}{TP + FP}$. Quan trọng khi chi phí của việc đoán sai một mẫu Tiêu cực thành Tích cực là lớn.
-- **Recall (Độ bao phủ / Nhạy):** Trong số tất cả những mẫu thực sự Tích cực, mô hình tìm ra được bao nhiêu mẫu: $\frac{TP}{TP + FN}$. Quan trọng khi không muốn bỏ sót review tiêu cực của khách.
-- **F1-Score:** Trung bình điều hòa giữa Precision và Recall: $2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}$. Đây là chỉ số đáng tin cậy nhất để đánh giá mô hình phân loại.
+- **Precision (Độ chuẩn xác):** Trong số những mẫu mô hình đoán là Tích cực, có bao nhiêu mẫu thực sự Tích cực: $\frac{TP}{TP + FP}$.
+- **Recall (Độ bao phủ / Nhạy):** Trong số tất cả những mẫu thực sự Tích cực, mô hình tìm ra được bao nhiêu mẫu: $\frac{TP}{TP + FN}$.
+- **F1-Score:** Trung bình điều hòa giữa Precision và Recall: $2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}$.
+- **Các biến thể F1-Score:**
+  - **Macro F1:** Tính F1 riêng cho từng lớp rồi lấy trung bình cộng không trọng số: $\frac{F_{1,\text{class 0}} + F_{1,\text{class 1}}}{2}$. Đánh giá công bằng cho mọi lớp bất kể số lượng mẫu.
+  - **Weighted F1:** Tính F1 riêng cho từng lớp rồi nhân với tỷ lệ số mẫu thực tế của từng lớp.
+  - **Binary F1:** Chỉ tính F1 cho lớp tích cực (Class 1).
 
 ---
 
@@ -191,5 +195,5 @@ BERT được các kỹ sư Google huấn luyện trên một kho dữ liệu kh
 ### 25. Những trường hợp nào mô hình BERT vẫn có thể dự đoán sai?
 1. **Câu vừa khen vừa chê (Mixed Sentiment):** Khách khen phòng ốc đẹp nhưng chê đồ ăn dở và nhân viên thô lỗ. Nhãn chung phụ thuộc vào việc người đánh giá cảm thấy yếu tố nào quan trọng hơn.
 2. **Châm biếm / Mỉa mai (Sarcasm):** Ví dụ *"Thank you for giving us a free indoor swimming pool in our leaking bathroom!"*.
-3. **Văn bản quá dài bị cắt cụt (Truncation):** Nếu phần phàn nàn cốt lõi nằm ở cuối một review dài hơn 256 từ và bị cắt bỏ bởi `max_length`.
-4. **Nhiễu nhãn (Label Noise):** Một số người dùng chấm điểm 1 sao nhưng ghi nhận xét tích cực, hoặc ngược lại (lỗi người nhập liệu).
+3. **Văn bản quá dài bị cắt cụt (Truncation):** Mặc dù trong mẫu 20 ca lỗi cực đoan được khảo sát, 0/20 ca bị cắt cụt (đều $\le 126$ tokens), trên toàn bộ tập dữ liệu (với phân vị p99 là 168 tokens), việc cắt cụt tại `max_length = 128` vẫn có thể làm mất thông tin kết luận ở cuối các bài đánh giá rất dài.
+4. **Nhiễu nhãn (Label Noise):** Một số người dùng chấm điểm 1 sao nhưng ghi nhận xét tích cực, hoặc ngược lại (lỗi người nhập liệu hoặc lỗi ghép trường biểu mẫu).

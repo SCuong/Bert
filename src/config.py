@@ -45,6 +45,7 @@ BERT_TEST_CM_PATH = os.path.join(FIGURES_DIR, "bert_test_confusion_matrix.png")
 
 COMPARATIVE_METRICS_PATH = os.path.join(METRICS_DIR, "comparative_metrics.json")
 ERROR_CASES_PATH = os.path.join(METRICS_DIR, "error_cases.json")
+ERROR_ANALYSIS_SUMMARY_PATH = os.path.join(METRICS_DIR, "error_analysis_summary.json")
 BERT_TRAINING_HISTORY_PATH = os.path.join(METRICS_DIR, "bert_training_history.json")
 TOKEN_STATS_PATH = os.path.join(METRICS_DIR, "token_length_stats.json")
 DATA_AUDIT_PATH = os.path.join(METRICS_DIR, "data_audit.json")

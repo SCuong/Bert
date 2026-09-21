@@ -101,4 +101,4 @@ flowchart LR
 3. **Artifacts thực nghiệm:** Toàn bộ metrics dạng JSON và biểu đồ trực quan hóa độ phân giải cao trong `artifacts/`.
 4. **Notebook Google Colab (`notebooks/`):** Hỗ trợ tính năng "Run All" trơn tru cho sinh viên.
 5. **Ứng dụng Demo (`app/app.py`):** Giao diện Streamlit trực quan, hiển thị xác suất và tokenization.
-6. **Báo cáo & Bài thuyết trình (`presentation/` & `FINAL_REPORT.md`):** Presentation generator implemented; final deck pending experiment results.
+6. **Báo cáo & Bài thuyết trình (`presentation/` & `FINAL_REPORT.md`):** Hoàn tất toàn bộ báo cáo tổng kết 17 mục chuẩn học thuật và bài thuyết trình PowerPoint chính thức (`presentation/BERT_Project_Final.pptx`) theo hệ thống thiết kế DUT.

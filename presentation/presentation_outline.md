@@ -1,107 +1,111 @@
 # Dàn Ý Bài Thuyết Trình: Ứng Dụng BERT Trong Phân Loại Cảm Xúc Đánh Giá Khách Sạn
+### Fine-Tuning BERT for Hotel Review Sentiment Classification
 
 **Tổng số slide:** 15 slide  
-**Thời lượng dự kiến:** 7 - 10 phút  
-**Phong cách thiết kế:** Học thuật, chuyên nghiệp, tối giản chữ, giàu biểu đồ thực nghiệm, không AI slop.
+**Thời lượng dự kiến:** 8 - 10 phút  
+**Hệ thống thiết kế:** Đại học Bách Khoa - ĐHĐN (DUT)  
+**File trình chiếu chính thức:** `presentation/BERT_Project_Final.pptx`
 
 ---
 
-### Slide 1: Trang Tiêu Đề (Title Slide)
-- **Tiêu đề lớn:** Ứng Dụng BERT Trong Phân Loại Cảm Xúc Đánh Giá Khách Sạn
-- **Tiêu đề phụ:** Fine-Tuning BERT for Hotel Review Sentiment Classification
-- **Môn học:** Trí tuệ Nhân tạo (Artificial Intelligence)
-- **Quy trình:** Tuân thủ chuẩn mực `AI Project Cycle`
-- **Thông tin:** Giảng viên hướng dẫn & Nhóm sinh viên thực hiện
+### Slide 1: Trang Tiêu Đề (DUT Title Slide)
+- **Tiêu đề lớn:** ĐỒ ÁN MÔN HỌC: TRÍ TUỆ NHÂN TẠO
+- **Đề tài chính thức:** Ứng Dụng Mô Hình BERT Trong Phân Loại Cảm Xúc Đánh Giá Khách Sạn
+- **Tiêu đề tiếng Anh:** Fine-Tuning BERT for Hotel Review Sentiment Classification
+- **Quy trình phương pháp luận:** Tuân thủ chuẩn mực 6 giai đoạn `AI Project Cycle` (Scope & Plan -> Data -> Models -> Deployment -> Maintenance -> Feedback)
+- **Thông tin đồ án:** Giảng viên hướng dẫn môn học & Nhóm sinh viên thực hiện
 
-### Slide 2: Bối Cảnh & Mục Tiêu (Scope & Problem Statement)
-- **Bối cảnh:** Sự bùng nổ của đánh giá khách sạn trực tuyến và nhu cầu tự động hóa phân tích phản hồi khách hàng.
-- **Phát biểu bài toán:** Input văn bản tiếng Anh -> Output nhãn nhị phân (Positive / Negative) kèm xác suất tin cậy.
-- **Bên liên quan (Stakeholders):** Khách sạn, khách lưu trú, đội ngũ kỹ sư AI.
-- **Tiêu chí thành công (Success Criteria):** Pipeline chuẩn mực, Zero Data Leakage, so sánh công bằng giữa Baseline và BERT, kiểm soát tính tái lập (`controlled for reproducibility with fixed seeds and documented environment`), giải thích ca lỗi.
+### Slide 2: Bối Cảnh & Mục Tiêu Nghiên Cứu (Scope & Plan)
+- **Bối cảnh thực tế:** Sự bùng nổ của đánh giá khách sạn trực tuyến trên Booking.com; nhu cầu tự động hóa phân loại phản hồi khách hàng.
+- **Phát biểu bài toán:** Input văn bản nhận xét tiếng Anh -> Output nhãn nhị phân (1: Tích cực, 0: Tiêu cực) kèm độ tin cậy.
+- **Các bên liên quan (Stakeholders):** Ban quản lý khách sạn, khách hàng lưu trú, kỹ sư AI.
+- **Mục tiêu kỹ thuật & Tiêu chí đánh giá:** Xây dựng mô hình cơ sở TF-IDF + Logistic Regression, fine-tuning chuẩn mực BERT, đánh giá đối đầu khách quan trên Held-Out Test Set (3,949 mẫu), kiểm soát chống rò rỉ dữ liệu (Zero Leakage) và phân tích định tính ca lỗi.
 
 ### Slide 3: Tiến Hóa Kiến Trúc: Từ RNN/LSTM Đến Transformer
-- **Hạn chế của RNN/LSTM:** Xử lý tuần tự không song song hóa được, tắc nghẽn gradient trên chuỗi dài (Vanishing Gradient).
-- **Bước ngoặt Transformer (2017):** Loại bỏ hoàn toàn mạng hồi quy, tính toán song song 100% trên GPU, kết nối trực tiếp mọi cặp từ bằng Self-Attention.
-- **So sánh trực quan:** Xử lý theo thời gian $t$ vs. Xử lý ma trận đồng thời.
+- **Hạn chế của RNN/LSTM:** Điểm nghẽn xử lý tuần tự (Sequential Recurrence Bottleneck) không song song hóa được trên GPU; suy giảm thông tin ngữ cảnh xa (Vanishing Gradient).
+- **Đột phá của Transformer (Vaswani et al., 2017):** Loại bỏ hoàn toàn mạng đệ quy; xử lý song song toàn bộ các từ trong chuỗi; kết nối trực tiếp mọi cặp từ qua cơ chế Self-Attention với đường truyền $\mathcal{O}(1)$; Positional Encoding mã hóa vị trí từ.
 
-### Slide 4: Kiến Trúc BERT & Cơ Chế Self-Attention
-- **Bản chất của BERT:** Sử dụng phần Encoder của Transformer xếp chồng (12 tầng ở bản Base).
-- **Deeply Bidirectional:** Đọc đồng thời hai chiều trái và phải ở mọi tầng.
+### Slide 4: Kiến Trúc BERT & Cơ Chế Multi-Head Self-Attention
+- **Bản chất của BERT:** Sử dụng khối Encoder của Transformer (12 tầng ở bản Base); Deeply Bidirectional (nhìn đồng thời ngữ cảnh hai chiều tự do).
 - **Cơ chế tính toán Scaled Dot-Product Attention:**
   $$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{Q K^T}{\sqrt{d_k}}\right) V$$
-- **Multi-Head Attention (12 heads):** Mỗi đầu chú ý học một mối liên kết cú pháp/ngữ nghĩa độc lập.
+- **Multi-Head Attention (12 heads):** Mỗi đầu chú ý học song song một khía cạnh ngôn ngữ khác nhau (cú pháp, đại từ, phủ định).
+- **Token đặc biệt:** `[CLS]` (vector đại diện phân loại) và `[SEP]` (phân tách câu).
 
-### Slide 5: Phân Tích Dữ Liệu Khách Sạn (Data & EDA)
-- **Tập dữ liệu:** `dts_20k_raw.csv` (Teacher-provided hotel-review sentiment dataset, 20,000 mẫu ban đầu).
-- **Kiểm toán dữ liệu (Data Audit):** Loại bỏ 255 mẫu (5 rỗng, 127 nhãn xung đột, 123 trùng lặp), còn 19,745 mẫu sạch (9,921 Negative, 9,824 Positive).
-- **Phân chia Stratified Split (70/10/20, seed=42):** Train (13,821), Val (1,975), Test (3,949) — Xác nhận Zero Data Leakage.
-- **Phân vị độ dài token BERT (Train+Val Scope, 15,796 mẫu):** Mean: 42.33 | Median: 30.0 | p90: 94.0 | p95: 121.0 | Max: 425 tokens.
-- **Quyết định cấu hình:** Chọn `MAX_LENGTH = 128` (chỉ cắt cụt 3.93%, tối ưu chi phí tính toán $\mathcal{O}(L^2)$ và bộ nhớ kích hoạt).
+### Slide 5: Phân Tích Khám Phá Dữ Liệu (Data & EDA)
+- **Tập dữ liệu:** `data/dts_20k_raw.csv` do giảng viên cung cấp (20,000 mẫu thô).
+- **Kiểm toán dữ liệu (Data Audit):** Loại bỏ 255 mẫu (5 rỗng, 127 nhãn xung đột, 123 trùng lặp), còn 19,745 mẫu sạch (9,921 Negative - 50.25%, 9,824 Positive - 49.75%).
+- **Phân chia Stratified Split (Seed 42):** Train: 13,821 (70%) | Val: 1,975 (10%) | Test: 3,949 (20%) — Xác nhận 0% rò rỉ dữ liệu.
+- **Phân vị độ dài token BERT (Train+Val Scope):** Mean: 42.33 | Median: 30.0 | p90: 94.0 | p95: 121.0 | Max: 425 tokens.
+- **Quyết định cấu hình:** Chọn `MAX_LENGTH = 128` (bảo toàn 96.07% văn bản, tối ưu chi phí tính toán $\mathcal{O}(L^2)$ và bộ nhớ kích hoạt).
 
-### Slide 6: Quy Trình Nghiên Cứu Chuẩn Mực (Project Pipeline)
-- **Sơ đồ luồng xử lý:** Raw Data -> Pre-split Audit (Missing, Duplicates, Conflicting) -> Stratified Split (70/10/20, seed=42) -> Baseline -> BERT Fine-tuning -> Comprehensive Evaluation -> Demo App.
-- **Nguyên tắc chống rò rỉ dữ liệu (No Data Leakage):** Tập Test chỉ được đánh giá duy nhất một lần ở bước cuối cùng.
+### Slide 6: Quy Trình Nghiên Cứu Chuẩn Mực (Pipeline)
+- **Sơ đồ 3 khối:**
+  1. *Dữ liệu & Tiền xử lý:* Bảo toàn ngữ cảnh (giữ nguyên từ phủ định, dấu câu), kiểm toán dữ liệu và phân chia Stratified.
+  2. *Mô hình hóa:* Xây dựng mô hình cơ sở TF-IDF + Logistic Regression và mô hình chính Fine-Tuned BERT.
+  3. *Đánh giá & Triển khai:* Đánh giá đối đầu độc lập trên Test Set đúng 1 lần duy nhất, trích xuất ca lỗi và xây dựng Demo Streamlit.
 
-### Slide 7: Mô Hình Cơ Sở (Baseline): TF-IDF + Logistic Regression
-- **Triết lý AI Project Cycle:** *"Start from simple to more complex models"*.
-- **Kiến trúc Baseline:** N-gram (1, 2), 10,000 features, Sublinear TF scaling kết hợp Logistic Regression (L-BFGS).
-- **Kết quả thực nghiệm trên Validation Set (1,975 mẫu):** Accuracy 81.01%, Macro F1 0.8098, thời gian huấn luyện 0.68s, tốc độ suy luận ~17,300 mẫu/giây (`baseline_validation_metrics.json`).
-- **Nguyên tắc bảo vệ Test Set:** Kết quả trên Test Set được niêm phong hoàn toàn cho bước đánh giá so sánh cuối cùng.
+### Slide 7: Mô Hình Cơ Sở: TF-IDF + Logistic Regression (Baseline)
+- **Triết lý AI Project Cycle:** *"Start from simple to more complex models"* (Slide 9).
+- **Kiến trúc:** TF-IDF (10,000 unigram + bigram, sublinear_tf) kết hợp Logistic Regression (L-BFGS, C=1.0).
+- **Kết quả trên Held-Out Test Set (3,949 mẫu):**
+  - Accuracy: 81.94% | Macro Precision: 0.8208 | Macro Recall: 0.8193 | Macro F1: 0.8192 | Weighted F1: 0.8192
+  - Thời gian suy luận: 0.137 giây (~28,784 mẫu/giây).
+  - Ma trận nhầm lẫn: 1,691 TN, 293 FP, 420 FN, 1,545 TP (713 lỗi).
 
-### Slide 8: Thiết Kế Thực Nghiệm & Chiến Lược Fine-Tuning
-- **Lựa chọn mô hình:** `google-bert/bert-base-uncased` (12 tầng, 768 chiều ẩn, 12 attention heads, ~110M tham số).
-- **Đồng bộ Tokenizer & Model:** AutoTokenizer và AutoModel uncased, từ điển 30,522 WordPiece tokens.
-- **Cấu hình siêu tham số:**
-  - Max Length: 128 (đã xác nhận dựa trên phân vị p95 = 121.0 tokens từ EDA trên tập Train+Val).
-  - Optimizer: AdamW với Decoupled Weight Decay = 0.01.
-  - Learning rate: $2 \times 10^{-5}$ kết hợp Linear Warmup Scheduler (10% số bước).
-  - Số epochs: 2–3 epochs (kiểm soát chặt chẽ qua Validation Loss & Macro F1).
-- **Chiến lược Checkpoint:** Tự động chọn và phục hồi Checkpoint có Validation F1 tốt nhất.
+### Slide 8: Phân Tích Sự Cố Mô Hình Cũ & Khác Biệt Pipeline Mới
+- **Khảo sát mã nguồn cũ môn học (`DL_Model.ipynb` - 65.20% Accuracy):**
+  1. *Lệch Tokenizer:* Tiền xử lý cased ghép với encoder uncased.
+  2. *Đóng băng Encoder:* `trainable=False` (Feature Extraction tĩnh).
+  3. *Learning rate quá lớn:* $10^{-3}$ (gấp 50 lần chuẩn), phá hủy trọng số.
+  4. *Head quá sâu:* 5 tầng Dense liên tiếp, loại bỏ Dropout.
+  5. *Overfitting:* Huấn luyện 100 epochs (Train 97% nhưng Test sụp đổ về 65.20%).
+- **Pipeline mới của nhóm:** Full Fine-Tuning, đồng bộ uncased, AdamW (lr=2e-5, warmup), 1 tầng Linear + Dropout(0.1), 3 epochs có kiểm soát checkpoint.
 
-### Slide 9: Triển Khai Kỹ Thuật Fine-Tuning BERT
-- **Kiến trúc thuần PyTorch:** Kế thừa trực tiếp `torch.utils.data.Dataset`, không phụ thuộc thư viện ngoài `datasets`.
-- **Tương thích API:** Sử dụng `processing_class` cho các phiên bản Hugging Face Transformers mới.
-- **Giám sát quá trình huấn luyện:** Ghi nhận cả đường cong Train Loss và Validation Loss qua 3 epochs (2,592 steps).
-- **Kết quả thực nghiệm trên Validation Set (1,975 mẫu - Đã hoàn thành):**
-  - Validation Accuracy: 83.90% | Macro Precision: 0.8393 | Macro Recall: 0.8389 | Macro F1: 0.8389.
-  - Thời gian huấn luyện: 15,617.19s (~260.29 phút trên CPU) | Thời gian suy luận: 171.58s (~11.5 mẫu/s).
-  - Ma trận nhầm lẫn Validation: 848 TN, 144 FP, 174 FN, 809 TP.
-  - Checkpoint tốt nhất: `checkpoint-2592` (Epoch 3).
-  - *(Lưu ý: Tập Test Set vẫn được niêm phong hoàn toàn cho bước đánh giá đối đầu cuối cùng).*
-- **Quản lý Artifacts:** Trọng số mô hình `artifacts/model/bert_best_model/`, metrics JSON và biểu đồ 300 DPI.
+### Slide 9: Quá Trình Huấn Luyện & Tinh Chỉnh BERT
+- **Tiến trình 3 epochs trên CPU (15,617.19s ~ 4.34 giờ, 2,592 steps):**
+  - Epoch 1: Train Loss 0.4077 | Val Loss 0.3541 | Val F1 0.8359
+  - Epoch 2: Train Loss 0.2885 | Val Loss 0.3702 | Val F1 0.8384
+  - Epoch 3: Train Loss 0.1983 | Val Loss 0.4503 | Val F1 **0.8389** (Đạt đỉnh)
+- **Động lực học tập:** Giải thích hiện tượng Val Loss tăng nhẹ ở Epoch 3 do Cross-Entropy phạt xác suất ở các mẫu khó/nhiễu, trong khi Macro F1 đạt đỉnh 0.8389. Chọn `checkpoint-2592` tối ưu.
 
+### Slide 10: Bảng So Sánh Kết Quả Thực Nghiệm Đối Đầu Trên Test Set
+- **Bảng đối đầu chính thức trên cùng 3,949 mẫu Test Set:**
+  - *TF-IDF + Logistic Regression (Baseline):* Accuracy 81.94%, Macro Precision 0.8208, Macro Recall 0.8193, Macro F1 0.8192
+  - *Fine-Tuned BERT (Ours):* Accuracy **84.83%**, Macro Precision **0.8486**, Macro Recall **0.8482**, Macro F1 **0.8483**
+  - *Mức độ cải thiện ($\Delta$):* **+2.89% Accuracy**, **+0.0291 Macro F1**
+  - *Tham khảo lịch sử môn học (`DL_Model.ipynb`):* NNLM 79.00%, BiLSTM 75.00%, Old BERT 65.20% (Tăng **+19.63%** so với code cũ!).
 
-### Slide 10: Bảng So Sánh Kết Quả Thực Nghiệm Tổng Hợp
-- Bảng so sánh phương pháp trên cùng tập dữ liệu:
-  1. TF-IDF + Logistic Regression (Mô hình cơ sở mới của nhóm — Pending Experiment)
-  2. Fine-Tuned BERT (Mô hình chính mới của nhóm — Pending Experiment)
-  3. NNLM Google Embedding (Tham khảo: 79.00%, Precision/Recall/F1: Not reported)
-  4. BiLSTM (Tham khảo: 75.00%, Precision/Recall/F1: Not reported)
-  5. Old "BERT" (Tham khảo: 65.20%, Precision/Recall/F1: Not reported)
-- **Các chỉ số đối sánh:** Accuracy, Macro Precision, Macro Recall, Macro F1.
+### Slide 11: Ma Trận Nhầm Lẫn & So Sánh Chi Tiết Từng Lớp
+- **Ma trận nhầm lẫn của Fine-Tuned BERT:** 1,711 TN, 273 FP, 326 FN, 1,639 TP (599 lỗi).
+- **So sánh với Baseline:**
+  - True Negatives tăng 20 mẫu (1,711 vs 1,691).
+  - True Positives tăng 94 mẫu (1,639 vs 1,545).
+  - False Negatives **giảm mạnh 94 ca** (từ 420 xuống 326 ca, giảm 22.38% số ca FN!).
+  - Tổng số lỗi giảm 114 ca trên tập kiểm thử.
 
-### Slide 11: Ma Trận Nhầm Lẫn & Phân Tích Độ Chính Xác Từng Lớp
-- Biểu đồ Heatmap Confusion Matrix của Baseline vs. BERT trên Test Set.
-- So sánh chi tiết độ chính xác của lớp Tiêu cực (0) và lớp Tích cực (1) (Sẽ sinh tự động sau khi chạy `evaluate.py`).
+### Slide 12: Báo Cáo Phân Tích Lỗi Định Tính (Qualitative Error Analysis)
+- **Khảo sát mẫu 20 ca lỗi có độ tin cậy cao nhất (10 FP, 10 FN):**
+  - *Mixed Sentiment:* 15/20 ca (75.0%) chứa cảm xúc pha trộn giữa các khía cạnh.
+  - *Dấu hiệu mơ hồ / nhiễu nhãn:* 8/20 ca (40.0%) có ngữ nghĩa mâu thuẫn với nhãn ground-truth.
+  - *Thẻ biểu mẫu nguồn (`"No Positive"`):* 6/20 ca (30.0%).
+  - *Cắt cụt độ dài token:* **0/20 ca** (đều $\le 126$ tokens).
+- **Trả lời RQ3:** Lỗi bắt nguồn chủ yếu từ tính đa khía cạnh của cảm xúc và chất lượng dữ liệu gốc; cắt cụt không phải là nguyên nhân gây ra các ca lỗi cực đoan nhất.
 
-### Slide 12: Khung Phân Tích Lỗi Định Tính (Error Analysis Framework)
-- Phương pháp luận khảo sát định tính 4 nhóm nguyên nhân gây ra lỗi dự đoán:
-  - *Mixed Sentiment:* Khách khen vị trí nhưng chê cách âm / vệ sinh.
-  - *Phủ định phức tạp / Đảo ngữ:* Cấu trúc phủ định kép tinh vi.
-  - *Châm biếm / Sarcasm:* Lời khen mang hàm ý chê bai.
-  - *Nhiễu nhãn / Cắt cụt:* Lỗi gán nhãn gốc hoặc review vượt quá `max_length`.
-- Trích xuất 20 ca lỗi thực tế sẽ thực hiện qua `evaluate.py`.
+### Slide 13: Ứng Dụng Thực Tế: Web Demo Thời Gian Thực (Streamlit)
+- **Giao diện `app/app.py`:**
+  - Nhập văn bản đánh giá bất kỳ; cung cấp sẵn 4 câu test mẫu phức tạp (phủ định, litotes, mệnh đề đối lập).
+  - So sánh đối đầu song song (Side-by-Side) giữa Baseline và BERT.
+  - Trực quan hóa giải thích bẻ từ con WordPiece (`[CLS]`, `##tokens`, `[SEP]`) và thanh đo xác suất Softmax.
 
-### Slide 13: Ứng Dụng Thực Tế: Demo Streamlit
-- Giao diện trực quan cho người dùng nhập review hoặc chọn tình huống thử nghiệm.
-- Minh họa quá trình bẻ từ WordPiece (`[CLS]`, `##tokens`, `[SEP]`).
-- Hiển thị xác suất dự đoán và nhãn phân loại theo thời gian thực.
-- So sánh kết quả tức thời giữa Baseline và BERT trên cùng một văn bản.
+### Slide 14: Giới Hạn Nghiên Cứu & Hướng Phát Triển Tương Lai
+- **Giới hạn hiện tại:** Bài toán nhị phân đơn giản hóa (chưa có lớp Neutral 3 sao); chi phí tài nguyên tính toán và độ trễ suy luận trên CPU (12.85 mẫu/s vs 28,784 mẫu/s).
+- **Hướng phát triển:** Phân tích Cảm xúc Đa Khía cạnh (Aspect-Based Sentiment Analysis - ABSA); nén mô hình với DistilBERT / ONNX Runtime; mở rộng ngữ liệu tiếng Việt (PhoBERT).
 
-### Slide 14: Giới Hạn & Hướng Phát Triển Tương Lai
-- **Giới hạn hiện tại:** Bài toán nhị phân 0/1 chưa nắm bắt được đánh giá trung lập (3 sao); chi phí tính toán cao hơn mô hình tuyến tính khi triển khai quy mô lớn.
-- **Hướng phát triển:** Phân loại cảm xúc đa khía cạnh (Aspect-Based Sentiment Analysis - ABSA); nén mô hình bằng DistilBERT hoặc ONNX Runtime để tăng tốc suy luận.
-
-### Slide 15: Kết Luận & Tài Liệu Tham Khảo
-- Tóm tắt 3 kết quả chính: Pipeline chuẩn mực không rò rỉ, đánh giá khách quan giữa Baseline và BERT, đóng gói sản phẩm hoàn chỉnh.
-- Trích dẫn học thuật chuẩn mực: Vaswani et al. (2017), Devlin et al. (2018), Hugging Face Transformers.
+### Slide 15: Tổng Kết Đóng Góp & Sẵn Sàng Phản Biện (Q&A)
+- **4 đóng góp nổi bật:**
+  1. Hoàn thành trọn vẹn quy trình AI Project Cycle.
+  2. Khôi phục tiềm năng của BERT so với code cũ (tăng từ 65.20% lên 84.83%).
+  3. Minh chứng thực nghiệm trung thực với đầy đủ artifacts kiểm chứng.
+  4. Hệ thống tài liệu học thuật và ứng dụng demo hoàn chỉnh.
+- **Lời cảm ơn & Khởi động phiên Hỏi Đáp (Q&A).**
