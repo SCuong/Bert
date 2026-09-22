@@ -44,6 +44,13 @@ class WebApplicationTests(unittest.TestCase):
         self.assertIn("site-header", script)
         self.assertIn("HEADER_SCROLL_THRESHOLD", script)
 
+    def test_fixed_header_styles_preserve_viewport_navigation_and_content_offset(self):
+        stylesheet = Path("app/static/css/style.css").read_text(encoding="utf-8")
+
+        self.assertIn(".site-header { position:fixed; top:0; left:0; width:100%;", stylesheet)
+        self.assertIn("padding-top:72px;", stylesheet)
+        self.assertIn("@media (max-width:560px) { body { padding-top:63px; }", stylesheet)
+
     def test_predict_rejects_blank_review(self):
         response = self.client.post("/api/predict", json={"text": "   "})
 
