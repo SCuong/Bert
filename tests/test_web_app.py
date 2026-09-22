@@ -1,5 +1,6 @@
 import unittest
 from unittest.mock import patch
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
@@ -17,6 +18,31 @@ class WebApplicationTests(unittest.TestCase):
         self.assertIn("BERT Sentiment Analysis", response.text)
         self.assertIn("Hotel Review Classification", response.text)
         self.assertIn("/static/css/style.css", response.text)
+
+    def test_home_page_includes_accessible_bilingual_language_controls(self):
+        response = self.client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('id="language-switcher"', response.text)
+        self.assertIn('aria-label="Switch to English"', response.text)
+        self.assertIn('aria-label="Chuyển sang Tiếng Việt"', response.text)
+        self.assertIn("data-i18n", response.text)
+
+    def test_home_page_marks_remaining_visible_and_assistive_text_for_translation(self):
+        response = self.client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('data-i18n="baseline"', response.text)
+        self.assertIn('data-i18n="binarySentimentClassification"', response.text)
+        self.assertIn('data-i18n-aria="languageSelectorAria"', response.text)
+        self.assertIn('data-i18n-aria="primaryNavigationAria"', response.text)
+
+    def test_client_script_persists_language_and_controls_sticky_header(self):
+        script = Path("app/static/js/app.js").read_text(encoding="utf-8")
+
+        self.assertIn("localStorage", script)
+        self.assertIn("site-header", script)
+        self.assertIn("HEADER_SCROLL_THRESHOLD", script)
 
     def test_predict_rejects_blank_review(self):
         response = self.client.post("/api/predict", json={"text": "   "})
