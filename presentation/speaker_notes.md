@@ -32,7 +32,7 @@
 > - Bước 4: Xây dựng mô hình cơ sở TF-IDF + Logistic Regression theo triết lý 'Start simple to complex models';  
 > - Bước 5: Fine-tuning toàn bộ 110M tham số của BERT, lưu checkpoint dựa trên Validation Macro F1;  
 > - Bước 6: Đánh giá độc lập đúng 1 lần duy nhất trên tập Test Set đã niêm phong;  
-> - Và Bước 7: Phân tích định tính 20 ca lỗi cực đoan và đóng gói Web UI Streamlit.  
+> - Và Bước 7: Phân tích định tính 20 ca lỗi cực đoan và đóng gói Web UI FastAPI.
 > Nguyên tắc cốt lõi xuyên suốt là kiểm soát giao thoa dữ liệu và đóng băng siêu tham số trước khi mở niêm phong tập kiểm thử."*
 
 ---
@@ -93,10 +93,10 @@
 
 ---
 
-### Slide 11: Ứng Dụng Tương Tác Thời Gian Thực (Streamlit Demo) (08:00 - 08:45)
-> *"Toàn bộ kết quả nghiên cứu đã được nhóm đóng gói thành ứng dụng Web trực quan bằng Streamlit tại `app/app.py`.  
-> Thẻ bên trái là ví dụ minh họa giao diện với một câu chứa cảm xúc nhượng bộ; đây không phải một benchmark đóng băng hay bằng chứng định lượng bổ sung. Khi chạy, ứng dụng hiển thị song song nhãn dự đoán và độ tin cậy của BERT cùng Baseline.  
-> Ứng dụng nạp mô hình từ `artifacts/model/bert_best_model/`, đo độ trễ trực tiếp theo môi trường thực thi và hiển thị các token WordPiece (`##`) của văn bản đầu vào."*
+### Slide 11: Ứng Dụng Tương Tác Thời Gian Thực (FastAPI Demo) (08:00 - 08:45)
+> *"Toàn bộ kết quả nghiên cứu đã được nhóm đóng gói thành ứng dụng Web trực quan bằng FastAPI tại `app/main.py`.
+> Thẻ bên trái là ví dụ minh họa giao diện với một câu chứa cảm xúc nhượng bộ; đây không phải một benchmark đóng băng hay bằng chứng định lượng bổ sung. Khi chạy, ứng dụng hiển thị nhãn, độ tin cậy và xác suất Positive / Negative lấy trực tiếp từ pipeline BERT chuẩn.
+> Ứng dụng phục vụ trang Jinja2 và endpoint `POST /api/predict`; model/tokenizer được cache bởi pipeline suy luận chuẩn, còn giao diện xử lý trạng thái tải và lỗi theo cách không lộ stack trace."*
 
 ---
 

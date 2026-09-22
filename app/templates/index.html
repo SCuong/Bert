@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A local academic demonstration of BERT hotel-review sentiment classification.">
+  <title>BERT Sentiment Analysis | Hotel Review Classification</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#analyze">Skip to analyzer</a>
+  <header class="site-header">
+    <nav class="nav shell" aria-label="Primary navigation">
+      <a class="brand" href="#top" aria-label="BERT Sentiment Analysis home">
+        <span class="brand-mark" aria-hidden="true">B</span>
+        <span><strong>BERT</strong><small>Sentiment Analysis</small></span>
+      </a>
+      <div class="nav-links" aria-label="Page sections">
+        <a href="#analyze">Analyze</a>
+        <a href="#model">Model</a>
+        <a href="#results">Results</a>
+        <a href="#about">About</a>
+      </div>
+      <a class="nav-cta" href="#analyze">Try the demo <span aria-hidden="true">→</span></a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero shell" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span> University AI course project</p>
+        <h1 id="hero-title">Understand hotel reviews <em>with BERT.</em></h1>
+        <p class="hero-text">A polished demonstration layer around a fine-tuned BERT classifier for English hotel-review sentiment. Enter a review to receive the model’s overall positive or negative prediction.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#analyze">Analyze a review <span aria-hidden="true">→</span></a>
+          <a class="button button-secondary" href="#results">View frozen results</a>
+        </div>
+        <p class="hero-note">Fine-tuned <code>bert-base-uncased</code> · Binary sentiment classification</p>
+      </div>
+      <div class="hero-visual" aria-label="Abstract language-model illustration">
+        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+        <div class="model-card">
+          <div class="model-card-top"><span class="mini-label">BERT PIPELINE</span><span class="pulse" aria-hidden="true"></span></div>
+          <div class="token-row"><span>[CLS]</span><span>clean</span><span>room</span><span>friendly</span><span>[SEP]</span></div>
+          <div class="neural-lines" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="model-output"><span>Prediction</span><strong>Ready for input</strong><b>live output</b></div>
+        </div>
+        <div class="floating-chip chip-one">NLP</div><div class="floating-chip chip-two">128 tokens</div>
+      </div>
+    </section>
+
+    <section id="analyze" class="analyzer-section" aria-labelledby="analyzer-title">
+      <div class="shell">
+        <div class="section-heading centered"><p class="eyebrow">Interactive demonstration</p><h2 id="analyzer-title">Analyze a hotel review</h2><p>Use a manually written example or enter your own English review. The model is loaded once and reused for inference.</p></div>
+        <div class="analyzer-card">
+          <div class="analyzer-form">
+            <div class="field-header"><label for="review-text">Hotel review</label><output id="character-count" for="review-text">0 characters</output></div>
+            <textarea id="review-text" name="review" rows="8" maxlength="5000" placeholder="Enter a hotel review here..." aria-describedby="input-help"></textarea>
+            <p id="input-help" class="input-help">The classifier returns one overall sentiment label. The local demo accepts up to 5,000 characters; the canonical tokenizer handles normal truncation behavior.</p>
+            <div class="examples" aria-label="Example reviews"><span>Try an example:</span>
+              <button type="button" class="example-chip" data-example="positive">Positive</button>
+              <button type="button" class="example-chip" data-example="negative">Negative</button>
+              <button type="button" class="example-chip" data-example="mixed">Mixed</button>
+            </div>
+            <div class="form-actions"><button id="analyze-button" class="button button-primary" type="button"><span class="button-label">Analyze sentiment</span><span class="button-spinner" aria-hidden="true"></span></button><button id="clear-button" class="button button-quiet" type="button">Clear</button></div>
+            <p id="form-message" class="form-message" aria-live="polite"></p>
+          </div>
+          <aside id="result-panel" class="result-panel is-empty" aria-live="polite" aria-label="Prediction result">
+            <div class="result-placeholder"><span class="result-symbol" aria-hidden="true">✦</span><h3>Your result will appear here</h3><p>Submit a review to display the BERT prediction and model probabilities.</p></div>
+            <div class="result-content" hidden>
+              <p class="mini-label">BERT prediction</p><div class="sentiment-heading"><span id="sentiment-icon" class="sentiment-icon" aria-hidden="true">✓</span><span id="sentiment-label">Positive</span></div>
+              <div class="confidence-block"><span>Confidence</span><strong id="confidence-value">0.0%</strong></div>
+              <div class="probability-list"><div><div class="probability-label"><span>Positive</span><strong id="positive-probability">0.0%</strong></div><div class="bar-track"><i id="positive-bar"></i></div></div><div><div class="probability-label"><span>Negative</span><strong id="negative-probability">0.0%</strong></div><div class="bar-track"><i id="negative-bar"></i></div></div></div>
+              <p class="result-explanation">The BERT classifier predicts the overall sentiment expressed in the review. Mixed or ambiguous reviews can be more difficult because they may contain competing opinions.</p>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section id="results" class="section shell" aria-labelledby="results-title">
+      <div class="section-heading"><p class="eyebrow">Frozen test-set results</p><h2 id="results-title">A measured improvement over the baseline.</h2><p>Metrics below are the project’s frozen comparative results; this interface does not retrain or reevaluate either model.</p></div>
+      <div class="metric-grid">
+        <article class="metric-card"><p class="mini-label">Baseline</p><h3>TF-IDF + Logistic Regression</h3><dl><div><dt>Accuracy</dt><dd>81.94%</dd></div><div><dt>Macro F1</dt><dd>0.8192</dd></div></dl></article>
+        <article class="metric-card featured"><span class="featured-tag">Fine-tuned model</span><p class="mini-label">BERT</p><h3>Fine-tuned <code>bert-base-uncased</code></h3><dl><div><dt>Accuracy</dt><dd>84.83%</dd></div><div><dt>Macro F1</dt><dd>0.8483</dd></div></dl></article>
+        <article class="metric-card improvement"><p class="mini-label">Improvement</p><h3>BERT vs. baseline</h3><dl><div><dt>Accuracy</dt><dd>+2.89 <small>percentage points</small></dd></div><div><dt>Macro F1</dt><dd>+0.0291</dd></div></dl></article>
+      </div>
+    </section>
+
+    <section id="model" class="model-section" aria-labelledby="model-title"><div class="shell model-grid"><div><p class="eyebrow light">How it works</p><h2 id="model-title">A compact language pipeline.</h2><p>BERT is a Transformer-based language model. In this project, it was fine-tuned for hotel-review sentiment classification and compared with a TF-IDF + Logistic Regression baseline.</p></div><ol class="pipeline"><li><span>01</span><strong>Hotel review</strong></li><li><span>02</span><strong>Tokenizer</strong></li><li><span>03</span><strong>Fine-tuned BERT</strong></li><li><span>04</span><strong>Sentiment prediction</strong></li></ol></div></section>
+
+    <section class="section shell information-grid" aria-label="Model context and limitations"><article class="info-card token-card"><p class="eyebrow">Input context</p><h2>Token-length snapshot</h2><p class="scope-note">Calculated on Train + Validation sets to preserve the held-out Test Set.</p><dl class="token-stats"><div><dt>p95</dt><dd>121 tokens</dd></div><div><dt>p99</dt><dd>168 tokens</dd></div><div><dt>At MAX_LENGTH=128</dt><dd>96.07% coverage</dd></div><div><dt>Above 128 tokens</dt><dd>3.93%</dd></div><div><dt>Above 256 tokens</dt><dd>0.09%</dd></div></dl></article><article class="info-card limitations-card"><p class="eyebrow">Evidence-based limitations</p><h2>Where the model can struggle</h2><ul><li><b>15/20</b> audited errors involved mixed sentiment.</li><li><b>8/20</b> involved possible label ambiguity or noise.</li><li><b>8/20</b> involved negation or concession.</li><li><b>6/20</b> involved template markers.</li></ul><p>In the 20 audited errors, none exceeded <code>MAX_LENGTH=128</code>.</p></article></section>
+
+    <section id="about" class="about-section"><div class="shell about-card"><p class="eyebrow light">Academic context</p><h2>Designed for a university AI course presentation.</h2><p>This application is a demonstration layer around the trained model developed for a hotel-review sentiment classification project. It is not intended as a production sentiment-analysis service.</p></div></section>
+  </main>
+  <footer class="footer shell"><span>© Academic demonstration · BERT hotel-review sentiment classification</span><a href="#top">Back to top ↑</a></footer>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

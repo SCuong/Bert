@@ -46,7 +46,7 @@ Dựa theo Slide 4 của `AI Project Cycle.pptx`:
 3. Triển khai fine-tuning chuẩn mực mô hình `google-bert/bert-base-uncased` với thư viện Hugging Face `transformers` và `PyTorch`.
 4. Đánh giá toàn diện mô hình trên tập kiểm thử độc lập (Test Set) qua các chỉ số: Accuracy, Precision, Recall, Macro/Weighted F1 và Confusion Matrix.
 5. Thực hiện phân tích lỗi chuyên sâu (Error Analysis) trên các mẫu dự đoán sai.
-6. Đóng gói ứng dụng demo tương tác trực quan bằng `Streamlit` và triển khai bộ công cụ sinh slide thuyết trình học thuật.
+6. Đóng gói ứng dụng demo tương tác cục bộ bằng `FastAPI`, Jinja2, CSS và JavaScript thuần; đồng thời triển khai bộ công cụ sinh slide thuyết trình học thuật.
 
 ---
 
@@ -89,7 +89,7 @@ flowchart LR
     D1 & F2 --> G
     G --> H["Baseline & BERT Test Metrics"]
     G --> I["Error Analysis (20 cases)"]
-    F2 --> J["Streamlit Demo App"]
+    F2 --> J["FastAPI Demo App"]
     H & I --> K["Presentation Generator (PPTX)"]
 ```
 
@@ -100,5 +100,5 @@ flowchart LR
 2. **Tài liệu học thuật (`docs/`):** Audit tài liệu, Đặc tả bài toán, Phân tích mã nguồn cũ (tham khảo nội bộ), Khung phân tích lỗi, Cẩm nang học tập (`STUDY_GUIDE.md`), Bộ câu hỏi phản biện (`DEFENSE_QA.md`).
 3. **Artifacts thực nghiệm:** Toàn bộ metrics dạng JSON và biểu đồ trực quan hóa độ phân giải cao trong `artifacts/`.
 4. **Notebook Google Colab (`notebooks/`):** Hỗ trợ tính năng "Run All" trơn tru cho sinh viên.
-5. **Ứng dụng Demo (`app/app.py`):** Giao diện Streamlit trực quan, hiển thị xác suất và tokenization.
+5. **Ứng dụng Demo (`app/main.py`):** Giao diện FastAPI/Jinja2 cục bộ, hiển thị nhãn và xác suất đầu ra thực tế của BERT.
 6. **Báo cáo & Bài thuyết trình (`presentation/` & `FINAL_REPORT.md`):** Hoàn tất báo cáo tổng kết và bài thuyết trình PowerPoint (`presentation/BERT_Project_Final.pptx`) theo DUT-style template supplied for this project.

@@ -310,7 +310,7 @@ def create_presentation(output_path=None):
     bullets_o = [
         ("Quy trình chuẩn mực khép kín:", " Triển khai đầy đủ 6 giai đoạn AI Project Cycle; kiểm toán exact-match trước split và case-normalized hậu nghiệm."),
         ("Thực nghiệm đối chứng công bằng:", " Huấn luyện mô hình cơ sở TF-IDF + Logistic Regression và Fine-tuning BERT (bert-base-uncased) trên cùng dữ liệu chuẩn."),
-        ("Đánh giá khách quan & Triển khai:", " Đóng băng và kiểm thử trên Held-Out Test Set (3,949 mẫu); phân tích định tính ca lỗi và đóng gói Web UI Streamlit.")
+        ("Đánh giá khách quan & Triển khai:", " Đóng băng và kiểm thử trên Held-Out Test Set (3,949 mẫu); phân tích định tính ca lỗi và đóng gói Web UI FastAPI.")
     ]
     for i, (bld, txt) in enumerate(bullets_o):
         p = tf2.paragraphs[0] if i == 0 else tf2.add_paragraph()
@@ -331,7 +331,7 @@ def create_presentation(output_path=None):
         ("04", "Baseline", "TF-IDF (10k feats)\n+ Logistic Regr"),
         ("05", "BERT Train", "Full fine-tuning,\nchọn checkpoint F1"),
         ("06", "Frozen Test", "Đánh giá 1 lần duy nhất\ntrên 3,949 mẫu"),
-        ("07", "Error & Demo", "Kiểm toán 20 ca lỗi;\nWeb UI Streamlit")
+        ("07", "Error & Demo", "Kiểm toán 20 ca lỗi;\nWeb UI FastAPI")
     ]
     
     step_w = Inches(1.52)
@@ -689,9 +689,9 @@ def create_presentation(output_path=None):
         set_text(box, body_c, font_size=Pt(11), color=CHARCOAL)
         
     # ==========================================================
-    # SLIDE 11: Real-Time Streamlit Demo (Light theme)
+    # SLIDE 11: Real-Time FastAPI Demo (Light theme)
     # ==========================================================
-    s11, s11_sldId = create_base_slide(prs, "Chương 4: Đóng gói & Triển khai", "ỨNG DỤNG TƯƠNG TÁC THỜI GIAN THỰC (STREAMLIT DEMO)", logo_blob=logo_blob)
+    s11, s11_sldId = create_base_slide(prs, "Chương 4: Đóng gói & Triển khai", "ỨNG DỤNG TƯƠNG TÁC THỜI GIAN THỰC (FASTAPI DEMO)", logo_blob=logo_blob)
     
     # Left: Mockup UI Card
     mock = s11.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(1.55), Inches(6.2), Inches(5.0))
@@ -700,7 +700,7 @@ def create_presentation(output_path=None):
     
     mock_hdr = s11.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(1.55), Inches(6.2), Inches(0.48))
     mock_hdr.fill.solid(); mock_hdr.fill.fore_color.rgb = NAVY; mock_hdr.line.fill.background()
-    set_text(mock_hdr, "GIAO DIỆN ỨNG DỤNG WEB (STREAMLIT UI — app/app.py)", font_size=Pt(12), bold=True, color=WHITE)
+    set_text(mock_hdr, "GIAO DIỆN ỨNG DỤNG WEB (FASTAPI UI — app/main.py)", font_size=Pt(12), bold=True, color=WHITE)
     
     mock_tb = s11.shapes.add_textbox(Inches(0.95), Inches(2.15), Inches(5.9), Inches(4.2))
     set_text(
@@ -708,9 +708,9 @@ def create_presentation(output_path=None):
         "Ví dụ minh họa giao diện (không phải benchmark đóng băng):\n"
         "\"The room was a bit small, but the location was great and breakfast was delicious!\"\n\n"
         "Ứng dụng hiển thị khi chạy:\n"
-        "• Nhãn dự đoán và độ tin cậy của BERT cùng Baseline.\n"
-        "• Danh sách token WordPiece của văn bản đầu vào.\n"
-        "• Độ trễ suy luận đo trực tiếp, phụ thuộc phần cứng và môi trường.",
+        "• Nhãn dự đoán và độ tin cậy từ BERT.\n"
+        "• Thanh xác suất Positive / Negative từ đầu ra thực tế.\n"
+        "• Trạng thái tải và thông báo lỗi rõ ràng, không lộ stack trace.",
         font_size=Pt(11), color=CHARCOAL
     )
     # Format runs
@@ -725,13 +725,13 @@ def create_presentation(output_path=None):
     
     # Right: 3 Feature Cards
     f_cards = [
-        ("TRIỂN KHAI CỤC BỘ KHÉP KÍN",
-         "• Nạp tự động trọng số đã đóng băng từ artifacts/model/bert_best_model/.\n"
-         "• Đo lường và hiển thị độ trễ suy luận thời gian thực (Inference Latency ms)."),
-        ("SO SÁNH ĐỐI ĐẦU SONG SONG",
-         "• Cho phép thử nghiệm trực tiếp khả năng nắm bắt ngữ cảnh câu giữa TF-IDF và Transformer trên cùng một văn bản đầu vào."),
-        ("TRỰC QUAN HÓA CƠ CHẾ BERT",
-         "• Hiển thị danh sách token WordPiece (##), minh họa trực quan cơ chế tách từ và biểu diễn vector cho người sử dụng.")
+        ("TRIỂN KHAI CỤC BỘ NHẸ",
+         "• FastAPI phục vụ trang Jinja2 và endpoint POST /api/predict.\n"
+         "• Pipeline chuẩn cache model/tokenizer, không nạp lại mỗi request."),
+        ("KẾT QUẢ MÔ HÌNH THỰC",
+         "• Nhãn, độ tin cậy và hai xác suất được lấy từ src.predict.predict_bert, không dùng giá trị minh họa."),
+        ("TRẢI NGHIỆM THUYẾT TRÌNH",
+         "• Ví dụ viết thủ công, bộ đếm ký tự, trạng thái tải và xử lý lỗi thân thiện trên một trang responsive.")
     ]
     for idx, (f_title, f_body) in enumerate(f_cards):
         top_pos = Inches(1.55) + idx * Inches(1.7)

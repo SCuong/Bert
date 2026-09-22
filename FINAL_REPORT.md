@@ -111,7 +111,7 @@ Các module cốt lõi:
 3. **Module BERT Fine-Tuning (`src/train_bert.py`):** Tinh chỉnh mô hình `google-bert/bert-base-uncased` với PyTorch và Hugging Face Transformers, sử dụng AdamW, Linear Warmup Scheduler, và cơ chế chọn checkpoint tối ưu dựa trên Validation Macro F1.
 4. **Module đánh giá đối đầu (`src/evaluate.py`):** Thực thi đánh giá so sánh đồng thời cả Baseline và BERT trên tập kiểm thử độc lập (Test Set) đúng 1 lần duy nhất, xuất các chỉ số chi tiết, ma trận nhầm lẫn và trích xuất danh sách ca lỗi phục vụ phân tích định tính.
 5. **Module suy luận tương tác (`src/predict.py`):** Cung cấp giao diện dự đoán cho từng chuỗi văn bản, hiển thị xác suất phân lớp và chi tiết phân rã từ con WordPiece.
-6. **Ứng dụng Web Demo (`app/app.py`):** Giao diện tương tác trực quan Streamlit, cho phép so sánh thời gian thực kết quả phân loại của cả hai mô hình trên các văn bản đánh giá tùy ý.
+6. **Ứng dụng Web Demo (`app/main.py`):** Giao diện FastAPI + Jinja2, gọi trực tiếp pipeline BERT chuẩn tại `src.predict.predict_bert` và hiển thị nhãn cùng xác suất đầu ra thực tế.
 
 ---
 
@@ -369,8 +369,8 @@ python -m src.evaluate
 # Bước 6: Khởi tạo bộ slide thuyết trình PowerPoint chính thức
 python -m presentation.generate_presentation
 
-# Bước 7: Khởi chạy ứng dụng Web tương tác Streamlit
-streamlit run app/app.py
+# Bước 7: Khởi chạy ứng dụng Web tương tác FastAPI
+uvicorn app.main:app --reload
 ```
 
 *Lưu ý về tính ngẫu nhiên:* Các hạt giống ngẫu nhiên (seed) đều được cố định tại giá trị `42` trong `src/config.py`. Tuy nhiên, do các phép toán số học dấu phẩy động trên phần cứng CPU/GPU và các luồng tính toán song song, các chỉ số số thực có thể có sự dao động nhỏ ở phần thập phân thứ 4 hoặc thứ 5 giữa các môi trường thực thi khác nhau.

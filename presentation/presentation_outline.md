@@ -32,7 +32,7 @@
 - **Thẻ 2: Mục tiêu & Đóng góp (Objective):**
   - *Quy trình chuẩn mực khép kín:* Triển khai đầy đủ 6 giai đoạn AI Project Cycle; kiểm toán exact-match trước split và case-normalized hậu nghiệm.
   - *Thực nghiệm đối chứng công bằng:* Huấn luyện mô hình cơ sở TF-IDF + Logistic Regression và Fine-tuning BERT (`bert-base-uncased`) trên cùng dữ liệu chuẩn.
-  - *Đánh giá khách quan & Triển khai:* Đóng băng và kiểm thử trên Held-Out Test Set (3,949 mẫu); phân tích định tính ca lỗi và đóng gói Web UI Streamlit.
+  - *Đánh giá khách quan & Triển khai:* Đóng băng và kiểm thử trên Held-Out Test Set (3,949 mẫu); phân tích định tính ca lỗi và đóng gói Web UI FastAPI.
 
 ---
 
@@ -45,7 +45,7 @@
   - **04. Baseline:** Xây dựng mô hình cơ sở TF-IDF (10k features) + Logistic Regression.
   - **05. BERT Train:** Full fine-tuning 110M tham số, lưu checkpoint theo Validation Macro F1.
   - **06. Frozen Test:** Đánh giá đúng 1 lần duy nhất trên tập Test Set đã niêm phong.
-  - **07. Error & Demo:** Kiểm toán chuyên sâu 20 ca lỗi cực đoan; đóng gói Web UI Streamlit.
+  - **07. Error & Demo:** Kiểm toán chuyên sâu 20 ca lỗi cực đoan; đóng gói Web UI FastAPI.
 - **Banner nguyên tắc cốt lõi (Bottom Callout):** Xây dựng độc lập từ đầu (from scratch) • Kiểm soát giao thoa dữ liệu • Đóng băng siêu tham số trước khi mở niêm phong tập kiểm thử.
 
 ---
@@ -150,17 +150,17 @@
 
 ---
 
-### Slide 11: Ứng Dụng Tương Tác Thời Gian Thực (Streamlit Demo — Light Theme)
-- **Thiết kế:** Bố cục 2 cột (Cột trái: Thẻ mô phỏng giao diện Web Streamlit thực tế; Cột phải: 3 thẻ tính năng nổi bật).
-- **Cột trái — Mockup UI Web (`app/app.py`, minh họa giao diện; không phải benchmark đóng băng):**
+### Slide 11: Ứng Dụng Tương Tác Thời Gian Thực (FastAPI Demo — Light Theme)
+- **Thiết kế:** Bố cục 2 cột (Cột trái: Thẻ mô phỏng giao diện Web FastAPI/Jinja2; Cột phải: 3 thẻ tính năng nổi bật).
+- **Cột trái — Mockup UI Web (`app/main.py`, minh họa giao diện; không phải benchmark đóng băng):**
   - Mẫu kiểm thử: *"The room was a bit small, but the location was great and breakfast was delicious!"*
-  - Khi chạy, ứng dụng hiển thị nhãn dự đoán và độ tin cậy của BERT cùng Baseline.
-  - Ứng dụng hiển thị danh sách token WordPiece của văn bản đầu vào.
-  - Độ trễ được đo trực tiếp khi suy luận và phụ thuộc phần cứng, môi trường thực thi.
+  - Khi chạy, ứng dụng hiển thị nhãn dự đoán, độ tin cậy và xác suất Positive / Negative của BERT.
+  - Dữ liệu trả về được lấy trực tiếp từ `src.predict.predict_bert`, không dùng giá trị minh họa.
+  - Giao diện có trạng thái tải, ví dụ thủ công và xử lý lỗi không lộ stack trace.
 - **Cột phải — 3 Tính năng nổi bật:**
-  - *Triển khai cục bộ khép kín:* Nạp tự động trọng số đã đóng băng từ `artifacts/model/bert_best_model/`; đo lường và hiển thị độ trễ suy luận thời gian thực.
-  - *So sánh đối đầu song song:* Cho phép thử nghiệm trực tiếp khả năng nắm bắt ngữ cảnh câu giữa TF-IDF và Transformer trên cùng một văn bản đầu vào.
-  - *Trực quan hóa cơ chế BERT:* Hiển thị danh sách token WordPiece (`##`), minh họa trực quan cơ chế tách từ và biểu diễn vector.
+  - *Triển khai cục bộ nhẹ:* FastAPI phục vụ trang Jinja2 và endpoint `POST /api/predict`; pipeline chuẩn cache model/tokenizer.
+  - *Kết quả mô hình thực:* Nhãn và xác suất được lấy trực tiếp từ BERT, không dùng confidence giả lập.
+  - *Trải nghiệm thuyết trình:* Ví dụ thủ công, bộ đếm ký tự, trạng thái tải và bố cục responsive.
 
 ---
 

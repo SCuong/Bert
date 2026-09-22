@@ -145,9 +145,9 @@
 
 ---
 
-### Câu 22: Ứng dụng Demo Streamlit hoạt động như thế nào?
-- **[Trả lời ngắn]:** Demo nạp mô hình Baseline và BERT từ thư mục artifacts, nhận văn bản từ người dùng, chạy qua pipeline suy luận, hiển thị so sánh đối đầu song song xác suất và giải thích bẻ từ WordPiece.
-- **[Trả lời mở rộng]:** Ứng dụng cung cấp 4 câu đánh giá mẫu thể hiện các trường hợp phức tạp (như câu phủ định kép, khen chê pha trộn). Giao diện hiển thị trực quan xác suất dự đoán của cả hai mô hình, làm nổi bật sự vượt trội của BERT trong việc xử lý ngữ cảnh đảo nghĩa so với mô hình túi từ TF-IDF.
+### Câu 22: Ứng dụng Demo FastAPI hoạt động như thế nào?
+- **[Trả lời ngắn]:** Demo phục vụ giao diện HTML bằng FastAPI + Jinja2, nhận văn bản từ người dùng qua `POST /api/predict`, rồi gọi trực tiếp `src.predict.predict_bert` để trả về nhãn và xác suất BERT thực tế.
+- **[Trả lời mở rộng]:** Ứng dụng cung cấp ba câu đánh giá mẫu do nhóm tự viết, bộ đếm ký tự, trạng thái tải và xử lý lỗi không lộ stack trace. Pipeline suy luận chuẩn cache model/tokenizer; vì vậy mô hình không được nạp lại cho từng request. Giao diện chỉ là lớp minh họa cục bộ, không phải một benchmark hoặc dịch vụ production.
 
 ---
 

@@ -4,7 +4,7 @@
 [![Python 3.11](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.x-red.svg)](https://pytorch.org/)
 [![Hugging Face](https://img.shields.io/badge/Transformers-5.17.0-yellow.svg)](https://huggingface.co/)
-[![Streamlit](https://img.shields.io/badge/Demo-Streamlit-FF4B4B.svg)](https://streamlit.io/)
+[![FastAPI](https://img.shields.io/badge/Demo-FastAPI-009688.svg)](https://fastapi.tiangolo.com/)
 
 Đồ án môn học **Trí Tuệ Nhân Tạo (Artificial Intelligence)**  
 Triển khai độc lập mới hoàn toàn từ đầu; không tái sử dụng mã nguồn tham khảo (independent implementation from scratch; reference code was not reused), tuân thủ chặt chẽ quy trình chuẩn **AI Project Cycle** (Scope & Plan $\rightarrow$ Data $\rightarrow$ Models $\rightarrow$ Deployment $\rightarrow$ Maintenance $\rightarrow$ Feedback).
@@ -76,7 +76,9 @@ Bài toán đặt ra: **Tự động phân loại cảm xúc (Sentiment Analysis
 │   ├── evaluate.py               # Đánh giá độc lập trên Test Set & trích xuất ca lỗi
 │   └── predict.py                # Pipeline suy luận và giải thích WordPiece tokens
 ├── app/
-│   └── app.py                    # Ứng dụng Web tương tác bằng Streamlit
+│   ├── main.py                   # FastAPI backend, reuse canonical BERT inference
+│   ├── templates/index.html      # Single-page presentation interface
+│   └── static/                   # Custom CSS and vanilla JavaScript
 ├── artifacts/
 │   ├── metrics/                  # Kết quả định lượng dạng JSON (baseline, bert, errors, token stats)
 │   ├── figures/                  # Biểu đồ trực quan hóa (EDA, Confusion Matrix, History)
@@ -133,11 +135,11 @@ python -m presentation.generate_presentation
 ```
 *Tạo tệp trình chiếu `presentation/BERT_Project_Final.pptx` (13 slide) theo DUT-style template supplied for this project, sử dụng các số liệu và biểu đồ thực nghiệm đã đóng băng.*
 
-### 4.7. Khởi chạy ứng dụng Web Demo (Streamlit)
+### 4.7. Khởi chạy ứng dụng Web Demo (FastAPI)
 ```bash
-streamlit run app/app.py
+uvicorn app.main:app --reload
 ```
-*Mở trình duyệt tại `http://localhost:8501` để trải nghiệm giao diện phân tích cảm xúc thời gian thực so sánh đối đầu giữa Baseline và Fine-Tuned BERT.*
+*Mở trình duyệt tại `http://127.0.0.1:8000` để trải nghiệm giao diện phân tích cảm xúc bằng Fine-Tuned BERT. Endpoint `POST /api/predict` gọi lại trực tiếp `src.predict.predict_bert`, do đó xác suất hiển thị là đầu ra thực tế của mô hình. Mô hình/tokenizer được cache bởi pipeline suy luận chuẩn và không nạp lại cho mỗi request.*
 
 ---
 
